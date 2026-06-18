@@ -65,15 +65,53 @@
   .cell{
     aspect-ratio:1/1; display:flex; align-items:center; justify-content:center;
     font-size:calc(var(--board)/11*0.62); line-height:1; overflow:hidden;
+    /* tiled depth: thin inner edge on every tile + drop shadow under emoji markers */
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.22);
+    text-shadow: 0 1px 2px rgba(0,0,0,.55);
   }
-  /* terrain colors */
-  .t-road{ background:#2b2f36; }
-  .t-grass{ background:#22341f; }
-  .t-plank{ background:#4a3625; }
-  .t-plaza{ background:#3a3f47; }
-  .t-water{ background:#15384f; }
-  .t-bldg{ background:#15181d; }
-  .player-cell{ background:#42352a; }
+  /* ---- textured terrain (pure CSS gradients, no image assets) ---- */
+  /* Asphalt road: dark slate with fine grit speckle. */
+  .t-road{ background:
+    radial-gradient(circle at 30% 30%, rgba(255,255,255,.05) 0 1px, transparent 1.4px),
+    radial-gradient(circle at 72% 68%, rgba(0,0,0,.20) 0 1px, transparent 1.4px),
+    linear-gradient(135deg,#31363f,#262a31);
+    background-size:7px 7px, 9px 9px, 100% 100%; }
+  /* Park grass: green with scattered lighter/darker tufts. */
+  .t-grass{ background:
+    radial-gradient(circle at 25% 35%, rgba(150,200,120,.20) 0 1.2px, transparent 1.7px),
+    radial-gradient(circle at 70% 62%, rgba(60,110,55,.45) 0 1.3px, transparent 1.8px),
+    linear-gradient(160deg,#283d23,#1b2c17);
+    background-size:8px 8px, 11px 11px, 100% 100%; }
+  /* Dock planks: warm wood with plank seams and grain. */
+  .t-plank{ background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.04) 0 2px, transparent 2px 5px),
+    repeating-linear-gradient(90deg, rgba(80,57,38,.55) 0 8px, rgba(58,42,28,.55) 8px 9px),
+    linear-gradient(#4a3625,#3a2a1c);
+    background-size:100% 100%, 9px 100%, 100% 100%; }
+  /* Plaza: art-deco stone cross-hatch. */
+  .t-plaza{ background:
+    repeating-linear-gradient(45deg, rgba(255,255,255,.05) 0 6px, transparent 6px 12px),
+    repeating-linear-gradient(-45deg, rgba(0,0,0,.12) 0 6px, transparent 6px 12px),
+    linear-gradient(#3d434c,#323840);
+    background-size:cover; }
+  /* Intracoastal water: rippled blue, gently shimmering. */
+  .t-water{ background:
+    repeating-linear-gradient(90deg, rgba(120,200,230,.12) 0 3px, transparent 3px 8px),
+    linear-gradient(180deg,#1b4a63,#123246);
+    background-size:16px 100%, 100% 100%;
+    animation:ripple 6s linear infinite; }
+  @keyframes ripple{ from{background-position:0 0,0 0;} to{background-position:16px 0,0 0;} }
+  /* Buildings: deco facade with a window grid and a brass cornice. */
+  .t-bldg{ background:
+    repeating-linear-gradient(90deg, rgba(217,164,65,.12) 0 3px, transparent 3px 7px),
+    repeating-linear-gradient(0deg, rgba(217,164,65,.10) 0 3px, transparent 3px 7px),
+    linear-gradient(180deg,#262a31,#14171c);
+    border-top:2px solid rgba(156,111,31,.55); }
+  /* Hero tile: warm spotlight under the goggles + brass glow. */
+  .player-cell{ background:
+    radial-gradient(circle at 50% 42%, #5c4733 0%, #34281c 70%);
+    box-shadow: inset 0 0 0 1px rgba(217,164,65,.45);
+    text-shadow: 0 0 7px rgba(217,164,65,.95), 0 1px 2px #000; }
 
   .dpad{ display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr);
     gap:8px; width:min(70vw,240px); margin-top:4px; }
@@ -405,8 +443,16 @@ function renderOverworld(){
       const cls  = TCLASS[base] || 't-road';
       let glyph = EMOJI[ch] || '';
       let cellCls = cls;
-      if(my===player.y && mx===player.x){ glyph = '🕶️'; cellCls = 'player-cell'; } // draw hero
-      html += `<div class="cell ${cellCls}">${glyph}</div>`;
+      const isPlayer = (my===player.y && mx===player.x);
+      if(isPlayer){ glyph = '🕶️'; cellCls = 'player-cell'; } // draw hero
+      // Deterministic tiny brightness jitter on plain terrain so open areas
+      // don't read as one flat slab. Skip marker tiles and the hero.
+      let style = '';
+      if(!glyph && !isPlayer){
+        const v = (mx*7 + my*13) % 6;            // stable per-coordinate
+        style = ` style="filter:brightness(${(0.9 + v*0.035).toFixed(3)})"`;
+      }
+      html += `<div class="cell ${cellCls}"${style}>${glyph}</div>`;
     }
   }
   board.innerHTML = html;
