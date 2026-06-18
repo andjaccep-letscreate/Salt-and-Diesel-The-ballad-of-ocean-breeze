@@ -58,10 +58,11 @@
   .hud .stat{ font-size:.74rem; letter-spacing:.08em; white-space:nowrap; }
   .minigauge{ flex:1 1 90px; min-width:90px; }
   .board{
-    width:var(--board); display:grid; grid-template-columns:repeat(11,1fr);
-    gap:0; border:3px solid var(--brass-d); border-radius:8px; overflow:hidden;
-    background:#000; user-select:none;
+    position:relative;   /* positioning context for the hero sprite overlay */
+    width:var(--board); border:3px solid var(--brass-d); border-radius:8px;
+    overflow:hidden; background:#000; user-select:none;
   }
+  #grid{ display:grid; grid-template-columns:repeat(11,1fr); width:100%; }
   .cell{
     aspect-ratio:1/1; display:flex; align-items:center; justify-content:center;
     font-size:calc(var(--board)/11*0.62); line-height:1; overflow:hidden;
@@ -107,11 +108,105 @@
     repeating-linear-gradient(0deg, rgba(217,164,65,.10) 0 3px, transparent 3px 7px),
     linear-gradient(180deg,#262a31,#14171c);
     border-top:2px solid rgba(156,111,31,.55); }
-  /* Hero tile: warm spotlight under the goggles + brass glow. */
-  .player-cell{ background:
-    radial-gradient(circle at 50% 42%, #5c4733 0%, #34281c 70%);
-    box-shadow: inset 0 0 0 1px rgba(217,164,65,.45);
-    text-shadow: 0 0 7px rgba(217,164,65,.95), 0 1px 2px #000; }
+  /* ---- Hero sprite overlay (Larry) ---- */
+  /* Sized to one tile in JS; tweens between tiles via the transform transition. */
+  #player{ position:absolute; left:0; top:0; z-index:5; pointer-events:none;
+    transition: transform .2s linear; will-change:transform; }
+  #player .sprite{ width:100%; height:100%; display:block; overflow:visible;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,.55)); }
+  /* show the correct view per facing direction */
+  #player .view{ display:none; }
+  #player[data-dir="down"]  .view-down{ display:block; }
+  #player[data-dir="up"]    .view-up{   display:block; }
+  #player[data-dir="right"] .view-side{ display:block; }
+  #player[data-dir="left"]  .view-side{ display:block; }
+  #player[data-dir="left"]  .sprite{ transform: scaleX(-1); }   /* mirror for left */
+  /* walk bob — alternating legs + subtle body bob (translate only; robust everywhere) */
+  .leg-a, .leg-b, .body-bob{ transform-box: fill-box; }
+  @keyframes bobA   { 0%,100%{ transform: translateY(0); }    50%{ transform: translateY(-2.2px); } }
+  @keyframes bobB   { 0%,100%{ transform: translateY(-2.2px); } 50%{ transform: translateY(0); } }
+  @keyframes bobBody{ 0%,100%{ transform: translateY(0); }    50%{ transform: translateY(-1px); } }
+  #player.walking .leg-a{    animation: bobA   .30s steps(2,jump-none) infinite; }
+  #player.walking .leg-b{    animation: bobB   .30s steps(2,jump-none) infinite; }
+  #player.walking .body-bob{ animation: bobBody .30s ease-in-out infinite; }
+  /* gentle idle breathing while standing still */
+  @keyframes idle{ 0%,100%{ transform: translateY(0); } 50%{ transform: translateY(-0.6px); } }
+  #player:not(.walking) .body-bob{ animation: idle 2.8s ease-in-out infinite; }
+
+  /* interactive map markers (landmarks, pickups, NPCs, patrols) gently pulse */
+  .cell .mk{ display:inline-block; transform-origin:center; }
+  @keyframes markerPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.14); } }
+  .cell .mk.marker{ animation: markerPulse 1.8s ease-in-out infinite; }
+
+  @media (prefers-reduced-motion: reduce){
+    #player{ transition:none; }
+    #player.walking .leg-a, #player.walking .leg-b, #player.walking .body-bob,
+    #player:not(.walking) .body-bob, .cell .mk.marker{ animation:none; }
+  }
+
+  /* ---- battle feedback animations ---- */
+  @keyframes shake{ 0%,100%{transform:translateX(0)} 20%{transform:translateX(-4px)}
+    40%{transform:translateX(4px)} 60%{transform:translateX(-3px)} 80%{transform:translateX(3px)} }
+  .eface.hit{ animation: shake .3s ease; }
+  @keyframes enemyIn{ 0%{transform:scale(.4); opacity:0} 70%{transform:scale(1.08)} 100%{transform:scale(1); opacity:1} }
+  .eface.enter{ animation: enemyIn .4s ease; }
+  @keyframes hurtflash{ 0%{box-shadow:0 0 0 0 rgba(200,69,47,0)}
+    30%{box-shadow:0 0 0 3px rgba(200,69,47,.85), inset 0 0 24px rgba(200,69,47,.45)}
+    100%{box-shadow:0 0 0 0 rgba(200,69,47,0)} }
+  .hpanel.hurt{ animation: hurtflash .45s ease; }
+
+  /* ---- floating combat numbers + screen shake ---- */
+  .epanel, .hpanel{ position:relative; }   /* anchor for floating numbers */
+  .float{ position:absolute; left:50%; top:14%; transform:translateX(-50%);
+    font-family:"Courier New",monospace; font-weight:800; pointer-events:none; z-index:20;
+    text-shadow:0 1px 2px #000; animation:floatUp .85s ease-out forwards; }
+  @keyframes floatUp{ 0%{opacity:0; transform:translate(-50%,8px) scale(.8);}
+    18%{opacity:1;} 100%{opacity:0; transform:translate(-50%,-30px) scale(1.1);} }
+  .float.dmg{ color:#ff8a6e; font-size:1.2rem; }
+  .float.crit{ color:#ffd479; font-size:1.65rem; }
+  .float.heal{ color:#8fe39a; font-size:1.2rem; }
+  @keyframes screenShake{ 0%,100%{transform:translate(0,0)} 25%{transform:translate(-5px,2px)}
+    50%{transform:translate(5px,-2px)} 75%{transform:translate(-3px,1px)} }
+  #battle.shaking{ animation: screenShake .35s ease; }
+
+  /* ---- atmosphere: board vignette + drifting haze ---- */
+  .board::after{ content:""; position:absolute; inset:0; pointer-events:none; z-index:6;
+    box-shadow: inset 0 0 55px rgba(0,0,0,.6); border-radius:6px; }
+  #fog{ position:absolute; inset:-25%; pointer-events:none; z-index:4; opacity:.10;
+    background: radial-gradient(55% 40% at 30% 30%, #cfe4f0 0%, transparent 60%),
+                radial-gradient(45% 35% at 75% 65%, #b9c9d6 0%, transparent 60%);
+    animation: drift 26s ease-in-out infinite alternate; }
+  @keyframes drift{ from{ transform:translate(0,0); } to{ transform:translate(9%,-7%); } }
+
+  /* ---- district arrival banner (non-blocking) ---- */
+  #banner{ position:absolute; left:0; right:0; top:36%; text-align:center; pointer-events:none;
+    z-index:30; opacity:0; }
+  #banner.show{ animation: bannerIn 2.2s ease forwards; }
+  @keyframes bannerIn{ 0%{opacity:0; transform:translateY(10px);}
+    16%,72%{opacity:1; transform:translateY(0);} 100%{opacity:0;} }
+  #banner .bn{ display:inline-block; background:rgba(10,12,16,.85); color:var(--brass);
+    border:2px solid var(--brass-d); border-radius:8px; padding:8px 16px;
+    font-weight:800; letter-spacing:.18em; text-transform:uppercase; font-size:.78rem;
+    box-shadow:0 4px 16px rgba(0,0,0,.6); }
+
+  /* ---- mute toggle ---- */
+  .muteBtn{ background:var(--panel2); color:var(--brass); border:2px solid var(--brass-d);
+    border-radius:8px; min-width:42px; min-height:38px; font-size:1rem; padding:0 8px; cursor:pointer; }
+
+  /* ---- title-screen ambiance: drifting glow + a passing dirigible ---- */
+  #title .frame{ position:relative; overflow:hidden; }
+  #title .frame::before{ content:""; position:absolute; inset:-50%; z-index:0; pointer-events:none;
+    background: radial-gradient(38% 30% at 20% 12%, rgba(217,164,65,.10), transparent 60%);
+    animation: drift 30s ease-in-out infinite alternate; }
+  #title .frame > *{ position:relative; z-index:1; }
+  #title .blimp{ position:absolute; top:6px; left:-20%; font-size:1.3rem; opacity:.45; z-index:0;
+    animation: sail 22s linear infinite; }
+  @keyframes sail{ from{ left:-20%; } to{ left:120%; } }
+
+  @media (prefers-reduced-motion: reduce){
+    #fog, #title .frame::before, #title .blimp, #banner.show, #battle.shaking,
+    .float, .eface.enter, .eface.hit, .hpanel.hurt{ animation:none; }
+  }
 
   .dpad{ display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr);
     gap:8px; width:min(70vw,240px); margin-top:4px; }
@@ -183,6 +278,7 @@
 <!-- ============================ TITLE ============================ -->
 <div id="title" class="screen active">
   <div class="frame">
+    <div class="blimp">🛩️</div>
     <div class="sub deco">West Palm Beach &middot; 1947</div>
     <h1>Salt &amp; Diesel</h1>
     <div class="sub deco">The Ballad of Ocean Breeze</div>
@@ -210,8 +306,98 @@
     <div class="minigauge"><div class="gauge hp"><div class="fill" id="hud-hp-fill"></div><div class="lbl" id="hud-hp-lbl">HP</div></div></div>
     <div class="minigauge"><div class="gauge"><div class="fill" id="hud-fuel-fill" style="background:linear-gradient(180deg,#62c3ee,#1d6f97)"></div><div class="lbl" id="hud-fuel-lbl">FUEL</div></div></div>
     <div class="stat">🧰 <b id="hud-kits" class="accent">3</b></div>
+    <button class="muteBtn" onclick="toggleMute()">🔊</button>
   </div>
-  <div class="board" id="board"></div>
+  <div class="board" id="board">
+    <div id="fog"></div>
+    <div id="grid"></div>
+    <!-- Persistent hero sprite overlay (NOT rebuilt each move, so it can tween). -->
+    <div id="player" data-dir="down" aria-hidden="true">
+      <svg class="sprite" viewBox="0 0 32 48" preserveAspectRatio="xMidYMax meet" aria-label="Larry">
+        <!-- shadow (shared) -->
+        <ellipse cx="16" cy="45" rx="9" ry="2.6" fill="rgba(0,0,0,.28)"/>
+        <!-- ============ FRONT (facing down / toward viewer) ============ -->
+        <g class="view view-down">
+          <g class="leg-a">
+            <rect x="10" y="31" width="4.6" height="8" rx="2" fill="#c98a5e"/>
+            <rect x="8.4" y="38.2" width="7.2" height="4" rx="2" fill="#eef0f2"/>
+            <rect x="8.4" y="41" width="7.2" height="1.6" rx="0.8" fill="#2a2d33"/>
+          </g>
+          <g class="leg-b">
+            <rect x="17.4" y="31" width="4.6" height="8" rx="2" fill="#c98a5e"/>
+            <rect x="16.4" y="38.2" width="7.2" height="4" rx="2" fill="#eef0f2"/>
+            <rect x="16.4" y="41" width="7.2" height="1.6" rx="0.8" fill="#2a2d33"/>
+          </g>
+          <g class="body-bob">
+            <rect x="9" y="26" width="14" height="7.5" rx="2.5" fill="#d3d6db"/>
+            <rect x="15.4" y="26" width="1.2" height="7.5" fill="#bcc0c6"/>
+            <rect x="4.6" y="16.6" width="4" height="7.5" rx="2" fill="#d8c7a8"/>
+            <circle cx="6.6" cy="24.4" r="2" fill="#c98a5e"/>
+            <rect x="23.4" y="16.6" width="4" height="7.5" rx="2" fill="#d8c7a8"/>
+            <circle cx="25.4" cy="24.4" r="2" fill="#c98a5e"/>
+            <rect x="8" y="16" width="16" height="12" rx="3.5" fill="#d8c7a8"/>
+            <rect x="15.2" y="16.4" width="1.6" height="7" fill="#bca87f"/>
+            <circle cx="16" cy="20" r="0.7" fill="#7a6a4a"/>
+            <circle cx="16" cy="10" r="6.5" fill="#c98a5e"/>
+            <path d="M13.4 13.6 Q16 15.8 18.6 13.6" stroke="#7a4f33" stroke-width="1" fill="none" stroke-linecap="round"/>
+            <rect x="9.6" y="8.4" width="12.8" height="3.2" rx="1.4" fill="#14171c"/>
+            <rect x="15.3" y="8.7" width="1.4" height="1.3" fill="#3a3f46"/>
+            <rect x="10.2" y="9" width="3" height="0.7" rx="0.35" fill="#454b54"/>
+            <path d="M9 10 Q9 3.4 16 3.1 Q23 3.4 23 10 Q21 6.7 16 6.4 Q11 6.7 9 10 Z" fill="#1c1410"/>
+          </g>
+        </g>
+        <!-- ============ BACK (facing up / away) ============ -->
+        <g class="view view-up">
+          <g class="leg-a">
+            <rect x="10" y="31" width="4.6" height="8" rx="2" fill="#c98a5e"/>
+            <rect x="8.4" y="38.2" width="7.2" height="4" rx="2" fill="#dfe2e6"/>
+            <rect x="8.4" y="38.2" width="7.2" height="1.4" rx="0.7" fill="#2a2d33"/>
+          </g>
+          <g class="leg-b">
+            <rect x="17.4" y="31" width="4.6" height="8" rx="2" fill="#c98a5e"/>
+            <rect x="16.4" y="38.2" width="7.2" height="4" rx="2" fill="#dfe2e6"/>
+            <rect x="16.4" y="38.2" width="7.2" height="1.4" rx="0.7" fill="#2a2d33"/>
+          </g>
+          <g class="body-bob">
+            <rect x="9" y="26" width="14" height="7.5" rx="2.5" fill="#d3d6db"/>
+            <rect x="4.6" y="16.6" width="4" height="7.5" rx="2" fill="#d8c7a8"/>
+            <rect x="23.4" y="16.6" width="4" height="7.5" rx="2" fill="#d8c7a8"/>
+            <rect x="8" y="16" width="16" height="12" rx="3.5" fill="#cdbb98"/>
+            <rect x="12" y="15.2" width="8" height="2.2" rx="1" fill="#b7a47b"/>
+            <circle cx="16" cy="10" r="6.5" fill="#c98a5e"/>
+            <path d="M9.2 11 Q9 3.4 16 3.1 Q23 3.4 22.8 11 Q22.6 12.6 16 12.6 Q9.4 12.6 9.2 11 Z" fill="#1c1410"/>
+          </g>
+        </g>
+        <!-- ============ SIDE (facing right; left = mirrored) ============ -->
+        <g class="view view-side">
+          <g class="leg-a">
+            <rect x="12" y="31" width="4.4" height="8" rx="2" fill="#b3774d"/>
+            <rect x="10.5" y="38.2" width="8" height="4" rx="2" fill="#dfe2e6"/>
+            <rect x="10.5" y="41" width="8" height="1.5" rx="0.7" fill="#2a2d33"/>
+          </g>
+          <g class="leg-b">
+            <rect x="15.6" y="31" width="4.6" height="8" rx="2" fill="#c98a5e"/>
+            <rect x="15" y="38.2" width="9" height="4" rx="2" fill="#eef0f2"/>
+            <rect x="15" y="41" width="9" height="1.6" rx="0.8" fill="#2a2d33"/>
+          </g>
+          <g class="body-bob">
+            <rect x="11.5" y="26" width="11.5" height="7.5" rx="2.5" fill="#d3d6db"/>
+            <rect x="10.5" y="16" width="12.5" height="12" rx="3.5" fill="#d8c7a8"/>
+            <rect x="16.8" y="16.6" width="4" height="8" rx="2" fill="#cdbb98"/>
+            <circle cx="18.8" cy="24.8" r="2" fill="#c98a5e"/>
+            <circle cx="17" cy="10" r="6.5" fill="#c98a5e"/>
+            <path d="M20.5 12.8 q1.4 1 2.2 0" stroke="#7a4f33" stroke-width="1" fill="none" stroke-linecap="round"/>
+            <rect x="18" y="8.4" width="5.4" height="3.1" rx="1.4" fill="#14171c"/>
+            <rect x="12.5" y="9.1" width="6" height="1.1" rx="0.5" fill="#14171c"/>
+            <rect x="18.5" y="8.8" width="1.6" height="0.7" rx="0.35" fill="#454b54"/>
+            <path d="M11 10.5 Q11 3.4 18 3.2 Q23.2 3.6 22.8 9.4 Q22 6.6 18 6.5 Q13 6.7 11 10.5 Z" fill="#1c1410"/>
+            <rect x="10.6" y="6.6" width="3.4" height="5" rx="1.6" fill="#1c1410"/>
+          </g>
+        </g>
+      </svg>
+    </div>
+    <div id="banner"></div>
+  </div>
   <div class="dpad">
     <button class="btn up"    onmousedown="move(-1,0)" ontouchstart="event.preventDefault();move(-1,0)">▲</button>
     <button class="btn left"  onmousedown="move(0,-1)" ontouchstart="event.preventDefault();move(0,-1)">◀</button>
@@ -224,7 +410,7 @@
 
 <!-- ============================ BATTLE ============================ -->
 <div id="battle" class="screen">
-  <div class="epanel">
+  <div class="epanel" id="epanel">
     <div class="eface" id="e-face">🥊</div>
     <div class="info">
       <div class="ename deco" id="e-name">ENEMY</div>
@@ -232,13 +418,14 @@
     </div>
   </div>
   <div class="log" id="log"></div>
-  <div class="hpanel">
+  <div class="hpanel" id="hpanel">
     <div class="top">
       <span class="face">🕶️</span>
       <div style="flex:1">
         <span class="deco accent">SPARKPLUG</span>
         <span class="stat" style="font-size:.72rem"> &middot; LV <b id="b-lv">1</b> &middot; 🧰 <b id="b-kits">3</b></span>
       </div>
+      <button class="muteBtn" onclick="toggleMute()">🔊</button>
     </div>
     <div class="gauge hp"><div class="fill" id="b-hp-fill"></div><div class="lbl" id="b-hp-lbl">HP</div></div>
     <div class="gauge" style="margin-top:6px"><div class="fill" id="b-fuel-fill" style="background:linear-gradient(180deg,#62c3ee,#1d6f97)"></div><div class="lbl" id="b-fuel-lbl">FUEL</div></div>
@@ -364,6 +551,103 @@ const EMOJI = {
 };
 /* terrain CSS class per base char */
 const TCLASS = {'.':'t-road',',':'t-grass','=':'t-plank','P':'t-plaza','W':'t-water','B':'t-bldg','T':'t-grass','F':'t-bldg'};
+/* tiles whose emoji marker should gently pulse to invite interaction */
+const INTERACTIVE = new Set(['1','2','3','4','N','D','R','k','u','o','L','H']);
+
+/* briefly (re)play a one-shot CSS animation class on an element */
+function flash(id, cls, ms){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.classList.remove(cls); void el.offsetWidth;   // restart the animation
+  el.classList.add(cls);
+  setTimeout(()=> el.classList.remove(cls), ms);
+}
+
+/* =================================================================
+   SOUND — all effects are SYNTHESIZED with the Web Audio API at runtime
+   (no audio files), so the game stays a single self-contained HTML file.
+   ================================================================= */
+let audioCtx = null, muted = false;
+function initAudio(){                 // must be created after a user gesture
+  if(audioCtx){ if(audioCtx.state==='suspended') audioCtx.resume(); return; }
+  try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+  catch(e){ audioCtx = null; }
+}
+/* one short tone (an oscillator with a quick volume envelope) */
+function tone(freq, dur, type, gain, delay){
+  if(!audioCtx || muted) return;
+  const t = audioCtx.currentTime + (delay||0);
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = type || 'square'; o.frequency.setValueAtTime(freq, t);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(gain||0.18, t+0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start(t); o.stop(t+dur+0.03);
+}
+/* a burst of filtered noise — used for impacts/clangs */
+function noise(dur, gain){
+  if(!audioCtx || muted) return;
+  const t = audioCtx.currentTime;
+  const buf = audioCtx.createBuffer(1, Math.max(1,(audioCtx.sampleRate*dur)|0), audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i] = (Math.random()*2-1) * Math.pow(1-i/d.length, 2);
+  const src = audioCtx.createBufferSource(); src.buffer = buf;
+  const f = audioCtx.createBiquadFilter(); f.type='highpass'; f.frequency.value=700;
+  const g = audioCtx.createGain(); g.gain.value = gain||0.18;
+  src.connect(f); f.connect(g); g.connect(audioCtx.destination); src.start(t);
+}
+const SFX = {
+  step(){ tone(170,0.05,'square',0.05); },
+  strike(){ noise(0.12,0.16); tone(240,0.08,'square',0.10); },
+  overdrive(){ noise(0.22,0.22); tone(110,0.26,'sawtooth',0.16); },
+  brace(){ tone(330,0.12,'triangle',0.12); },
+  repair(){ tone(523,0.10,'sine',0.12); tone(784,0.14,'sine',0.12,0.10); },
+  pickup(){ tone(660,0.08,'square',0.12); tone(990,0.10,'square',0.12,0.08); },
+  hurt(){ noise(0.16,0.20); tone(140,0.18,'sawtooth',0.12); },
+  gate(){ tone(70,0.45,'sawtooth',0.18); noise(0.3,0.12); },
+  level(){ [523,659,784,1047].forEach((f,i)=> tone(f,0.18,'triangle',0.13,i*0.09)); },
+  win(){ [523,659,784,1047,1319].forEach((f,i)=> tone(f,0.32,'sine',0.15,i*0.13)); },
+  lose(){ [440,330,247,165].forEach((f,i)=> tone(f,0.32,'sawtooth',0.15,i*0.15)); }
+};
+function toggleMute(){
+  muted = !muted;
+  if(!muted){ initAudio(); if(audioCtx && audioCtx.state==='suspended') audioCtx.resume(); }
+  document.querySelectorAll('.muteBtn').forEach(b => b.textContent = muted ? '🔇' : '🔊');
+}
+
+/* floating combat number over the enemy ('epanel') or hero ('hpanel') panel */
+function floatDamage(parentId, text, kind){
+  const p = document.getElementById(parentId);
+  if(!p || !p.appendChild) return;
+  const s = document.createElement('span');
+  s.className = 'float ' + kind; s.textContent = text;
+  p.appendChild(s);
+  setTimeout(()=>{ if(s.remove) s.remove(); }, 900);
+}
+function shakeScreen(){ flash('battle','shaking', 360); }
+
+/* district arrival banners — announced once each, the first time you enter */
+const DISTRICTS = [
+  { name:'The Rail Yards', x0:1,  x1:5,  y0:11, y1:17 },
+  { name:'The Docks',      x0:16, x1:21, y0:11, y1:18 },
+  { name:'Comeau Tower',   x0:9,  x1:13, y0:1,  y1:4  }
+];
+let seenDistricts = new Set();
+function showBanner(text){
+  const b = document.getElementById('banner');
+  if(!b) return;
+  b.innerHTML = '<span class="bn">'+text+'</span>';
+  b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
+}
+function checkDistrict(){
+  for(const d of DISTRICTS){
+    if(player.x>=d.x0 && player.x<=d.x1 && player.y>=d.y0 && player.y<=d.y1){
+      if(!seenDistricts.has(d.name)){ seenDistricts.add(d.name); showBanner('Entering · '+d.name); }
+      return;
+    }
+  }
+}
 
 /* enemy definitions keyed by the tile char that spawns them */
 const ENEMIES = {
@@ -401,13 +685,16 @@ function newGame(){
   hero = freshHero();
   player = { y:START.y, x:START.x };
   mode = 'title'; busy = false; enc = null;
+  facing = 'down'; seenDistricts = new Set();
   showScreen('title');
 }
 
 function startGame(){
+  initAudio();             // Start button is a user gesture → safe to create audio
   mode = 'overworld';
   showScreen('overworld');
-  renderOverworld();
+  renderOverworld(true);   // snap sprite into place (no glide-in)
+  showBanner('Downtown · Clematis St.');
 }
 
 /* ----------------------- SCREEN ROUTING --------------------------- */
@@ -430,10 +717,10 @@ function cameraOrigin(){
   return {camX, camY};
 }
 
-function renderOverworld(){
-  const board = document.getElementById('board');
+let facing = 'down';   // last direction the hero moved (drives the sprite view)
+
+function renderOverworld(instant){
   const {camX, camY} = cameraOrigin();
-  board.style.gridTemplateColumns = `repeat(${VIEW_W},1fr)`;
   let html = '';
   for(let vy=0; vy<VIEW_H; vy++){
     for(let vx=0; vx<VIEW_W; vx++){
@@ -441,23 +728,46 @@ function renderOverworld(){
       const ch = map[my][mx];
       const base = (ch in GROUND) ? GROUND[ch] : ch;     // floor under markers
       const cls  = TCLASS[base] || 't-road';
-      let glyph = EMOJI[ch] || '';
-      let cellCls = cls;
-      const isPlayer = (my===player.y && mx===player.x);
-      if(isPlayer){ glyph = '🕶️'; cellCls = 'player-cell'; } // draw hero
+      const glyph = EMOJI[ch] || '';
       // Deterministic tiny brightness jitter on plain terrain so open areas
-      // don't read as one flat slab. Skip marker tiles and the hero.
-      let style = '';
-      if(!glyph && !isPlayer){
+      // don't read as one flat slab. Marker tiles keep full brightness.
+      let style = '', inner = '';
+      if(glyph){
+        const mkCls = INTERACTIVE.has(ch) ? ' marker' : '';   // pulse interactive tiles
+        inner = `<span class="mk${mkCls}">${glyph}</span>`;
+      } else {
         const v = (mx*7 + my*13) % 6;            // stable per-coordinate
         style = ` style="filter:brightness(${(0.9 + v*0.035).toFixed(3)})"`;
       }
-      html += `<div class="cell ${cellCls}"${style}>${glyph}</div>`;
+      html += `<div class="cell ${cls}"${style}>${inner}</div>`;
     }
   }
-  board.innerHTML = html;
+  document.getElementById('grid').innerHTML = html;   // hero is a separate overlay
+  positionPlayer(camX, camY, instant);
   updateHUD();
 }
+
+/* Place the persistent hero sprite over its viewport cell. When the camera is
+   following (player centered) the world scrolls under a stationary Larry; when
+   the camera is clamped at a map edge, Larry slides to the new cell. The 0.2s
+   CSS transform transition tweens that slide; pass instant=true to snap (e.g.
+   when (re)entering the overworld) so he doesn't glide in from the corner. */
+function positionPlayer(camX, camY, instant){
+  const pl = document.getElementById('player');
+  const tile = document.getElementById('grid').clientWidth / VIEW_W;
+  const vx = player.x - camX, vy = player.y - camY;
+  pl.style.width = tile + 'px';
+  pl.style.height = tile + 'px';
+  pl.dataset.dir = facing;
+  if(instant) pl.style.transition = 'none';
+  pl.style.transform = `translate(${vx*tile}px, ${vy*tile}px)`;
+  if(instant){ void pl.offsetWidth; pl.style.transition = ''; }  // restore tween
+}
+
+/* Keep the sprite aligned if the viewport is resized/rotated. */
+window.addEventListener('resize', ()=>{
+  if(mode==='overworld'){ const {camX,camY}=cameraOrigin(); positionPlayer(camX,camY,true); }
+});
 
 function updateHUD(){
   document.getElementById('hud-lv').textContent   = hero.lv;
@@ -467,8 +777,15 @@ function updateHUD(){
 }
 
 /* grid-based movement: one tile per input, clamped to bounds, blocked by solids */
+let walkTimer = null;
 function move(dy, dx){
   if(mode !== 'overworld' || busy) return;     // frozen during battle/dialogue/menus
+  if(!muted) initAudio();                       // keep audio alive across gestures
+
+  // Face the way the player pressed, even if blocked or interacting.
+  facing = dx<0 ? 'left' : dx>0 ? 'right' : dy<0 ? 'up' : 'down';
+  document.getElementById('player').dataset.dir = facing;
+
   const ny = player.y + dy, nx = player.x + dx;
   if(ny<0 || ny>=MAP_H || nx<0 || nx>=MAP_W) return;   // bounds
   const ch = map[ny][nx];
@@ -478,9 +795,17 @@ function move(dy, dx){
   if(ch==='N' || ch==='D' || ch==='R'){ openDialogue(ch); return; }      // talk; stay put
   if(ch in ENEMIES){ startBattle(ch, ny, nx); return; }                  // fight; stay put
   if(ch==='k' || ch==='u' || ch==='o'){ takePickup(ch, ny, nx); }        // grab, then step on
+
   // plain walk (or onto a now-cleared pickup tile)
   player.y = ny; player.x = nx;
-  renderOverworld();
+  // Bob the legs only while a step is animating; clear shortly after.
+  const pl = document.getElementById('player');
+  pl.classList.add('walking');
+  clearTimeout(walkTimer);
+  walkTimer = setTimeout(()=> pl.classList.remove('walking'), 230);
+  SFX.step();
+  renderOverworld(false);   // animate the tween
+  checkDistrict();          // announce a district the first time you enter it
 }
 
 /* keyboard support (desktop) */
@@ -501,6 +826,7 @@ function takePickup(ch, y, x){
                      toastHint("Cracked a FUEL CACHE 🛢️  (+2 max fuel, refilled)"); }
   else if(ch==='o'){ hero.atk += 2; toastHint("Pocketed the LUCKY COG 🔩  (+2 Attack, permanent)"); }
   map[y][x] = GROUND[ch];     // remove the pickup tile (one-time)
+  SFX.pickup();
 }
 function toastHint(msg){
   const el = document.getElementById('ow-hint');
@@ -538,6 +864,7 @@ function startBattle(ch, y, x){
   pushLog(def.intro, 'sys');
   showScreen('battle');
   renderBattle();
+  flash('e-face', 'enter', 420);   // enemy scales into view
 }
 
 function pushLog(text, cls){
@@ -585,6 +912,9 @@ function playerAction(kind){
     const dmg = rollDamage(base, 0.15, 1.6);
     enc.hp = Math.max(0, enc.hp - dmg);
     pushLog(`Wrench strike for ${dmg}${lastCrit?' — CRITICAL!':''}.`, lastCrit?'crit':'');
+    flash('e-face', 'hit', 320);                         // enemy recoils
+    floatDamage('epanel', dmg, lastCrit?'crit':'dmg');
+    SFX.strike(); if(lastCrit) shakeScreen();
   }
   else if(kind==='overdrive'){
     if(hero.fuel < 4){ return; }                        // safety guard
@@ -594,11 +924,15 @@ function playerAction(kind){
     const dmg = rollDamage(base, 0.25, 1.7);
     enc.hp = Math.max(0, enc.hp - dmg);
     pushLog(`OVERDRIVE blast for ${dmg}${lastCrit?' — CRITICAL!':''}!`, lastCrit?'crit':'');
+    flash('e-face', 'hit', 320);                         // enemy recoils
+    floatDamage('epanel', dmg, lastCrit?'crit':'dmg');
+    SFX.overdrive(); shakeScreen();
   }
   else if(kind==='brace'){
     hero.braced = true;                                 // halves next incoming hit
     hero.fuel = Math.min(hero.maxFuel, hero.fuel + 3);  // +3 fuel
     pushLog(`You brace behind the wrench. (guard up, +3 fuel)`, 'sys');
+    SFX.brace();
   }
   else if(kind==='repair'){
     if(hero.kits <= 0){ return; }                       // safety guard
@@ -606,6 +940,8 @@ function playerAction(kind){
     const heal = Math.floor(hero.maxHp * 0.4);          // heal 40% max HP
     hero.hp = Math.min(hero.maxHp, hero.hp + heal);
     pushLog(`Field repair: +${heal} HP. (${hero.kits} kit${hero.kits===1?'':'s'} left)`, 'sys');
+    floatDamage('hpanel', '+'+heal, 'heal');
+    SFX.repair();
   }
   else { acted = false; }
 
@@ -638,6 +974,9 @@ function enemyTurn(){
   if(crit)  tag += ' CRIT';
   if(hero.braced) tag += ' (braced)';
   pushLog(`${enc.name} hits you for ${dmg}.${tag}`, 'hurt');
+  flash('hpanel', 'hurt', 460);                          // hero panel flashes red
+  floatDamage('hpanel', dmg, (heavy||crit)?'crit':'dmg');
+  SFX.hurt(); if(heavy||crit) shakeScreen();
 
   hero.braced = false;                                  // guard consumed
   hero.fuel = Math.min(hero.maxFuel, hero.fuel + 1);    // +1 fuel regen end of enemy turn
@@ -669,7 +1008,8 @@ function winBattle(){
     hero.hp = hero.maxHp; hero.fuel = hero.maxFuel;     // full restore
   }
 
-  if(enc.kind==='boss'){ mode='victory'; showScreen('victory'); return; }
+  if(levels>0 && enc.kind!=='boss') SFX.level();
+  if(enc.kind==='boss'){ SFX.win(); mode='victory'; showScreen('victory'); return; }
 
   // Reward screen (non-boss only).
   let s = `XP gained: +${enc.xp}\n`;
@@ -690,18 +1030,19 @@ function winBattle(){
 
 function openGate(gateChar){
   for(let y=0;y<MAP_H;y++) for(let x=0;x<MAP_W;x++){
-    if(map[y][x]===gateChar){ map[y][x] = '.'; return; }
+    if(map[y][x]===gateChar){ map[y][x] = '.'; SFX.gate(); return; }
   }
 }
 
 function closeReward(){
   mode='overworld';
   showScreen('overworld');
-  renderOverworld();          // player is right where they were, next to the cleared spot
+  renderOverworld(true);      // player is right where they were, next to the cleared spot
 }
 
 function gameOver(){
   mode='gameover';
+  SFX.lose();
   document.getElementById('go-text').innerHTML =
     `The streets go quiet as <span class="accent">${enc.name}</span> stands over a busted `+
     `pair of goggles. The syndicate breathes easy tonight... but Larry's been counted out `+
