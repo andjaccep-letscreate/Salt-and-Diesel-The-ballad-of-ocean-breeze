@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SALT &amp; DIESEL — The Ballad of Ocean Breeze</title>
+<style>
+  /* ============================ THEME ============================ */
+  :root{
+    --board: min(96vw, 480px);   /* overworld board width; tiles scale to fit */
+    --bg:#0c0e12;                 /* near-black slate */
+    --panel:#14181f;             /* dark slate panels */
+    --panel2:#1b212b;
+    --ink:#d8d2c4;               /* aged paper text */
+    --brass:#d9a441;             /* brass/amber accent */
+    --brass-d:#9c6f1f;
+    --rust:#b5532a;
+    --hp:#c8452f;
+    --fuel:#3fa7d6;
+    --rivet:#3a4350;
+    --good:#6fbf73;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; background:var(--bg); color:var(--ink);
+    font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif; overflow-x:hidden;}
+  body{display:flex; flex-direction:column; align-items:center; min-height:100vh;}
+  h1,h2,h3,.deco{ text-transform:uppercase; letter-spacing:.22em; font-weight:800; }
+  .accent{color:var(--brass);}
+  .screen{ width:100%; max-width:560px; padding:14px; display:none; }
+  .screen.active{ display:flex; flex-direction:column; align-items:center; }
+  button{ font-family:inherit; cursor:pointer; }
+  .btn{
+    background:linear-gradient(180deg,#27313d,#161b22);
+    color:var(--brass); border:2px solid var(--brass-d); border-radius:8px;
+    padding:14px 18px; font-size:1rem; text-transform:uppercase; letter-spacing:.12em;
+    font-weight:700; box-shadow:0 2px 0 #000, inset 0 1px 0 #ffffff14;
+    min-height:48px; min-width:48px;
+  }
+  .btn:active{ transform:translateY(1px); }
+  .btn:disabled{ opacity:.38; color:#8a8170; border-color:#3a3a3a; cursor:not-allowed; }
+
+  /* ============================ TITLE ============================ */
+  #title .frame{
+    border:3px double var(--brass-d); border-radius:12px; background:var(--panel);
+    padding:22px; width:100%; box-shadow:0 0 0 6px #000 inset;
+  }
+  #title h1{ font-size:1.5rem; margin:.1em 0 0; color:var(--brass); line-height:1.2;}
+  #title .sub{ letter-spacing:.3em; font-size:.72rem; color:var(--rust); margin-bottom:14px;}
+  .bio{ background:var(--panel2); border-left:4px solid var(--brass); padding:12px 14px;
+    font-size:.92rem; line-height:1.5; border-radius:0 8px 8px 0; margin:10px 0;}
+  .bio .face{ font-size:2.4rem; float:left; margin:0 12px 4px 0; }
+  .blurb{ font-size:.9rem; line-height:1.55; opacity:.92; }
+
+  /* ========================== OVERWORLD ========================== */
+  #overworld{ gap:8px; }
+  .hud{ width:var(--board); display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+    background:var(--panel); border:2px solid var(--brass-d); border-radius:10px; padding:8px 10px;}
+  .hud .stat{ font-size:.74rem; letter-spacing:.08em; white-space:nowrap; }
+  .minigauge{ flex:1 1 90px; min-width:90px; }
+  .board{
+    width:var(--board); display:grid; grid-template-columns:repeat(11,1fr);
+    gap:0; border:3px solid var(--brass-d); border-radius:8px; overflow:hidden;
+    background:#000; user-select:none;
+  }
+  .cell{
+    aspect-ratio:1/1; display:flex; align-items:center; justify-content:center;
+    font-size:calc(var(--board)/11*0.62); line-height:1; overflow:hidden;
+  }
+  /* terrain colors */
+  .t-road{ background:#2b2f36; }
+  .t-grass{ background:#22341f; }
+  .t-plank{ background:#4a3625; }
+  .t-plaza{ background:#3a3f47; }
+  .t-water{ background:#15384f; }
+  .t-bldg{ background:#15181d; }
+  .player-cell{ background:#42352a; }
+
+  .dpad{ display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr);
+    gap:8px; width:min(70vw,240px); margin-top:4px; }
+  .dpad .btn{ font-size:1.4rem; padding:0; height:62px; }
+  .dpad .up{ grid-area:1/2; } .dpad .left{ grid-area:2/1; }
+  .dpad .right{ grid-area:2/3; } .dpad .down{ grid-area:3/2; }
+  .dpad .mid{ grid-area:2/2; display:flex; align-items:center; justify-content:center;
+    font-size:1.6rem; opacity:.5;}
+  .hint{ font-size:.72rem; opacity:.6; letter-spacing:.05em; text-align:center; }
+
+  /* ============================ GAUGE ============================ */
+  .gauge{ position:relative; height:20px; background:#0a0c10; border:2px solid var(--rivet);
+    border-radius:5px; overflow:hidden;
+    box-shadow: inset 0 0 0 1px #000,
+      0 0 0 0 #000; }
+  .gauge .fill{ position:absolute; inset:0 100% 0 0; transition:right .25s ease; }
+  .gauge.hp .fill{ background:linear-gradient(180deg,#e2613f,#8c2417); right:auto; width:100%;}
+  .gauge .lbl{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:.66rem; letter-spacing:.1em; font-weight:700; color:#fff; text-shadow:0 1px 1px #000; z-index:2;}
+  /* rivet dots */
+  .gauge::before, .gauge::after{ content:""; position:absolute; top:50%; width:3px; height:3px;
+    border-radius:50%; background:#5a6573; transform:translateY(-50%); z-index:3;}
+  .gauge::before{ left:3px; } .gauge::after{ right:3px; }
+
+  /* ============================ BATTLE ============================ */
+  #battle{ gap:10px; }
+  .epanel,.hpanel{ width:100%; max-width:480px; background:var(--panel);
+    border:2px solid var(--brass-d); border-radius:10px; padding:12px; }
+  .epanel{ display:flex; gap:12px; align-items:center; }
+  .eface{ font-size:3rem; }
+  .epanel .info{ flex:1; }
+  .ename{ font-size:1.05rem; color:var(--brass); }
+  .log{
+    width:100%; max-width:480px; height:140px; background:#05070a;
+    border:2px solid var(--rivet); border-radius:8px; padding:8px 10px;
+    font-family:"Courier New",monospace; font-size:.8rem; line-height:1.45; color:#9fe6c4;
+    overflow:hidden; display:flex; flex-direction:column; justify-content:flex-end;
+  }
+  .log .line{ white-space:pre-wrap; }
+  .log .crit{ color:var(--brass); font-weight:700; }
+  .log .hurt{ color:#ff8a6e; }
+  .log .sys{ color:#8aa0b5; }
+  .hpanel .top{ display:flex; align-items:center; gap:10px; margin-bottom:8px;}
+  .hpanel .top .face{ font-size:2rem; }
+  .actions{ width:100%; max-width:480px; display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .actions .btn{ flex-direction:column; }
+  .actions .btn small{ display:block; font-size:.62rem; letter-spacing:.06em; opacity:.8; margin-top:3px;}
+
+  /* ===================== REWARD / END SCREENS ===================== */
+  .card{ width:100%; max-width:480px; background:var(--panel);
+    border:3px double var(--brass-d); border-radius:12px; padding:20px; text-align:center;}
+  .card h2{ color:var(--brass); font-size:1.2rem; }
+  .card .big{ font-size:3rem; margin:6px 0; }
+  .summary{ background:var(--panel2); border-radius:8px; padding:12px; margin:12px 0;
+    font-size:.9rem; line-height:1.6; text-align:left; white-space:pre-wrap; }
+
+  /* dialogue overlay */
+  #dialogue{ position:fixed; inset:0; background:#000b; display:none;
+    align-items:flex-end; justify-content:center; padding:18px; z-index:50;}
+  #dialogue.active{ display:flex; }
+  #dialogue .box{ background:var(--panel); border:2px solid var(--brass); border-radius:12px;
+    padding:16px; max-width:460px; width:100%; }
+  #dialogue .who{ color:var(--brass); font-size:2rem; }
+  #dialogue .say{ font-size:.95rem; line-height:1.5; margin:8px 0 14px; }
+</style>
+</head>
+<body>
+
+<!-- ============================ TITLE ============================ -->
+<div id="title" class="screen active">
+  <div class="frame">
+    <div class="sub deco">West Palm Beach &middot; 1947</div>
+    <h1>Salt &amp; Diesel</h1>
+    <div class="sub deco">The Ballad of Ocean Breeze</div>
+    <p class="blurb">Art-deco towers claw at a bruised sky. Dirigibles hang over the
+    Intracoastal like fat brass wasps, and every oil-fired engine in town answers to one
+    man: <span class="accent">Baron Castellane</span>. His syndicate runs the docks, the
+    rail yards, and the cops who look the other way. Somebody has to throw a wrench in the
+    works.</p>
+    <div class="bio">
+      <span class="face">🕶️</span>
+      <strong class="accent">SPARKPLUG</strong> &mdash; real name <strong>Larry</strong>.
+      A broad-shouldered, easygoing troubleshooter with short dark hair and a grin that
+      says he's already figured the angle. Never seen without his signature tinted goggles
+      and a worn tan work shirt, a hydraulic wrench slung over one shoulder. Hits hard,
+      fixes harder.
+    </div>
+    <button class="btn" style="width:100%;font-size:1.1rem" onclick="startGame()">Start the Job</button>
+  </div>
+</div>
+
+<!-- ========================== OVERWORLD ========================== -->
+<div id="overworld" class="screen">
+  <div class="hud">
+    <div class="stat">LV <b id="hud-lv" class="accent">1</b></div>
+    <div class="minigauge"><div class="gauge hp"><div class="fill" id="hud-hp-fill"></div><div class="lbl" id="hud-hp-lbl">HP</div></div></div>
+    <div class="minigauge"><div class="gauge"><div class="fill" id="hud-fuel-fill" style="background:linear-gradient(180deg,#62c3ee,#1d6f97)"></div><div class="lbl" id="hud-fuel-lbl">FUEL</div></div></div>
+    <div class="stat">🧰 <b id="hud-kits" class="accent">3</b></div>
+  </div>
+  <div class="board" id="board"></div>
+  <div class="dpad">
+    <button class="btn up"    onmousedown="move(-1,0)" ontouchstart="event.preventDefault();move(-1,0)">▲</button>
+    <button class="btn left"  onmousedown="move(0,-1)" ontouchstart="event.preventDefault();move(0,-1)">◀</button>
+    <div class="mid">🕶️</div>
+    <button class="btn right" onmousedown="move(0,1)"  ontouchstart="event.preventDefault();move(0,1)">▶</button>
+    <button class="btn down"  onmousedown="move(1,0)"  ontouchstart="event.preventDefault();move(1,0)">▼</button>
+  </div>
+  <div class="hint" id="ow-hint">Arrow keys / D-pad to roam &middot; walk into markers to act</div>
+</div>
+
+<!-- ============================ BATTLE ============================ -->
+<div id="battle" class="screen">
+  <div class="epanel">
+    <div class="eface" id="e-face">🥊</div>
+    <div class="info">
+      <div class="ename deco" id="e-name">ENEMY</div>
+      <div class="gauge hp" style="margin-top:6px"><div class="fill" id="e-hp-fill"></div><div class="lbl" id="e-hp-lbl">HP</div></div>
+    </div>
+  </div>
+  <div class="log" id="log"></div>
+  <div class="hpanel">
+    <div class="top">
+      <span class="face">🕶️</span>
+      <div style="flex:1">
+        <span class="deco accent">SPARKPLUG</span>
+        <span class="stat" style="font-size:.72rem"> &middot; LV <b id="b-lv">1</b> &middot; 🧰 <b id="b-kits">3</b></span>
+      </div>
+    </div>
+    <div class="gauge hp"><div class="fill" id="b-hp-fill"></div><div class="lbl" id="b-hp-lbl">HP</div></div>
+    <div class="gauge" style="margin-top:6px"><div class="fill" id="b-fuel-fill" style="background:linear-gradient(180deg,#62c3ee,#1d6f97)"></div><div class="lbl" id="b-fuel-lbl">FUEL</div></div>
+  </div>
+  <div class="actions">
+    <button class="btn" id="a-strike"    onclick="playerAction('strike')">Strike<small>free attack</small></button>
+    <button class="btn" id="a-overdrive" onclick="playerAction('overdrive')">Overdrive<small>−4 fuel · big hit</small></button>
+    <button class="btn" id="a-brace"     onclick="playerAction('brace')">Brace<small>guard · +3 fuel</small></button>
+    <button class="btn" id="a-repair"    onclick="playerAction('repair')">Repair<small>heal · −1 kit</small></button>
+  </div>
+</div>
+
+<!-- ============================ REWARD ============================ -->
+<div id="reward" class="screen">
+  <div class="card">
+    <h2 class="deco">Target Down</h2>
+    <div class="big" id="r-face">🥊</div>
+    <div class="summary" id="r-summary"></div>
+    <button class="btn" style="width:100%" onclick="closeReward()">Back to the Streets</button>
+  </div>
+</div>
+
+<!-- ============================ VICTORY ============================ -->
+<div id="victory" class="screen">
+  <div class="card">
+    <h2 class="deco accent">The City Exhales</h2>
+    <div class="big">🦾💥🗼</div>
+    <p class="blurb" style="text-align:left">Atop the Comeau Tower the Leviathan grinds to a
+    dead stop, steam screaming from a hundred ruptured seams. Baron Castellane's empire of
+    oil and fear topples with it. By dawn the dirigibles fly someone else's colors, the
+    docks run honest, and somewhere a newsboy hollers a headline about a man in tinted
+    goggles. Larry just calls it a Tuesday. <span class="accent">Job's done, Sparkplug.</span></p>
+    <button class="btn" style="width:100%" onclick="newGame()">Play Again</button>
+  </div>
+</div>
+
+<!-- ============================ GAME OVER ============================ -->
+<div id="gameover" class="screen">
+  <div class="card">
+    <h2 class="deco" style="color:var(--rust)">Lights Out</h2>
+    <div class="big">🛠️💀</div>
+    <p class="blurb" id="go-text" style="text-align:left"></p>
+    <button class="btn" style="width:100%" onclick="newGame()">Try Again</button>
+  </div>
+</div>
+
+<!-- dialogue overlay -->
+<div id="dialogue">
+  <div class="box">
+    <div class="who" id="d-face">📰</div>
+    <div class="say" id="d-say"></div>
+    <button class="btn" style="width:100%" onclick="closeDialogue()">Continue</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* =================================================================
+   SALT & DIESEL — single-file dieselpunk turn-based RPG
+   ================================================================= */
+
+/* ----------------------- THE CITY MAP -----------------------------
+   24 wide x 30 tall grid of single-char tile codes (BFS-validated).
+   Terrain:  . road   , grass   = dock plank   P plaza   W water   B building   T palm
+   Story:    1 alley(🥊)  2 rail yard(🛤️)  3 docks(⚓)  4 Comeau Tower(🗼)
+   Gates:    a → rail yard,  b → docks,  c → tower   (rendered 🚧 until opened)
+   NPCs:     N newsboy(📰)  D dock worker(👷)  R fortune-teller(🔮)
+   Pickups:  k repair kit(🧰)  u fuel cache(🛢️)  o lucky cog(🔩)
+   Patrols:  L lookout(🔦)  H scrap hound(⚙️)
+-------------------------------------------------------------------- */
+const ORIGINAL_MAP = [
+  "BBBBBBBBBBBBBBBBBBBBBBWW",
+  "B........BBBBB,,,,,,,BWW",
+  "B.BB..BB.B.4.B,,,,,,,BWW",
+  "B.BB..BB.B...B,,,,,,,BWW",
+  "B........BBcBB....T..BWW",
+  "B....................BWW",
+  "B.BB..........BB.....BWW",
+  "B.BB......B...BB.....BWW",
+  "B........B1B.........BWW",
+  "B.............L......BWW",
+  "B....................BWW",
+  "BBBBBB..BB......BBBBBBWW",
+  "B....B..BB.N....B...==WW",
+  "B....B....PPP...B...==WW",
+  "B..2.a....P.P...b...=3WW",
+  "B....B....PPP...B...==WW",
+  "B....B.......BB.B...==WW",
+  "BBBBBB.......BB.B...==WW",
+  "B...............BBBBBBWW",
+  "B....T...............BWW",
+  "B,,,,,,,,,...,,,,,,,,BWW",
+  "B,,,,,,,,,..T,,,,,,,,BWW",
+  "B,,,,,,,,,...,,D,,,,,BWW",
+  "B,,,,,,,,H...,,,,,,,,BWW",
+  "B,,,,,,R,,...,,,,,,,,BWW",
+  "B,,k,,,,,,...,,,,,,,,BWW",
+  "B,,,,,,,,,...,,,,,u,,BWW",
+  "Bo,,,,,,,,...,,,,,,,,BWW",
+  "B....................BWW",
+  "BBBBBBBBBBBBBBBBBBBBBBWW",
+];
+const MAP_H = ORIGINAL_MAP.length;       // 30
+const MAP_W = ORIGINAL_MAP[0].length;    // 24
+const VIEW_W = 11, VIEW_H = 13;          // camera viewport
+const START = {y:14, x:11};
+
+/* solid tiles block movement; gates are solid until "opened" (mutated to '.') */
+const SOLID = new Set(['B','W','T','F','a','b','c']);
+/* base terrain under each special marker (for color + what it reverts to) */
+const GROUND = {
+  '1':'.','2':'.','3':'=','4':'.','a':'.','b':'.','c':'.',
+  'N':'.','D':',','R':',','k':',','u':',','o':',','L':'.','H':','
+};
+/* emoji marker per tile (floors have none) */
+const EMOJI = {
+  'B':'🏢','W':'🌊','T':'🌴','F':'🚧',
+  '1':'🥊','2':'🛤️','3':'⚓','4':'🗼',
+  'a':'🚧','b':'🚧','c':'🚧',
+  'N':'📰','D':'👷','R':'🔮',
+  'k':'🧰','u':'🛢️','o':'🔩',
+  'L':'🔦','H':'⚙️'
+};
+/* terrain CSS class per base char */
+const TCLASS = {'.':'t-road',',':'t-grass','=':'t-plank','P':'t-plaza','W':'t-water','B':'t-bldg','T':'t-grass','F':'t-bldg'};
+
+/* enemy definitions keyed by the tile char that spawns them */
+const ENEMIES = {
+  'L':{name:"Syndicate Lookout", face:"🔦", hp:30, atk:8,  def:2, xp:18, kind:'patrol',
+       intro:"A syndicate lookout swings his beam your way — \"You ain't on the list.\""},
+  'H':{name:"Scrap Hound",       face:"⚙️", hp:26, atk:7,  def:1, xp:16, kind:'patrol',
+       intro:"A clockwork scrap hound clatters out of the weeds, gears snarling."},
+  '1':{name:"Knuckles Moreau",   face:"🥊", hp:38, atk:9,  def:2, xp:28, kind:'story', opens:'a',
+       intro:"Knuckles Moreau cracks his oversized fists. \"Baron says you're done, pal.\""},
+  '2':{name:"Rust-Bucket Loader",face:"🤖", hp:58, atk:12, def:5, xp:44, kind:'story', opens:'b',
+       intro:"A malfunctioning cargo automaton lurches alive, hydraulics shrieking."},
+  '3':{name:"Capt. Dredge Voss", face:"⚓", hp:74, atk:15, def:6, xp:60, kind:'story', opens:'c',
+       intro:"Capt. Dredge Voss racks a harpoon gun. \"This is my waterfront, landlubber.\""},
+  '4':{name:"Baron Castellane",  face:"🦾", hp:130,atk:19, def:8, xp:100,kind:'boss',
+       intro:"The Leviathan rises — Baron Castellane in his walking mech. \"Witness industry!\""}
+};
+const NPC_LINES = {
+  'N':{face:"📰", say:"EXTRA! EXTRA! Castellane's dirigibles choke the skyline — and the mayor calls it 'progress'! Read all about it, mister!"},
+  'D':{face:"👷", say:"Diesel fumes thick as gravy down here, pal. Mind the planks — slick as a politician's promise."},
+  'R':{face:"🔮", say:"I see brass and fire in your future, Sparkplug... a tower, a Baron who won't bow, and a wrench that decides it all."}
+};
+
+/* ----------------------- GAME STATE ------------------------------- */
+let map;          // mutable 2D array of chars
+let hero, player, mode, busy, enc, lastCrit;
+
+function freshHero(){
+  return { lv:1, xp:0, xpNext:30,
+           hp:60, maxHp:60, fuel:6, maxFuel:12,
+           atk:13, def:4, kits:3, braced:false };
+}
+
+function newGame(){
+  map = ORIGINAL_MAP.map(row => row.split(''));   // deep copy
+  hero = freshHero();
+  player = { y:START.y, x:START.x };
+  mode = 'title'; busy = false; enc = null;
+  showScreen('title');
+}
+
+function startGame(){
+  mode = 'overworld';
+  showScreen('overworld');
+  renderOverworld();
+}
+
+/* ----------------------- SCREEN ROUTING --------------------------- */
+const SCREENS = ['title','overworld','battle','reward','victory','gameover'];
+function showScreen(id){
+  SCREENS.forEach(s => document.getElementById(s).classList.toggle('active', s===id));
+}
+
+/* =================================================================
+   OVERWORLD: camera, rendering, movement, collision
+   ================================================================= */
+
+/* The camera centers on the player and is CLAMPED to the map edges so
+   the viewport never shows past the map border. */
+function cameraOrigin(){
+  let camX = player.x - Math.floor(VIEW_W/2);
+  let camY = player.y - Math.floor(VIEW_H/2);
+  camX = Math.max(0, Math.min(camX, MAP_W - VIEW_W));   // clamp horizontally
+  camY = Math.max(0, Math.min(camY, MAP_H - VIEW_H));   // clamp vertically
+  return {camX, camY};
+}
+
+function renderOverworld(){
+  const board = document.getElementById('board');
+  const {camX, camY} = cameraOrigin();
+  board.style.gridTemplateColumns = `repeat(${VIEW_W},1fr)`;
+  let html = '';
+  for(let vy=0; vy<VIEW_H; vy++){
+    for(let vx=0; vx<VIEW_W; vx++){
+      const my = camY+vy, mx = camX+vx;
+      const ch = map[my][mx];
+      const base = (ch in GROUND) ? GROUND[ch] : ch;     // floor under markers
+      const cls  = TCLASS[base] || 't-road';
+      let glyph = EMOJI[ch] || '';
+      let cellCls = cls;
+      if(my===player.y && mx===player.x){ glyph = '🕶️'; cellCls = 'player-cell'; } // draw hero
+      html += `<div class="cell ${cellCls}">${glyph}</div>`;
+    }
+  }
+  board.innerHTML = html;
+  updateHUD();
+}
+
+function updateHUD(){
+  document.getElementById('hud-lv').textContent   = hero.lv;
+  document.getElementById('hud-kits').textContent = hero.kits;
+  setGauge('hud-hp', hero.hp, hero.maxHp, 'HP '+hero.hp+'/'+hero.maxHp);
+  setGauge('hud-fuel', hero.fuel, hero.maxFuel, 'FUEL '+hero.fuel+'/'+hero.maxFuel);
+}
+
+/* grid-based movement: one tile per input, clamped to bounds, blocked by solids */
+function move(dy, dx){
+  if(mode !== 'overworld' || busy) return;     // frozen during battle/dialogue/menus
+  const ny = player.y + dy, nx = player.x + dx;
+  if(ny<0 || ny>=MAP_H || nx<0 || nx>=MAP_W) return;   // bounds
+  const ch = map[ny][nx];
+  if(SOLID.has(ch)) return;                            // collision (incl. closed gates)
+
+  // Decide what walking onto this tile does, BEFORE committing the step.
+  if(ch==='N' || ch==='D' || ch==='R'){ openDialogue(ch); return; }      // talk; stay put
+  if(ch in ENEMIES){ startBattle(ch, ny, nx); return; }                  // fight; stay put
+  if(ch==='k' || ch==='u' || ch==='o'){ takePickup(ch, ny, nx); }        // grab, then step on
+  // plain walk (or onto a now-cleared pickup tile)
+  player.y = ny; player.x = nx;
+  renderOverworld();
+}
+
+/* keyboard support (desktop) */
+document.addEventListener('keydown', (e)=>{
+  const k = e.key;
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(k)) e.preventDefault();
+  if(mode!=='overworld') return;
+  if(k==='ArrowUp'||k==='w') move(-1,0);
+  else if(k==='ArrowDown'||k==='s') move(1,0);
+  else if(k==='ArrowLeft'||k==='a') move(0,-1);
+  else if(k==='ArrowRight'||k==='d') move(0,1);
+});
+
+/* ----------------------- PICKUPS & NPCS --------------------------- */
+function takePickup(ch, y, x){
+  if(ch==='k'){ hero.kits += 1; toastHint("Found a REPAIR KIT 🧰  (+1 kit)"); }
+  else if(ch==='u'){ hero.maxFuel += 2; hero.fuel = hero.maxFuel;
+                     toastHint("Cracked a FUEL CACHE 🛢️  (+2 max fuel, refilled)"); }
+  else if(ch==='o'){ hero.atk += 2; toastHint("Pocketed the LUCKY COG 🔩  (+2 Attack, permanent)"); }
+  map[y][x] = GROUND[ch];     // remove the pickup tile (one-time)
+}
+function toastHint(msg){
+  const el = document.getElementById('ow-hint');
+  el.textContent = msg;
+  clearTimeout(toastHint._t);
+  toastHint._t = setTimeout(()=>{ el.innerHTML = "Arrow keys / D-pad to roam &middot; walk into markers to act"; }, 3200);
+}
+
+function openDialogue(ch){
+  mode = 'dialogue';                       // freezes overworld movement
+  const d = NPC_LINES[ch];
+  document.getElementById('d-face').textContent = d.face;
+  document.getElementById('d-say').textContent = d.say;
+  document.getElementById('dialogue').classList.add('active');
+}
+function closeDialogue(){
+  document.getElementById('dialogue').classList.remove('active');
+  mode = 'overworld';
+}
+
+/* =================================================================
+   BATTLE SYSTEM (turn-based)
+   ================================================================= */
+let logLines = [];
+
+function startBattle(ch, y, x){
+  const def = ENEMIES[ch];
+  enc = { ch, y, x, name:def.name, face:def.face, maxHp:def.hp, hp:def.hp,
+          atk:def.atk, def:def.def, xp:def.xp, kind:def.kind, opens:def.opens };
+  hero.braced = false;
+  mode = 'battle'; busy = false;
+  logLines = [];
+  document.getElementById('e-face').textContent = enc.face;
+  document.getElementById('e-name').textContent = enc.name;
+  pushLog(def.intro, 'sys');
+  showScreen('battle');
+  renderBattle();
+}
+
+function pushLog(text, cls){
+  logLines.push({text, cls:cls||''});
+  if(logLines.length > 6) logLines = logLines.slice(-6);
+  const box = document.getElementById('log');
+  box.innerHTML = logLines.map(l=>`<div class="line ${l.cls}">${l.text}</div>`).join('');
+}
+
+function setGauge(id, val, max, label){
+  const pct = max>0 ? Math.max(0, Math.min(100, (val/max)*100)) : 0;
+  document.getElementById(id+'-fill').style.right = (100-pct)+'%';
+  document.getElementById(id+'-fill').style.width = '100%';
+  document.getElementById(id+'-lbl').textContent = label;
+}
+
+function renderBattle(){
+  setGauge('e-hp', enc.hp, enc.maxHp, enc.name.toUpperCase()+'  '+enc.hp+'/'+enc.maxHp);
+  setGauge('b-hp', hero.hp, hero.maxHp, 'HP '+hero.hp+'/'+hero.maxHp);
+  setGauge('b-fuel', hero.fuel, hero.maxFuel, 'FUEL '+hero.fuel+'/'+hero.maxFuel);
+  document.getElementById('b-lv').textContent = hero.lv;
+  document.getElementById('b-kits').textContent = hero.kits;
+  // enable/disable action buttons (also disabled while enemy is acting)
+  document.getElementById('a-strike').disabled    = busy;
+  document.getElementById('a-overdrive').disabled = busy || hero.fuel < 4;
+  document.getElementById('a-brace').disabled     = busy;
+  document.getElementById('a-repair').disabled    = busy || hero.kits <= 0;
+}
+
+/* --- shared damage roll: apply ±18% variance, then crit factor; min 1 --- */
+function rollDamage(base, critChance, critMult){
+  let d = base * (1 + (Math.random()*0.36 - 0.18));   // ±18% variance
+  lastCrit = Math.random() < critChance;              // crit check
+  if(lastCrit) d *= critMult;                          // crit multiplier
+  return Math.max(1, Math.floor(d));                   // never below 1
+}
+
+function playerAction(kind){
+  if(mode!=='battle' || busy) return;
+  let acted = true;
+
+  if(kind==='strike'){
+    // free basic attack: max(1, ATK - DEF), ±18%, 15% crit x1.6
+    const base = Math.max(1, hero.atk - enc.def);
+    const dmg = rollDamage(base, 0.15, 1.6);
+    enc.hp = Math.max(0, enc.hp - dmg);
+    pushLog(`Wrench strike for ${dmg}${lastCrit?' — CRITICAL!':''}.`, lastCrit?'crit':'');
+  }
+  else if(kind==='overdrive'){
+    if(hero.fuel < 4){ return; }                        // safety guard
+    hero.fuel -= 4;                                      // fuel cost
+    // floor(ATK*1.7) - floor(DEF/2), ±18%, 25% crit x1.7
+    const base = Math.max(1, Math.floor(hero.atk*1.7) - Math.floor(enc.def/2));
+    const dmg = rollDamage(base, 0.25, 1.7);
+    enc.hp = Math.max(0, enc.hp - dmg);
+    pushLog(`OVERDRIVE blast for ${dmg}${lastCrit?' — CRITICAL!':''}!`, lastCrit?'crit':'');
+  }
+  else if(kind==='brace'){
+    hero.braced = true;                                 // halves next incoming hit
+    hero.fuel = Math.min(hero.maxFuel, hero.fuel + 3);  // +3 fuel
+    pushLog(`You brace behind the wrench. (guard up, +3 fuel)`, 'sys');
+  }
+  else if(kind==='repair'){
+    if(hero.kits <= 0){ return; }                       // safety guard
+    hero.kits -= 1;
+    const heal = Math.floor(hero.maxHp * 0.4);          // heal 40% max HP
+    hero.hp = Math.min(hero.maxHp, hero.hp + heal);
+    pushLog(`Field repair: +${heal} HP. (${hero.kits} kit${hero.kits===1?'':'s'} left)`, 'sys');
+  }
+  else { acted = false; }
+
+  if(!acted) return;
+  renderBattle();
+
+  if(enc.hp <= 0){ winBattle(); return; }
+
+  // Pace the enemy's response, with buttons locked so input can't double-fire.
+  busy = true;
+  renderBattle();
+  setTimeout(enemyTurn, 800);
+}
+
+function enemyTurn(){
+  // base = max(1, enemyATK - heroDEF); ±18%; 22% heavy x1.4; 10% crit x1.5;
+  // if hero braced this round, halve afterward; min 1.
+  const base = Math.max(1, enc.atk - hero.def);
+  let d = base * (1 + (Math.random()*0.36 - 0.18));     // variance
+  const heavy = Math.random() < 0.22;
+  const crit  = Math.random() < 0.10;
+  if(heavy) d *= 1.4;
+  if(crit)  d *= 1.5;
+  if(hero.braced) d *= 0.5;                              // guard halves the hit
+  let dmg = Math.max(1, Math.floor(d));
+  hero.hp = Math.max(0, hero.hp - dmg);
+
+  let tag = '';
+  if(heavy) tag += ' HEAVY';
+  if(crit)  tag += ' CRIT';
+  if(hero.braced) tag += ' (braced)';
+  pushLog(`${enc.name} hits you for ${dmg}.${tag}`, 'hurt');
+
+  hero.braced = false;                                  // guard consumed
+  hero.fuel = Math.min(hero.maxFuel, hero.fuel + 1);    // +1 fuel regen end of enemy turn
+
+  if(hero.hp <= 0){ renderBattle(); gameOver(); return; }
+
+  busy = false;
+  renderBattle();
+}
+
+/* ----------------------- WIN / REWARD / END ----------------------- */
+function winBattle(){
+  pushLog(`${enc.name} is down!`, 'sys');
+  // Clear the tile from the overworld (no respawn) and open the next gate.
+  if(enc.kind!=='boss'){
+    map[enc.y][enc.x] = GROUND[enc.ch];
+  }
+  if(enc.opens){ openGate(enc.opens); }
+
+  // Apply XP and any level-ups (full restore on level up).
+  const before = { lv:hero.lv };
+  hero.xp += enc.xp;
+  let levels = 0;
+  while(hero.xp >= hero.xpNext){
+    hero.xp -= hero.xpNext;
+    hero.lv += 1; levels++;
+    hero.maxHp += 10; hero.maxFuel += 2; hero.atk += 3; hero.def += 1;
+    hero.xpNext = Math.round(hero.xpNext * 1.55);
+    hero.hp = hero.maxHp; hero.fuel = hero.maxFuel;     // full restore
+  }
+
+  if(enc.kind==='boss'){ mode='victory'; showScreen('victory'); return; }
+
+  // Reward screen (non-boss only).
+  let s = `XP gained: +${enc.xp}\n`;
+  if(levels>0){
+    s += `\nLEVEL UP!  ${before.lv} → ${hero.lv}\n`;
+    s += `Max HP ${hero.maxHp} · Max Fuel ${hero.maxFuel}\n`;
+    s += `Attack ${hero.atk} · Defense ${hero.def}\n`;
+    s += `(HP & Fuel fully restored)\n`;
+  } else {
+    s += `\nNo level this time.\n`;
+  }
+  s += `\nXP to next: ${hero.xp}/${hero.xpNext}`;
+  if(enc.opens){ s += `\n\nA gate 🚧 grinds open ahead...`; }
+  document.getElementById('r-face').textContent = enc.face;
+  document.getElementById('r-summary').textContent = s;
+  mode='reward'; showScreen('reward');
+}
+
+function openGate(gateChar){
+  for(let y=0;y<MAP_H;y++) for(let x=0;x<MAP_W;x++){
+    if(map[y][x]===gateChar){ map[y][x] = '.'; return; }
+  }
+}
+
+function closeReward(){
+  mode='overworld';
+  showScreen('overworld');
+  renderOverworld();          // player is right where they were, next to the cleared spot
+}
+
+function gameOver(){
+  mode='gameover';
+  document.getElementById('go-text').innerHTML =
+    `The streets go quiet as <span class="accent">${enc.name}</span> stands over a busted `+
+    `pair of goggles. The syndicate breathes easy tonight... but Larry's been counted out `+
+    `before. Wind the springs and try again.`;
+  showScreen('gameover');
+}
+
+/* ----------------------- BOOT ------------------------------------- */
+newGame();
+</script>
+</body>
+</html>
