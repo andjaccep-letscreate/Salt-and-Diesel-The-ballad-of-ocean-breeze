@@ -155,6 +155,59 @@
     100%{box-shadow:0 0 0 0 rgba(200,69,47,0)} }
   .hpanel.hurt{ animation: hurtflash .45s ease; }
 
+  /* ---- floating combat numbers + screen shake ---- */
+  .epanel, .hpanel{ position:relative; }   /* anchor for floating numbers */
+  .float{ position:absolute; left:50%; top:14%; transform:translateX(-50%);
+    font-family:"Courier New",monospace; font-weight:800; pointer-events:none; z-index:20;
+    text-shadow:0 1px 2px #000; animation:floatUp .85s ease-out forwards; }
+  @keyframes floatUp{ 0%{opacity:0; transform:translate(-50%,8px) scale(.8);}
+    18%{opacity:1;} 100%{opacity:0; transform:translate(-50%,-30px) scale(1.1);} }
+  .float.dmg{ color:#ff8a6e; font-size:1.2rem; }
+  .float.crit{ color:#ffd479; font-size:1.65rem; }
+  .float.heal{ color:#8fe39a; font-size:1.2rem; }
+  @keyframes screenShake{ 0%,100%{transform:translate(0,0)} 25%{transform:translate(-5px,2px)}
+    50%{transform:translate(5px,-2px)} 75%{transform:translate(-3px,1px)} }
+  #battle.shaking{ animation: screenShake .35s ease; }
+
+  /* ---- atmosphere: board vignette + drifting haze ---- */
+  .board::after{ content:""; position:absolute; inset:0; pointer-events:none; z-index:6;
+    box-shadow: inset 0 0 55px rgba(0,0,0,.6); border-radius:6px; }
+  #fog{ position:absolute; inset:-25%; pointer-events:none; z-index:4; opacity:.10;
+    background: radial-gradient(55% 40% at 30% 30%, #cfe4f0 0%, transparent 60%),
+                radial-gradient(45% 35% at 75% 65%, #b9c9d6 0%, transparent 60%);
+    animation: drift 26s ease-in-out infinite alternate; }
+  @keyframes drift{ from{ transform:translate(0,0); } to{ transform:translate(9%,-7%); } }
+
+  /* ---- district arrival banner (non-blocking) ---- */
+  #banner{ position:absolute; left:0; right:0; top:36%; text-align:center; pointer-events:none;
+    z-index:30; opacity:0; }
+  #banner.show{ animation: bannerIn 2.2s ease forwards; }
+  @keyframes bannerIn{ 0%{opacity:0; transform:translateY(10px);}
+    16%,72%{opacity:1; transform:translateY(0);} 100%{opacity:0;} }
+  #banner .bn{ display:inline-block; background:rgba(10,12,16,.85); color:var(--brass);
+    border:2px solid var(--brass-d); border-radius:8px; padding:8px 16px;
+    font-weight:800; letter-spacing:.18em; text-transform:uppercase; font-size:.78rem;
+    box-shadow:0 4px 16px rgba(0,0,0,.6); }
+
+  /* ---- mute toggle ---- */
+  .muteBtn{ background:var(--panel2); color:var(--brass); border:2px solid var(--brass-d);
+    border-radius:8px; min-width:42px; min-height:38px; font-size:1rem; padding:0 8px; cursor:pointer; }
+
+  /* ---- title-screen ambiance: drifting glow + a passing dirigible ---- */
+  #title .frame{ position:relative; overflow:hidden; }
+  #title .frame::before{ content:""; position:absolute; inset:-50%; z-index:0; pointer-events:none;
+    background: radial-gradient(38% 30% at 20% 12%, rgba(217,164,65,.10), transparent 60%);
+    animation: drift 30s ease-in-out infinite alternate; }
+  #title .frame > *{ position:relative; z-index:1; }
+  #title .blimp{ position:absolute; top:6px; left:-20%; font-size:1.3rem; opacity:.45; z-index:0;
+    animation: sail 22s linear infinite; }
+  @keyframes sail{ from{ left:-20%; } to{ left:120%; } }
+
+  @media (prefers-reduced-motion: reduce){
+    #fog, #title .frame::before, #title .blimp, #banner.show, #battle.shaking,
+    .float, .eface.enter, .eface.hit, .hpanel.hurt{ animation:none; }
+  }
+
   .dpad{ display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr);
     gap:8px; width:min(70vw,240px); margin-top:4px; }
   .dpad .btn{ font-size:1.4rem; padding:0; height:62px; }
@@ -225,6 +278,7 @@
 <!-- ============================ TITLE ============================ -->
 <div id="title" class="screen active">
   <div class="frame">
+    <div class="blimp">🛩️</div>
     <div class="sub deco">West Palm Beach &middot; 1947</div>
     <h1>Salt &amp; Diesel</h1>
     <div class="sub deco">The Ballad of Ocean Breeze</div>
@@ -252,8 +306,10 @@
     <div class="minigauge"><div class="gauge hp"><div class="fill" id="hud-hp-fill"></div><div class="lbl" id="hud-hp-lbl">HP</div></div></div>
     <div class="minigauge"><div class="gauge"><div class="fill" id="hud-fuel-fill" style="background:linear-gradient(180deg,#62c3ee,#1d6f97)"></div><div class="lbl" id="hud-fuel-lbl">FUEL</div></div></div>
     <div class="stat">🧰 <b id="hud-kits" class="accent">3</b></div>
+    <button class="muteBtn" onclick="toggleMute()">🔊</button>
   </div>
   <div class="board" id="board">
+    <div id="fog"></div>
     <div id="grid"></div>
     <!-- Persistent hero sprite overlay (NOT rebuilt each move, so it can tween). -->
     <div id="player" data-dir="down" aria-hidden="true">
@@ -340,6 +396,7 @@
         </g>
       </svg>
     </div>
+    <div id="banner"></div>
   </div>
   <div class="dpad">
     <button class="btn up"    onmousedown="move(-1,0)" ontouchstart="event.preventDefault();move(-1,0)">▲</button>
@@ -353,7 +410,7 @@
 
 <!-- ============================ BATTLE ============================ -->
 <div id="battle" class="screen">
-  <div class="epanel">
+  <div class="epanel" id="epanel">
     <div class="eface" id="e-face">🥊</div>
     <div class="info">
       <div class="ename deco" id="e-name">ENEMY</div>
@@ -368,6 +425,7 @@
         <span class="deco accent">SPARKPLUG</span>
         <span class="stat" style="font-size:.72rem"> &middot; LV <b id="b-lv">1</b> &middot; 🧰 <b id="b-kits">3</b></span>
       </div>
+      <button class="muteBtn" onclick="toggleMute()">🔊</button>
     </div>
     <div class="gauge hp"><div class="fill" id="b-hp-fill"></div><div class="lbl" id="b-hp-lbl">HP</div></div>
     <div class="gauge" style="margin-top:6px"><div class="fill" id="b-fuel-fill" style="background:linear-gradient(180deg,#62c3ee,#1d6f97)"></div><div class="lbl" id="b-fuel-lbl">FUEL</div></div>
@@ -505,6 +563,92 @@ function flash(id, cls, ms){
   setTimeout(()=> el.classList.remove(cls), ms);
 }
 
+/* =================================================================
+   SOUND — all effects are SYNTHESIZED with the Web Audio API at runtime
+   (no audio files), so the game stays a single self-contained HTML file.
+   ================================================================= */
+let audioCtx = null, muted = false;
+function initAudio(){                 // must be created after a user gesture
+  if(audioCtx){ if(audioCtx.state==='suspended') audioCtx.resume(); return; }
+  try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+  catch(e){ audioCtx = null; }
+}
+/* one short tone (an oscillator with a quick volume envelope) */
+function tone(freq, dur, type, gain, delay){
+  if(!audioCtx || muted) return;
+  const t = audioCtx.currentTime + (delay||0);
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = type || 'square'; o.frequency.setValueAtTime(freq, t);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(gain||0.18, t+0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start(t); o.stop(t+dur+0.03);
+}
+/* a burst of filtered noise — used for impacts/clangs */
+function noise(dur, gain){
+  if(!audioCtx || muted) return;
+  const t = audioCtx.currentTime;
+  const buf = audioCtx.createBuffer(1, Math.max(1,(audioCtx.sampleRate*dur)|0), audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i] = (Math.random()*2-1) * Math.pow(1-i/d.length, 2);
+  const src = audioCtx.createBufferSource(); src.buffer = buf;
+  const f = audioCtx.createBiquadFilter(); f.type='highpass'; f.frequency.value=700;
+  const g = audioCtx.createGain(); g.gain.value = gain||0.18;
+  src.connect(f); f.connect(g); g.connect(audioCtx.destination); src.start(t);
+}
+const SFX = {
+  step(){ tone(170,0.05,'square',0.05); },
+  strike(){ noise(0.12,0.16); tone(240,0.08,'square',0.10); },
+  overdrive(){ noise(0.22,0.22); tone(110,0.26,'sawtooth',0.16); },
+  brace(){ tone(330,0.12,'triangle',0.12); },
+  repair(){ tone(523,0.10,'sine',0.12); tone(784,0.14,'sine',0.12,0.10); },
+  pickup(){ tone(660,0.08,'square',0.12); tone(990,0.10,'square',0.12,0.08); },
+  hurt(){ noise(0.16,0.20); tone(140,0.18,'sawtooth',0.12); },
+  gate(){ tone(70,0.45,'sawtooth',0.18); noise(0.3,0.12); },
+  level(){ [523,659,784,1047].forEach((f,i)=> tone(f,0.18,'triangle',0.13,i*0.09)); },
+  win(){ [523,659,784,1047,1319].forEach((f,i)=> tone(f,0.32,'sine',0.15,i*0.13)); },
+  lose(){ [440,330,247,165].forEach((f,i)=> tone(f,0.32,'sawtooth',0.15,i*0.15)); }
+};
+function toggleMute(){
+  muted = !muted;
+  if(!muted){ initAudio(); if(audioCtx && audioCtx.state==='suspended') audioCtx.resume(); }
+  document.querySelectorAll('.muteBtn').forEach(b => b.textContent = muted ? '🔇' : '🔊');
+}
+
+/* floating combat number over the enemy ('epanel') or hero ('hpanel') panel */
+function floatDamage(parentId, text, kind){
+  const p = document.getElementById(parentId);
+  if(!p || !p.appendChild) return;
+  const s = document.createElement('span');
+  s.className = 'float ' + kind; s.textContent = text;
+  p.appendChild(s);
+  setTimeout(()=>{ if(s.remove) s.remove(); }, 900);
+}
+function shakeScreen(){ flash('battle','shaking', 360); }
+
+/* district arrival banners — announced once each, the first time you enter */
+const DISTRICTS = [
+  { name:'The Rail Yards', x0:1,  x1:5,  y0:11, y1:17 },
+  { name:'The Docks',      x0:16, x1:21, y0:11, y1:18 },
+  { name:'Comeau Tower',   x0:9,  x1:13, y0:1,  y1:4  }
+];
+let seenDistricts = new Set();
+function showBanner(text){
+  const b = document.getElementById('banner');
+  if(!b) return;
+  b.innerHTML = '<span class="bn">'+text+'</span>';
+  b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
+}
+function checkDistrict(){
+  for(const d of DISTRICTS){
+    if(player.x>=d.x0 && player.x<=d.x1 && player.y>=d.y0 && player.y<=d.y1){
+      if(!seenDistricts.has(d.name)){ seenDistricts.add(d.name); showBanner('Entering · '+d.name); }
+      return;
+    }
+  }
+}
+
 /* enemy definitions keyed by the tile char that spawns them */
 const ENEMIES = {
   'L':{name:"Syndicate Lookout", face:"🔦", hp:30, atk:8,  def:2, xp:18, kind:'patrol',
@@ -541,13 +685,16 @@ function newGame(){
   hero = freshHero();
   player = { y:START.y, x:START.x };
   mode = 'title'; busy = false; enc = null;
+  facing = 'down'; seenDistricts = new Set();
   showScreen('title');
 }
 
 function startGame(){
+  initAudio();             // Start button is a user gesture → safe to create audio
   mode = 'overworld';
   showScreen('overworld');
   renderOverworld(true);   // snap sprite into place (no glide-in)
+  showBanner('Downtown · Clematis St.');
 }
 
 /* ----------------------- SCREEN ROUTING --------------------------- */
@@ -633,6 +780,7 @@ function updateHUD(){
 let walkTimer = null;
 function move(dy, dx){
   if(mode !== 'overworld' || busy) return;     // frozen during battle/dialogue/menus
+  if(!muted) initAudio();                       // keep audio alive across gestures
 
   // Face the way the player pressed, even if blocked or interacting.
   facing = dx<0 ? 'left' : dx>0 ? 'right' : dy<0 ? 'up' : 'down';
@@ -655,7 +803,9 @@ function move(dy, dx){
   pl.classList.add('walking');
   clearTimeout(walkTimer);
   walkTimer = setTimeout(()=> pl.classList.remove('walking'), 230);
+  SFX.step();
   renderOverworld(false);   // animate the tween
+  checkDistrict();          // announce a district the first time you enter it
 }
 
 /* keyboard support (desktop) */
@@ -676,6 +826,7 @@ function takePickup(ch, y, x){
                      toastHint("Cracked a FUEL CACHE 🛢️  (+2 max fuel, refilled)"); }
   else if(ch==='o'){ hero.atk += 2; toastHint("Pocketed the LUCKY COG 🔩  (+2 Attack, permanent)"); }
   map[y][x] = GROUND[ch];     // remove the pickup tile (one-time)
+  SFX.pickup();
 }
 function toastHint(msg){
   const el = document.getElementById('ow-hint');
@@ -762,6 +913,8 @@ function playerAction(kind){
     enc.hp = Math.max(0, enc.hp - dmg);
     pushLog(`Wrench strike for ${dmg}${lastCrit?' — CRITICAL!':''}.`, lastCrit?'crit':'');
     flash('e-face', 'hit', 320);                         // enemy recoils
+    floatDamage('epanel', dmg, lastCrit?'crit':'dmg');
+    SFX.strike(); if(lastCrit) shakeScreen();
   }
   else if(kind==='overdrive'){
     if(hero.fuel < 4){ return; }                        // safety guard
@@ -772,11 +925,14 @@ function playerAction(kind){
     enc.hp = Math.max(0, enc.hp - dmg);
     pushLog(`OVERDRIVE blast for ${dmg}${lastCrit?' — CRITICAL!':''}!`, lastCrit?'crit':'');
     flash('e-face', 'hit', 320);                         // enemy recoils
+    floatDamage('epanel', dmg, lastCrit?'crit':'dmg');
+    SFX.overdrive(); shakeScreen();
   }
   else if(kind==='brace'){
     hero.braced = true;                                 // halves next incoming hit
     hero.fuel = Math.min(hero.maxFuel, hero.fuel + 3);  // +3 fuel
     pushLog(`You brace behind the wrench. (guard up, +3 fuel)`, 'sys');
+    SFX.brace();
   }
   else if(kind==='repair'){
     if(hero.kits <= 0){ return; }                       // safety guard
@@ -784,6 +940,8 @@ function playerAction(kind){
     const heal = Math.floor(hero.maxHp * 0.4);          // heal 40% max HP
     hero.hp = Math.min(hero.maxHp, hero.hp + heal);
     pushLog(`Field repair: +${heal} HP. (${hero.kits} kit${hero.kits===1?'':'s'} left)`, 'sys');
+    floatDamage('hpanel', '+'+heal, 'heal');
+    SFX.repair();
   }
   else { acted = false; }
 
@@ -817,6 +975,8 @@ function enemyTurn(){
   if(hero.braced) tag += ' (braced)';
   pushLog(`${enc.name} hits you for ${dmg}.${tag}`, 'hurt');
   flash('hpanel', 'hurt', 460);                          // hero panel flashes red
+  floatDamage('hpanel', dmg, (heavy||crit)?'crit':'dmg');
+  SFX.hurt(); if(heavy||crit) shakeScreen();
 
   hero.braced = false;                                  // guard consumed
   hero.fuel = Math.min(hero.maxFuel, hero.fuel + 1);    // +1 fuel regen end of enemy turn
@@ -848,7 +1008,8 @@ function winBattle(){
     hero.hp = hero.maxHp; hero.fuel = hero.maxFuel;     // full restore
   }
 
-  if(enc.kind==='boss'){ mode='victory'; showScreen('victory'); return; }
+  if(levels>0 && enc.kind!=='boss') SFX.level();
+  if(enc.kind==='boss'){ SFX.win(); mode='victory'; showScreen('victory'); return; }
 
   // Reward screen (non-boss only).
   let s = `XP gained: +${enc.xp}\n`;
@@ -869,7 +1030,7 @@ function winBattle(){
 
 function openGate(gateChar){
   for(let y=0;y<MAP_H;y++) for(let x=0;x<MAP_W;x++){
-    if(map[y][x]===gateChar){ map[y][x] = '.'; return; }
+    if(map[y][x]===gateChar){ map[y][x] = '.'; SFX.gate(); return; }
   }
 }
 
@@ -881,6 +1042,7 @@ function closeReward(){
 
 function gameOver(){
   mode='gameover';
+  SFX.lose();
   document.getElementById('go-text').innerHTML =
     `The streets go quiet as <span class="accent">${enc.name}</span> stands over a busted `+
     `pair of goggles. The syndicate breathes easy tonight... but Larry's been counted out `+
