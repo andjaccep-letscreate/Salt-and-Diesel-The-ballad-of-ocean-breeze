@@ -112,21 +112,21 @@
     repeating-linear-gradient(0deg, rgba(217,164,65,.10) 0 3px, transparent 3px 7px),
     linear-gradient(180deg,#262a31,#14171c);
     border-top:2px solid rgba(156,111,31,.55); }
-  /* ---- Hero sprite overlay (Larry) ---- */
-  /* Sized to one tile in JS; tweens between tiles via the transform transition. */
+  /* ---- Hero sprite (Larry) — reusable .larry class so the same markup works
+         both as the overworld overlay (#player) and the battle stage (#hero-sprite) ---- */
   #player{ position:absolute; left:0; top:0; z-index:5; pointer-events:none;
     transition: transform .2s linear; will-change:transform; }
-  #player .sprite{ width:100%; height:100%; display:block; overflow:visible;
+  .larry .sprite{ width:100%; height:100%; display:block; overflow:visible;
     filter: drop-shadow(0 1px 2px rgba(0,0,0,.55)); }
   /* show the correct view per facing direction */
-  #player .view{ display:none; }
-  #player[data-dir="down"]  .view-down{ display:block; }
-  #player[data-dir="up"]    .view-up{   display:block; }
-  #player[data-dir="right"] .view-side{ display:block; }
-  #player[data-dir="left"]  .view-side{ display:block; }
-  #player[data-dir="left"]  .sprite{ transform: scaleX(-1); }   /* mirror for left */
+  .larry .view{ display:none; }
+  .larry[data-dir="down"]  .view-down{ display:block; }
+  .larry[data-dir="up"]    .view-up{   display:block; }
+  .larry[data-dir="right"] .view-side{ display:block; }
+  .larry[data-dir="left"]  .view-side{ display:block; }
+  .larry[data-dir="left"]  .sprite{ transform: scaleX(-1); }   /* mirror for left */
   /* walk bob — alternating legs + subtle body bob (translate only; robust everywhere) */
-  .leg-a, .leg-b, .body-bob{ transform-box: fill-box; }
+  .leg-a, .leg-b, .body-bob, .bolt-arm{ transform-box: fill-box; }
   @keyframes bobA   { 0%,100%{ transform: translateY(0); }    50%{ transform: translateY(-2.2px); } }
   @keyframes bobB   { 0%,100%{ transform: translateY(-2.2px); } 50%{ transform: translateY(0); } }
   @keyframes bobBody{ 0%,100%{ transform: translateY(0); }    50%{ transform: translateY(-1px); } }
@@ -136,16 +136,38 @@
   /* gentle idle breathing while standing still */
   @keyframes idle{ 0%,100%{ transform: translateY(0); } 50%{ transform: translateY(-0.6px); } }
   #player:not(.walking) .body-bob{ animation: idle 2.8s ease-in-out infinite; }
+  /* faint electric arc along the bolt blade (always subtly alive) */
+  .bolt-arc{ opacity:.0; }
+  @keyframes arcIdle{ 0%,92%,100%{ opacity:.15; } 96%{ opacity:.7; } }
+  .larry .bolt-arc{ animation: arcIdle 2.4s ease-in-out infinite; }
 
   /* interactive map markers (landmarks, pickups, NPCs, patrols) gently pulse */
   .cell .mk{ display:inline-block; transform-origin:center; }
   @keyframes markerPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.14); } }
   .cell .mk.marker{ animation: markerPulse 1.8s ease-in-out infinite; }
 
+  /* ---- battle stage sprites (Larry + enemy as inline SVG) ---- */
+  #hero-sprite{ width:46px; height:60px; flex:0 0 auto; }
+  .eface svg{ width:3rem; height:3rem; display:block; }
+  /* hero attack: a quick lunge while the bolt-arm slashes in an arc */
+  @keyframes heroLunge   { 0%,100%{ transform:translateX(0); } 35%{ transform:translateX(7px); } }
+  @keyframes heroLungeBig{ 0%,100%{ transform:translateX(0); } 30%{ transform:translateX(11px); } }
+  @keyframes bladeSlash  { 0%{ transform:rotate(-18deg); } 45%{ transform:rotate(46deg); } 100%{ transform:rotate(0); } }
+  @keyframes bladeSlashBig{ 0%{ transform:rotate(-34deg); } 40%{ transform:rotate(74deg); } 100%{ transform:rotate(0); } }
+  @keyframes arcZap      { 0%,100%{ opacity:0; } 30%,55%{ opacity:1; } }
+  .larry.atk            { animation: heroLunge .35s ease; }
+  .larry.atk .bolt-arm  { transform-origin: bottom center; animation: bladeSlash .35s ease; }
+  .larry.atk .bolt-arc  { animation: arcZap .35s ease; opacity:1; }
+  .larry.atk-od         { animation: heroLungeBig .42s ease; }
+  .larry.atk-od .bolt-arm{ transform-origin: bottom center; animation: bladeSlashBig .42s ease; }
+  .larry.atk-od .bolt-arc{ animation: arcZap .42s ease; opacity:1; }
+
   @media (prefers-reduced-motion: reduce){
     #player{ transition:none; }
     #player.walking .leg-a, #player.walking .leg-b, #player.walking .body-bob,
-    #player:not(.walking) .body-bob, .cell .mk.marker{ animation:none; }
+    #player:not(.walking) .body-bob, .cell .mk.marker, .larry .bolt-arc,
+    .larry.atk, .larry.atk .bolt-arm, .larry.atk-od, .larry.atk-od .bolt-arm,
+    .larry.atk .bolt-arc, .larry.atk-od .bolt-arc{ animation:none; }
   }
 
   /* ---- battle feedback animations ---- */
@@ -392,7 +414,7 @@
     <div id="fog"></div>
     <div id="grid"></div>
     <!-- Persistent hero sprite overlay (NOT rebuilt each move, so it can tween). -->
-    <div id="player" data-dir="down" aria-hidden="true">
+    <div id="player" class="larry" data-dir="down" aria-hidden="true">
       <svg class="sprite" viewBox="0 0 32 48" preserveAspectRatio="xMidYMax meet" aria-label="Larry">
         <!-- shadow (shared) -->
         <ellipse cx="16" cy="45" rx="9" ry="2.6" fill="rgba(0,0,0,.28)"/>
@@ -424,6 +446,13 @@
             <rect x="15.3" y="8.7" width="1.4" height="1.3" fill="#3a3f46"/>
             <rect x="10.2" y="9" width="3" height="0.7" rx="0.35" fill="#454b54"/>
             <path d="M9 10 Q9 3.4 16 3.1 Q23 3.4 23 10 Q21 6.7 16 6.4 Q11 6.7 9 10 Z" fill="#1c1410"/>
+            <!-- bolt sword: brass hilt + jagged lightning blade + electric arc -->
+            <g class="bolt-arm">
+              <rect x="24.4" y="23.5" width="3" height="6.5" rx="1" fill="#a9772b"/>
+              <rect x="22.4" y="23" width="7" height="1.8" rx="0.9" fill="#d9a441"/>
+              <polygon points="27,5 23.4,15 26.2,15 24.2,24 30.2,12.5 27.2,12.5" fill="#dcebfb" stroke="#8fb6d6" stroke-width="0.5"/>
+              <polyline class="bolt-arc" points="27,5 24.6,14 26.6,14 24.8,23" fill="none" stroke="#7fe9ff" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round"/>
+            </g>
           </g>
         </g>
         <!-- ============ BACK (facing up / away) ============ -->
@@ -446,6 +475,12 @@
             <rect x="12" y="15.2" width="8" height="2.2" rx="1" fill="#b7a47b"/>
             <circle cx="16" cy="10" r="6.5" fill="#c98a5e"/>
             <path d="M9.2 11 Q9 3.4 16 3.1 Q23 3.4 22.8 11 Q22.6 12.6 16 12.6 Q9.4 12.6 9.2 11 Z" fill="#1c1410"/>
+            <g class="bolt-arm">
+              <rect x="24.4" y="23.5" width="3" height="6.5" rx="1" fill="#a9772b"/>
+              <rect x="22.4" y="23" width="7" height="1.8" rx="0.9" fill="#d9a441"/>
+              <polygon points="27,5 23.4,15 26.2,15 24.2,24 30.2,12.5 27.2,12.5" fill="#dcebfb" stroke="#8fb6d6" stroke-width="0.5"/>
+              <polyline class="bolt-arc" points="27,5 24.6,14 26.6,14 24.8,23" fill="none" stroke="#7fe9ff" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round"/>
+            </g>
           </g>
         </g>
         <!-- ============ SIDE (facing right; left = mirrored) ============ -->
@@ -472,6 +507,12 @@
             <rect x="18.5" y="8.8" width="1.6" height="0.7" rx="0.35" fill="#454b54"/>
             <path d="M11 10.5 Q11 3.4 18 3.2 Q23.2 3.6 22.8 9.4 Q22 6.6 18 6.5 Q13 6.7 11 10.5 Z" fill="#1c1410"/>
             <rect x="10.6" y="6.6" width="3.4" height="5" rx="1.6" fill="#1c1410"/>
+            <g class="bolt-arm">
+              <rect x="24.4" y="23.5" width="3" height="6.5" rx="1" fill="#a9772b"/>
+              <rect x="22.4" y="23" width="7" height="1.8" rx="0.9" fill="#d9a441"/>
+              <polygon points="27,5 23.4,15 26.2,15 24.2,24 30.2,12.5 27.2,12.5" fill="#dcebfb" stroke="#8fb6d6" stroke-width="0.5"/>
+              <polyline class="bolt-arc" points="27,5 24.6,14 26.6,14 24.8,23" fill="none" stroke="#7fe9ff" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round"/>
+            </g>
           </g>
         </g>
       </svg>
@@ -500,7 +541,7 @@
   <div class="log" id="log"></div>
   <div class="hpanel" id="hpanel">
     <div class="top">
-      <span class="face">🕶️</span>
+      <div id="hero-sprite" class="larry" data-dir="right" aria-hidden="true"></div>
       <div style="flex:1">
         <span class="deco accent">SPARKPLUG</span>
         <span class="stat" style="font-size:.72rem"> &middot; LV <b id="b-lv">1</b> &middot; 🧰 <b id="b-kits">3</b></span>
@@ -646,7 +687,7 @@ const EMOJI = {
   'a':'🚧','b':'🚧','c':'🚧',
   'N':'📰','D':'👷','R':'🔮',
   'k':'🧰','u':'🛢️','o':'🔩',
-  'L':'🔦','H':'⚙️'
+  'L':'🦩','H':'🦀'
 };
 /* terrain CSS class per base char */
 const TCLASS = {'.':'t-road',',':'t-grass','=':'t-plank','P':'t-plaza','W':'t-water','B':'t-bldg','T':'t-grass','F':'t-bldg'};
@@ -842,6 +883,17 @@ function kickDust(pl){
   }
 }
 
+/* Play Larry's bolt-sword swing in battle. 'strike' = quick slash, 'overdrive'
+   = bigger two-handed arc. Input is already locked (busy) while this plays. */
+function attackAnim(kind){
+  const h = document.getElementById('hero-sprite');
+  if(!h) return;
+  const cls = (kind === 'overdrive') ? 'atk-od' : 'atk';
+  h.classList.remove('atk','atk-od'); void h.offsetWidth;   // restart the animation
+  h.classList.add(cls);
+  setTimeout(()=> h.classList.remove(cls), kind==='overdrive' ? 440 : 370);
+}
+
 /* floating combat number over the enemy ('epanel') or hero ('hpanel') panel */
 function floatDamage(parentId, text, kind){
   const p = document.getElementById(parentId);
@@ -855,9 +907,9 @@ function shakeScreen(){ flash('battle','shaking', 360); }
 
 /* district arrival banners — announced once each, the first time you enter */
 const DISTRICTS = [
-  { name:'The Rail Yards', x0:1,  x1:5,  y0:11, y1:17 },
-  { name:'The Docks',      x0:16, x1:21, y0:11, y1:18 },
-  { name:'Comeau Tower',   x0:9,  x1:13, y0:1,  y1:4  }
+  { name:'rail', x0:1,  x1:5,  y0:11, y1:17, banner:"THE RAIL YARDS — rust, steam, and the groan of dredge-loaders." },
+  { name:'docks',x0:16, x1:21, y0:11, y1:18, banner:"THE DOCKS — dirigibles overhead, the Intracoastal slapping the planks." },
+  { name:'tower',x0:9,  x1:13, y0:1,  y1:4,  banner:"COMEAU TOWER — the Baron's spire, and something vast stirring in the water below." }
 ];
 let seenDistricts = new Set();
 function showBanner(text){
@@ -869,26 +921,28 @@ function showBanner(text){
 function checkDistrict(){
   for(const d of DISTRICTS){
     if(player.x>=d.x0 && player.x<=d.x1 && player.y>=d.y0 && player.y<=d.y1){
-      if(!seenDistricts.has(d.name)){ seenDistricts.add(d.name); showBanner('Entering · '+d.name); }
+      if(!seenDistricts.has(d.name)){ seenDistricts.add(d.name); showBanner(d.banner); }
       return;
     }
   }
 }
 
-/* enemy definitions keyed by the tile char that spawns them */
+/* enemy definitions keyed by the tile char that spawns them.
+   `face` is the emoji fallback; `sprite` (ENEMY_SVG below) is the inline SVG shown
+   in battle. STATS ARE UNCHANGED from the original balance. */
 const ENEMIES = {
-  'L':{name:"Syndicate Lookout", face:"🔦", hp:30, atk:8,  def:2, xp:18, kind:'patrol',
-       intro:"A syndicate lookout swings his beam your way — \"You ain't on the list.\""},
-  'H':{name:"Scrap Hound",       face:"⚙️", hp:26, atk:7,  def:1, xp:16, kind:'patrol',
-       intro:"A clockwork scrap hound clatters out of the weeds, gears snarling."},
-  '1':{name:"Knuckles Moreau",   face:"🥊", hp:38, atk:9,  def:2, xp:28, kind:'story', opens:'a',
-       intro:"Knuckles Moreau cracks his oversized fists. \"Baron says you're done, pal.\""},
-  '2':{name:"Rust-Bucket Loader",face:"🤖", hp:58, atk:12, def:5, xp:44, kind:'story', opens:'b',
-       intro:"A malfunctioning cargo automaton lurches alive, hydraulics shrieking."},
-  '3':{name:"Capt. Dredge Voss", face:"⚓", hp:74, atk:15, def:6, xp:60, kind:'story', opens:'c',
-       intro:"Capt. Dredge Voss racks a harpoon gun. \"This is my waterfront, landlubber.\""},
-  '4':{name:"Baron Castellane",  face:"🦾", hp:130,atk:19, def:8, xp:100,kind:'boss',
-       intro:"The Leviathan rises — Baron Castellane in his walking mech. \"Witness industry!\""}
+  'L':{name:"“Beacon” the Spoonbill-Rig", face:"🦩", hp:30, atk:8,  def:2, xp:18, kind:'patrol',
+       intro:"A spindly searchlight wader-mech swivels on the catwalk, lamp-beak glaring. \"I see you.\""},
+  'H':{name:"Barnacle Cur",      face:"🦀", hp:26, atk:7,  def:1, xp:16, kind:'patrol',
+       intro:"A scrap-welded crab-mech scuttles from the weeds, pincers snapping."},
+  '1':{name:"“Salt-Knuckle” Inez Vega", face:"🕷️", hp:38, atk:9,  def:2, xp:28, kind:'story', opens:'a',
+       intro:"Inez Vega fans out four grafted brass arms, green visor glinting. \"Wrong web, hermano.\""},
+  '2':{name:"“Ironback” Odell Reese", face:"🐢", hp:58, atk:12, def:5, xp:44, kind:'story', opens:'b',
+       intro:"Odell Reese hunches under a riveted sea-turtle carapace. \"Hit the shell all day.\""},
+  '3':{name:"Capt. Marisol “Riptide” Delacroix", face:"🦈", hp:74, atk:15, def:6, xp:60, kind:'story', opens:'c',
+       intro:"Capt. Delacroix lowers a brass shark-jaw helm, calm as deep water. \"My harbor. My teeth.\""},
+  '4':{name:"Baron Castellane",  face:"🐊", hp:130,atk:19, def:8, xp:100,kind:'boss',
+       intro:"Anchor-chains scream as the Baron's riveted crocodile-walker rises, dripping bay water. \"Behold my leviathan!\""}
 };
 const NPC_LINES = {
   'N':{face:"📰", say:"EXTRA! EXTRA! Castellane's dirigibles choke the skyline — and the mayor calls it 'progress'! Read all about it, mister!"},
@@ -898,12 +952,77 @@ const NPC_LINES = {
 
 /* purely cosmetic enemy barks, occasionally shown on the enemy's turn */
 const TAUNTS = {
-  'L':["\"Stay where you are!\"", "\"Boss'll pay extra for you.\""],
-  'H':["*grinding snarl*", "*gears shriek*"],
-  '1':["\"That all ya got?\"", "\"C'mere, wise guy!\""],
-  '2':["WARNING: INTRUDER.", "*hydraulics hiss*"],
-  '3':["\"Walk the plank, landlubber!\"", "\"My waterfront!\""],
-  '4':["\"Witness industry!\"", "\"You're scrap, troubleshooter.\"", "\"Behold the Leviathan!\""]
+  'L':["\"Three flashes means trouble. That's you.\"", "\"I see you — and now so does everyone.\"", "(the lamp swivels and locks on)"],
+  'H':["(a grinding, sideways scuttle)", "(pincers snap shut with a clang)", "(steam hisses from a cracked seam)"],
+  '1':["\"Six arms, three of 'em just for you.\"", "\"You swing like the tide's against you, hermano.\"", "\"Stay down — this web's mine.\""],
+  '2':["\"Hit the shell all day. I've got all day.\"", "(a deep hydraulic groan)", "\"Nothing gets through. Nothing.\""],
+  '3':["\"My harbor. My teeth. My tide pulls you under.\"", "\"Blood in the water, and it's yours.\"", "\"Every ship answers to me. So will you.\""],
+  '4':["\"I raised this leviathan from the harbor floor.\"", "\"West Palm Beach is mine, down to the last rivet.\"", "\"You are a wrench. I am the apex.\""]
+};
+
+/* Inline SVG sprites for each enemy (dieselpunk × nautical Florida-animal machines).
+   Keyed by tile char; shown in the battle enemy panel. Pure shapes, no assets. */
+const ENEMY_SVG = {
+  /* Inez Vega — green lynx spider brawler: torso + green visor + 4 brass arms */
+  '1':`<svg viewBox="0 0 48 48" aria-label="Inez Vega">
+    <g stroke="#a9772b" stroke-width="2.4" stroke-linecap="round" fill="none">
+      <path d="M22 22 L10 14"/><path d="M22 26 L8 26"/><path d="M26 22 L38 14"/><path d="M26 26 L40 26"/></g>
+    <circle cx="9" cy="13" r="2.4" fill="#d9a441"/><circle cx="7" cy="26" r="2.4" fill="#d9a441"/>
+    <circle cx="39" cy="13" r="2.4" fill="#d9a441"/><circle cx="41" cy="26" r="2.4" fill="#d9a441"/>
+    <rect x="18" y="20" width="12" height="16" rx="3" fill="#caa46a"/>
+    <circle cx="24" cy="14" r="6.5" fill="#caa46a"/>
+    <rect x="18.5" y="11.5" width="11" height="4.4" rx="2.2" fill="#0c1f14"/>
+    <circle cx="22" cy="13.7" r="1.5" fill="#5bd98a"/><circle cx="26" cy="13.7" r="1.5" fill="#5bd98a"/></svg>`,
+  /* Odell Reese — green sea turtle exo-rig: domed carapace + head + hydraulic legs */
+  '2':`<svg viewBox="0 0 48 48" aria-label="Ironback Odell">
+    <rect x="11" y="33" width="6" height="9" rx="2" fill="#8b95a0"/><rect x="31" y="33" width="6" height="9" rx="2" fill="#8b95a0"/>
+    <path d="M8 34 Q24 8 40 34 Z" fill="#5e6b50"/>
+    <path d="M8 34 Q24 12 40 34" fill="none" stroke="#3c4636" stroke-width="2"/>
+    <g fill="#3c4636"><circle cx="24" cy="20" r="1.4"/><circle cx="17" cy="28" r="1.4"/><circle cx="31" cy="28" r="1.4"/><circle cx="24" cy="30" r="1.4"/></g>
+    <circle cx="14" cy="30" r="2" fill="#b9c6b0"/><circle cx="34" cy="26" r="2" fill="#b9c6b0"/>
+    <circle cx="24" cy="36" r="4.5" fill="#caa46a"/>
+    <rect x="20" y="34.6" width="8" height="2.6" rx="1.3" fill="#14171c"/></svg>`,
+  /* Capt. Riptide — bull shark diving rig: coat + snout-helm with teeth + dorsal fin */
+  '3':`<svg viewBox="0 0 48 48" aria-label="Capt. Riptide">
+    <path d="M32 16 L40 22 L32 25 Z" fill="#5b7790"/>
+    <rect x="16" y="20" width="16" height="20" rx="3" fill="#37506a"/>
+    <rect x="23" y="20" width="2" height="20" fill="#26384d"/>
+    <path d="M13 14 Q24 7 31 16 Q24 23 15 20 Z" fill="#8b95a0"/>
+    <path d="M13 14 Q24 7 31 16" fill="none" stroke="#5b6772" stroke-width="1.4"/>
+    <g fill="#eef2f6"><polygon points="16,19.4 17.5,16.4 19,19.4"/><polygon points="19,19.6 20.5,16.6 22,19.6"/><polygon points="22,19.6 23.5,16.8 25,19.6"/></g>
+    <circle cx="20" cy="14" r="1.3" fill="#0c1418"/></svg>`,
+  /* Baron — American crocodile leviathan walker + tiny Baron at the cockpit hatch */
+  '4':`<svg viewBox="0 0 48 48" aria-label="Baron's Leviathan">
+    <rect x="10" y="34" width="5" height="9" rx="2" fill="#6b7682"/><rect x="33" y="34" width="5" height="9" rx="2" fill="#6b7682"/>
+    <rect x="9" y="24" width="30" height="12" rx="4" fill="#566350"/>
+    <g fill="#3c4636"><polygon points="14,24 16,20 18,24"/><polygon points="19,24 21,19 23,24"/><polygon points="24,24 26,19 28,24"/><polygon points="29,24 31,20 33,24"/></g>
+    <path d="M9 28 L1 30 L1 33 L9 34 Z" fill="#566350"/>
+    <g fill="#eef2f6"><polygon points="2,30 3,32 4,30"/><polygon points="4.4,30 5.4,32.2 6.4,30"/><polygon points="6.6,30 7.6,32 8.6,30"/></g>
+    <circle cx="11" cy="27" r="1.4" fill="#d94f3a"/>
+    <g fill="#8b95a0"><circle cx="41" cy="30" r="2"/><circle cx="44" cy="31" r="2"/></g>
+    <circle cx="24" cy="28.5" r="3.4" fill="#1c2530"/>
+    <circle cx="24" cy="28" r="1.7" fill="#caa46a"/>
+    <rect x="22.4" y="25" width="3.2" height="1.5" fill="#14171c"/></svg>`,
+  /* Beacon — roseate spoonbill searchlight wader: stilt legs + rosy body + lamp-beak */
+  'L':`<svg viewBox="0 0 48 48" aria-label="Beacon Spoonbill">
+    <g stroke="#a9772b" stroke-width="2" stroke-linecap="round"><path d="M21 32 L18 44"/><path d="M27 32 L30 44"/></g>
+    <ellipse cx="24" cy="26" rx="8" ry="7" fill="#e58aa6"/>
+    <g fill="#c96f8a"><circle cx="22" cy="24" r="1"/><circle cx="26" cy="27" r="1"/><circle cx="24" cy="29" r="1"/></g>
+    <rect x="22.9" y="14" width="2.4" height="10" fill="#e58aa6"/>
+    <circle cx="24" cy="13" r="3.4" fill="#e58aa6"/>
+    <path d="M24 12 L34 9 L34 13 Z" fill="#8b95a0"/>
+    <circle cx="34" cy="11" r="4.6" fill="#fff6c2" opacity="0.35"/>
+    <circle cx="34" cy="11" r="2.6" fill="#fff6c2"/></svg>`,
+  /* Barnacle Cur — scrap crab-mech: low shell + pincers + jointed legs + barnacles */
+  'H':`<svg viewBox="0 0 48 48" aria-label="Barnacle Cur">
+    <g stroke="#6b7682" stroke-width="2" stroke-linecap="round"><path d="M16 32 L9 38"/><path d="M18 34 L12 41"/><path d="M32 32 L39 38"/><path d="M30 34 L36 41"/></g>
+    <ellipse cx="24" cy="30" rx="12" ry="8" fill="#7a5a3a"/>
+    <path d="M12 30 Q24 22 36 30" fill="none" stroke="#5a4026" stroke-width="1.6"/>
+    <g stroke="#5a4026" stroke-width="1.5"><path d="M21 24 L20 19"/><path d="M27 24 L28 19"/></g>
+    <circle cx="20" cy="18" r="1.6" fill="#d94f3a"/><circle cx="28" cy="18" r="1.6" fill="#d94f3a"/>
+    <path d="M10 28 q-6 -2 -7 2 q3 1 4 0 q-2 2 1 3 q3 -1 4 -3 Z" fill="#8b6a44"/>
+    <path d="M38 28 q6 -2 7 2 q-3 1 -4 0 q2 2 -1 3 q-3 -1 -4 -3 Z" fill="#8b6a44"/>
+    <circle cx="20" cy="30" r="1.8" fill="#b9c6b0"/><circle cx="29" cy="32" r="1.8" fill="#b9c6b0"/></svg>`
 };
 
 /* ----------------------- GAME STATE ------------------------------- */
@@ -944,7 +1063,7 @@ function enterWorld(welcome){
   mode = 'overworld';
   showScreen('overworld');
   renderOverworld(true);   // snap sprite into place (no glide-in)
-  if(welcome) showBanner('Downtown · Clematis St.');
+  if(welcome) showBanner('CLEMATIS STREET — brass storefronts, idling roadsters, salt and exhaust on the breeze.');
   saveGame();
 }
 /* kept for test harnesses / programmatic entry */
@@ -1174,7 +1293,13 @@ function startBattle(ch, y, x){
   hero.braced = false;
   mode = 'battle'; busy = false;
   logLines = [];
-  document.getElementById('e-face').textContent = enc.face;
+  // Enemy: inline SVG sprite (fallback to the emoji if one is missing).
+  const eFace = document.getElementById('e-face');
+  if(ENEMY_SVG[ch]) eFace.innerHTML = ENEMY_SVG[ch]; else eFace.textContent = enc.face;
+  // Hero: clone Larry's sprite into the battle stage, facing the enemy (right).
+  const heroSprite = document.getElementById('hero-sprite');
+  const plEl = document.getElementById('player');
+  if(heroSprite && plEl) heroSprite.innerHTML = plEl.innerHTML;
   document.getElementById('e-name').textContent = enc.name;
   pushLog(def.intro, 'sys');
   showScreen('battle');
@@ -1236,6 +1361,7 @@ function playerAction(kind){
     flash('e-face', 'hit', 320);                         // enemy recoils
     floatDamage('epanel', dmg, lastCrit?'crit':'dmg');
     burst('epanel', lastCrit?12:6, lastCrit?'crit':'hit');
+    attackAnim('strike');                                 // Larry's bolt-sword slash
     SFX.strike(); if(lastCrit){ shakeScreen(); flashScreen(); }
   }
   else if(kind==='overdrive'){
@@ -1249,6 +1375,7 @@ function playerAction(kind){
     flash('e-face', 'hit', 320);                         // enemy recoils
     floatDamage('epanel', dmg, lastCrit?'crit':'dmg');
     burst('epanel', lastCrit?16:10, lastCrit?'crit':'hit');
+    attackAnim('overdrive');                              // bigger two-handed bolt arc
     SFX.overdrive(); shakeScreen(); if(lastCrit) flashScreen();
   }
   else if(kind==='brace'){
