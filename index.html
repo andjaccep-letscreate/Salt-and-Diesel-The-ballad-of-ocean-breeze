@@ -203,11 +203,20 @@
   .larry.atk-od .bolt-arm{ transform-origin: bottom center; animation: bladeSlashBig .42s ease; }
   .larry.atk-od .bolt-arc{ animation: arcZap .42s ease; opacity:1; }
 
-  /* enemy attack lunge (toward the hero on the left) + bite/snap */
-  @keyframes enemyLunge   { 0%,100%{ transform:translateX(0) scale(1); } 32%{ transform:translateX(-15px) scale(1.05); } }
-  @keyframes enemyLungeBig{ 0%,100%{ transform:translateX(0) scale(1); } 30%{ transform:translateX(-20px) scale(1.08); } }
-  #stage-enemy.eatk    { animation: enemyLunge .42s ease; }
-  #stage-enemy.eatk-big{ animation: enemyLungeBig .48s ease; }
+  /* per-creature enemy attacks (all move LEFT toward the hero), ≤0.46s so the
+     ~0.48s input re-enable always covers the full animation */
+  @keyframes atkJab  { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-10px)} 40%{transform:translateX(-2px)} 60%{transform:translateX(-12px)} 80%{transform:translateX(-3px)} } /* spider: quick jabs */
+  @keyframes atkRam  { 0%,100%{transform:translateX(0)} 45%{transform:translateX(-15px)} }                                   /* turtle: slow heavy ram */
+  @keyframes atkDash { 0%,100%{transform:translateX(0) scale(1)} 30%{transform:translateX(-22px) scale(1.05)} }             /* shark: fast charge */
+  @keyframes atkChomp{ 0%,100%{transform:translateX(0) rotate(0)} 30%{transform:translateX(-14px) rotate(-7deg)} 55%{transform:translateX(-9px) rotate(5deg)} } /* croc: bite */
+  @keyframes atkPeck { 0%,100%{transform:translate(0,0)} 30%{transform:translate(-8px,4px)} 55%{transform:translate(-4px,0)} } /* spoonbill: lamp peck */
+  @keyframes atkSnap { 0%,100%{transform:translateX(0) scaleY(1)} 25%{transform:translateX(-9px) scaleY(.9)} 45%{transform:translateX(-4px) scaleY(1)} 65%{transform:translateX(-9px) scaleY(.9)} } /* crab: pincer snap */
+  #stage-enemy.eatk-jab  { animation: atkJab  .42s ease; }
+  #stage-enemy.eatk-ram  { animation: atkRam  .46s ease; }
+  #stage-enemy.eatk-dash { animation: atkDash .40s ease; }
+  #stage-enemy.eatk-chomp{ animation: atkChomp .44s ease; }
+  #stage-enemy.eatk-peck { animation: atkPeck .40s ease; }
+  #stage-enemy.eatk-snap { animation: atkSnap .44s ease; }
   /* knockback / flinch when struck */
   @keyframes knockR { 0%,100%{ transform:translateX(0);} 30%{ transform:translateX(9px);} 60%{ transform:translateX(3px);} }
   @keyframes flinchL{ 0%,100%{ transform:translateX(0);} 30%{ transform:translateX(-8px);} 55%{ transform:translateX(2px);} 80%{ transform:translateX(-3px);} }
@@ -227,8 +236,9 @@
     .larry:not(.walking) .body-bob, .cell .mk.marker, .larry .bolt-arc,
     .larry.atk, .larry.atk .bolt-arm, .larry.atk-od, .larry.atk-od .bolt-arm,
     .larry.atk .bolt-arc, .larry.atk-od .bolt-arc,
-    #stage .stage-haze, #stage-enemy.eatk, #stage-enemy.eatk-big,
-    #stage-enemy.knock, #stage-hero.flinch{ animation:none; }
+    #stage .stage-haze, #stage-enemy.knock, #stage-hero.flinch,
+    #stage-enemy.eatk-jab, #stage-enemy.eatk-ram, #stage-enemy.eatk-dash,
+    #stage-enemy.eatk-chomp, #stage-enemy.eatk-peck, #stage-enemy.eatk-snap{ animation:none; }
     /* under reduced motion, .struck (opacity blink) and .guard remain as the hit feedback */
   }
 
@@ -961,14 +971,17 @@ function attackAnim(kind){
   h.classList.add(cls);
   setTimeout(()=> h.classList.remove(cls), kind==='overdrive' ? 440 : 370);
 }
-/* Enemy lunges left toward Larry. `big` = heavy attack. */
-function enemyAttackAnim(big){
+/* Each creature has its own attack motion toward Larry (shark dash, crab snap,
+   spider jab, croc bite, turtle ram, spoonbill peck). */
+const ENEMY_ATK = { '1':'jab', '2':'ram', '3':'dash', '4':'chomp', 'L':'peck', 'H':'snap' };
+function enemyAttackAnim(){
   const e = document.getElementById('stage-enemy');
   if(!e) return;
-  const cls = big ? 'eatk-big' : 'eatk';
-  e.classList.remove('eatk','eatk-big'); void e.offsetWidth;
+  const cls = 'eatk-' + (ENEMY_ATK[enc.ch] || 'dash');
+  ['jab','ram','dash','chomp','peck','snap'].forEach(n => e.classList.remove('eatk-'+n));
+  void e.offsetWidth;                       // restart the animation
   e.classList.add(cls);
-  setTimeout(()=> e.classList.remove(cls), big ? 480 : 420);
+  setTimeout(()=> e.classList.remove(cls), 480);
 }
 /* one-shot helper: add a class, auto-remove after ms (for knock/flinch/struck/guard) */
 function pulse(id, cls, ms){
@@ -1518,7 +1531,7 @@ function enemyTurn(){
   if(crit)  tag += ' CRIT';
   if(hero.braced) tag += ' (braced)';
   pushLog(`${enc.name} hits you for ${dmg}.${tag}`, 'hurt');
-  enemyAttackAnim(heavy);                                // enemy lunges left toward Larry
+  enemyAttackAnim();                                     // enemy's own attack motion toward Larry
   flash('hpanel', 'hurt', 460);                          // hero panel flashes red
   if(wasBraced){                                         // guarded: guard flash + light recoil
     pulse('stage-hero','guard',420);
