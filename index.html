@@ -44,7 +44,11 @@
     border:3px double var(--brass-d); border-radius:12px; background:var(--panel);
     padding:22px; width:100%; box-shadow:0 0 0 6px #000 inset;
   }
-  #title h1{ font-size:1.5rem; margin:.1em 0 0; color:var(--brass); line-height:1.2;}
+  #title h1{ font-size:1.5rem; margin:.1em 0 0; line-height:1.2;
+    color:#ffd97a; text-shadow:0 0 6px #d9a441, 0 0 16px #b5532a; animation: neon 5s infinite; }
+  @keyframes neon{
+    0%,17%,21%,23%,55%,57%,100%{ opacity:1; text-shadow:0 0 6px #d9a441, 0 0 18px #b5532a; }
+    19%,22%,56%{ opacity:.45; text-shadow:none; } }
   #title .sub{ letter-spacing:.3em; font-size:.72rem; color:var(--rust); margin-bottom:14px;}
   .bio{ background:var(--panel2); border-left:4px solid var(--brass); padding:12px 14px;
     font-size:.92rem; line-height:1.5; border-radius:0 8px 8px 0; margin:10px 0;}
@@ -249,10 +253,24 @@
   .gearBtn{ background:var(--panel2); color:var(--brass); border:2px solid var(--brass-d); border-radius:8px;
     min-width:42px; min-height:38px; font-size:1rem; padding:0 8px; cursor:pointer; }
 
+  /* ---- screen fade transitions ---- */
+  .screen.active{ animation: screenFade .35s ease; }
+  @keyframes screenFade{ from{ opacity:0; } to{ opacity:1; } }
+  /* blinking typewriter caret */
+  .caret::after{ content:"▌"; color:var(--brass); animation: caret .8s steps(1) infinite; }
+  @keyframes caret{ 50%{ opacity:0; } }
+
+  /* ---- footstep dust under the hero ---- */
+  .dust{ position:absolute; bottom:8%; left:50%; width:5px; height:5px; border-radius:50%;
+    background:rgba(180,170,150,.55); pointer-events:none; z-index:4; animation: dustPuff .45s ease-out forwards; }
+  @keyframes dustPuff{ from{ transform:translate(-50%,0) scale(.6); opacity:.7; }
+    to{ transform:translate(calc(-50% + var(--dx)), -6px) scale(1.4); opacity:0; } }
+
   @media (prefers-reduced-motion: reduce){
     #fog, #title .frame::before, #title .blimp, #banner.show, #battle.shaking,
     .float, .eface.enter, .eface.hit, .eface.lunge, .hpanel.hurt, .spark,
-    #battle.danger::before, #flash.go, #cutscene .cs-emoji{ animation:none; }
+    #battle.danger::before, #flash.go, #cutscene .cs-emoji, #title h1,
+    .screen.active, .caret::after, .dust{ animation:none; }
   }
 
   .dpad{ display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr);
@@ -645,6 +663,33 @@ function flash(id, cls, ms){
 }
 
 /* =================================================================
+   TYPEWRITER — reveal text one character at a time (cutscene + dialogue).
+   Clicking the button completes the line instantly, then advances.
+   ================================================================= */
+let twTimer = null, twEl = null, twFull = '', twDone = true, twCb = null;
+function reducedMotion(){
+  try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+  catch(e){ return false; }
+}
+function typeText(el, text, cb){
+  if(twTimer){ clearInterval(twTimer); twTimer = null; }
+  twEl = el; twFull = text; twCb = cb || null; twDone = false;
+  if(!el){ twDone = true; if(twCb) twCb(); return; }
+  if(reducedMotion()){ el.textContent = text; el.classList.remove('caret'); twDone = true; if(twCb) twCb(); return; }
+  let i = 0; el.textContent = ''; el.classList.add('caret');
+  twTimer = setInterval(()=>{
+    i++; el.textContent = text.slice(0, i);
+    if(i >= text.length){ clearInterval(twTimer); twTimer = null; twDone = true;
+      el.classList.remove('caret'); if(twCb) twCb(); }
+  }, 22);
+}
+function typeFinish(){              // skip to the full line
+  if(twTimer){ clearInterval(twTimer); twTimer = null; }
+  if(twEl){ twEl.textContent = twFull; twEl.classList.remove('caret'); }
+  twDone = true;
+}
+
+/* =================================================================
    SOUND — all effects are SYNTHESIZED with the Web Audio API at runtime
    (no audio files), so the game stays a single self-contained HTML file.
    ================================================================= */
@@ -785,6 +830,18 @@ function burst(parentId, n, cls){
 }
 function flashScreen(){ flash('flash', 'go', 240); }
 
+/* little puffs of dust kicked up under the hero as he walks */
+function kickDust(pl){
+  if(!pl || !pl.appendChild) return;
+  for(let i=0;i<2;i++){
+    const s = document.createElement('span');
+    s.className = 'dust';
+    s.style.setProperty('--dx', (Math.random()*10 - 5) + 'px');
+    pl.appendChild(s);
+    setTimeout(()=>{ if(s.remove) s.remove(); }, 480);
+  }
+}
+
 /* floating combat number over the enemy ('epanel') or hero ('hpanel') panel */
 function floatDamage(parentId, text, kind){
   const p = document.getElementById(parentId);
@@ -837,6 +894,16 @@ const NPC_LINES = {
   'N':{face:"📰", say:"EXTRA! EXTRA! Castellane's dirigibles choke the skyline — and the mayor calls it 'progress'! Read all about it, mister!"},
   'D':{face:"👷", say:"Diesel fumes thick as gravy down here, pal. Mind the planks — slick as a politician's promise."},
   'R':{face:"🔮", say:"I see brass and fire in your future, Sparkplug... a tower, a Baron who won't bow, and a wrench that decides it all."}
+};
+
+/* purely cosmetic enemy barks, occasionally shown on the enemy's turn */
+const TAUNTS = {
+  'L':["\"Stay where you are!\"", "\"Boss'll pay extra for you.\""],
+  'H':["*grinding snarl*", "*gears shriek*"],
+  '1':["\"That all ya got?\"", "\"C'mere, wise guy!\""],
+  '2':["WARNING: INTRUDER.", "*hydraulics hiss*"],
+  '3':["\"Walk the plank, landlubber!\"", "\"My waterfront!\""],
+  '4':["\"Witness industry!\"", "\"You're scrap, troubleshooter.\"", "\"Behold the Leviathan!\""]
 };
 
 /* ----------------------- GAME STATE ------------------------------- */
@@ -903,12 +970,13 @@ function startCutscene(){
 function renderCutscene(){
   const s = CUTSCENE[csIndex];
   document.getElementById('cs-emoji').textContent = s.e;
-  document.getElementById('cs-text').textContent = s.t;
+  typeText(document.getElementById('cs-text'), s.t);     // typewriter reveal
   document.getElementById('cs-next').textContent = (csIndex === CUTSCENE.length-1) ? 'Begin' : 'Next';
   document.getElementById('cs-dots').innerHTML =
     CUTSCENE.map((_,i)=>`<span class="dot${i===csIndex?' on':''}"></span>`).join('');
 }
 function cutsceneNext(){
+  if(!twDone){ typeFinish(); return; }                   // first click: finish the line
   if(csIndex < CUTSCENE.length-1){ csIndex++; renderCutscene(); }
   else enterWorld(true);
 }
@@ -1047,6 +1115,7 @@ function move(dy, dx){
   pl.classList.add('walking');
   clearTimeout(walkTimer);
   walkTimer = setTimeout(()=> pl.classList.remove('walking'), 230);
+  kickDust(pl);
   SFX.step();
   renderOverworld(false);   // animate the tween
   checkDistrict();          // announce a district the first time you enter it
@@ -1084,10 +1153,11 @@ function openDialogue(ch){
   mode = 'dialogue';                       // freezes overworld movement
   const d = NPC_LINES[ch];
   document.getElementById('d-face').textContent = d.face;
-  document.getElementById('d-say').textContent = d.say;
   document.getElementById('dialogue').classList.add('active');
+  typeText(document.getElementById('d-say'), d.say);     // typewriter reveal
 }
 function closeDialogue(){
+  if(!twDone){ typeFinish(); return; }    // first tap finishes the line
   document.getElementById('dialogue').classList.remove('active');
   mode = 'overworld';
 }
@@ -1211,6 +1281,9 @@ function playerAction(kind){
 }
 
 function enemyTurn(){
+  // Cosmetic flavor bark (does not affect the fight).
+  const barks = TAUNTS[enc.ch];
+  if(barks && Math.random() < 0.30) pushLog(`${enc.name}: ${barks[(Math.random()*barks.length)|0]}`, 'sys');
   // base = max(1, enemyATK - heroDEF); ±18%; 22% heavy x1.4; 10% crit x1.5;
   // if hero braced this round, halve afterward; min 1.
   const base = Math.max(1, enc.atk - hero.def);
