@@ -877,18 +877,18 @@ function checkDistrict(){
 
 /* enemy definitions keyed by the tile char that spawns them */
 const ENEMIES = {
-  'L':{name:"Syndicate Lookout", face:"🔦", hp:30, atk:8,  def:2, xp:18, kind:'patrol',
-       intro:"A syndicate lookout swings his beam your way — \"You ain't on the list.\""},
-  'H':{name:"Scrap Hound",       face:"⚙️", hp:26, atk:7,  def:1, xp:16, kind:'patrol',
-       intro:"A clockwork scrap hound clatters out of the weeds, gears snarling."},
-  '1':{name:"Knuckles Moreau",   face:"🥊", hp:38, atk:9,  def:2, xp:28, kind:'story', opens:'a',
-       intro:"Knuckles Moreau cracks his oversized fists. \"Baron says you're done, pal.\""},
-  '2':{name:"Rust-Bucket Loader",face:"🤖", hp:58, atk:12, def:5, xp:44, kind:'story', opens:'b',
-       intro:"A malfunctioning cargo automaton lurches alive, hydraulics shrieking."},
-  '3':{name:"Capt. Dredge Voss", face:"⚓", hp:74, atk:15, def:6, xp:60, kind:'story', opens:'c',
-       intro:"Capt. Dredge Voss racks a harpoon gun. \"This is my waterfront, landlubber.\""},
+  'L':{name:"“Beacon” Linh Tran", face:"🔦", hp:30, atk:8,  def:2, xp:18, kind:'patrol',
+       intro:"“Beacon” Linh Tran swings a signal-lamp down from the catwalks. \"I see you — and now everyone does.\""},
+  'H':{name:"Rivet Cur",         face:"⚙️", hp:26, atk:7,  def:1, xp:16, kind:'patrol',
+       intro:"A propeller-finned scrap mutt, barnacles on its flanks, clatters out of the weeds snarling."},
+  '1':{name:"“Salt-Knuckle” Inez Vega", face:"🥊", hp:38, atk:9,  def:2, xp:28, kind:'story', opens:'a',
+       intro:"Inez Vega rolls her shoulders, brass cleat-knuckles glinting. \"Wrong dock, hermano.\""},
+  '2':{name:"The Dredgeman",     face:"🤿", hp:58, atk:12, def:5, xp:44, kind:'story', opens:'b',
+       intro:"A hulking salvage diver in a riveted brass suit lurches alive, barnacles cracking, hose hissing."},
+  '3':{name:"Capt. Marisol “Riptide” Delacroix", face:"⚓", hp:74, atk:15, def:6, xp:60, kind:'story', opens:'c',
+       intro:"Capt. Marisol Delacroix levels a harpoon, calm as still water. \"My waters. My rules.\""},
   '4':{name:"Baron Castellane",  face:"🦾", hp:130,atk:19, def:8, xp:100,kind:'boss',
-       intro:"The Leviathan rises — Baron Castellane in his walking mech. \"Witness industry!\""}
+       intro:"Anchor-chains scream as the Baron's dredged diving-bell dreadnought rises, dripping. \"Behold my leviathan!\""}
 };
 const NPC_LINES = {
   'N':{face:"📰", say:"EXTRA! EXTRA! Castellane's dirigibles choke the skyline — and the mayor calls it 'progress'! Read all about it, mister!"},
@@ -898,12 +898,12 @@ const NPC_LINES = {
 
 /* purely cosmetic enemy barks, occasionally shown on the enemy's turn */
 const TAUNTS = {
-  'L':["\"Stay where you are!\"", "\"Boss'll pay extra for you.\""],
-  'H':["*grinding snarl*", "*gears shriek*"],
-  '1':["\"That all ya got?\"", "\"C'mere, wise guy!\""],
-  '2':["WARNING: INTRUDER.", "*hydraulics hiss*"],
-  '3':["\"Walk the plank, landlubber!\"", "\"My waterfront!\""],
-  '4':["\"Witness industry!\"", "\"You're scrap, troubleshooter.\"", "\"Behold the Leviathan!\""]
+  'L':["\"I see you — and so does the whole syndicate now.\"", "\"Three flashes means trouble. That's you.\"", "\"You're not getting past my light.\""],
+  'H':["(a grinding, propeller snarl)", "(barnacle-crusted jaws clamp shut)", "(steam vents from its riveted spine)"],
+  '1':["\"You swing like the tide's against you.\"", "\"Cleat to the jaw, hermano — that's the harbor toll.\"", "\"Stay down, this ain't your dock.\""],
+  '2':["(hose hisses) \"…pressure… building…\"", "(a slow, echoing clang)", "\"…down here… no one hears…\""],
+  '3':["\"My waters. My rules. My tide pulls you under.\"", "\"Every ship in this harbor answers to me — you will too.\"", "\"Drowning is just the sea collecting its debt.\""],
+  '4':["\"I raised this leviathan from the harbor floor — and it does not tire.\"", "\"West Palm Beach is mine, down to the last rivet.\"", "\"You are a wrench. I am the machine.\""]
 };
 
 /* ----------------------- GAME STATE ------------------------------- */
