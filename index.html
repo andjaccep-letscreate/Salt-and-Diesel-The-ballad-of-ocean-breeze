@@ -715,36 +715,36 @@
    Patrols:  L lookout(🔦)  H scrap hound(⚙️)
 -------------------------------------------------------------------- */
 const ORIGINAL_MAP = [
-  "BBBBBBBBBBBBBBBBBBBBBBWW",
-  "B........BBBBB,,,,,,,BWW",
-  "B.BB..BB.B.4.B,,,,,,,BWW",
-  "B.BB..BB.B...B,,,,,,,BWW",
-  "B........BBcBB....T..BWW",
-  "B....................BWW",
-  "B.BB..........BB.....BWW",
-  "B.BB......B...BB.....BWW",
-  "B........B1B.........BWW",
-  "B.............L......BWW",
-  "B....................BWW",
-  "BBBBBB..BB......BBBBBBWW",
-  "B....B..BB.N....B...==WW",
-  "B....B....PPP...B...==WW",
-  "B..2.a....P.P...b...=3WW",
-  "B....B....PPP...B...==WW",
-  "B....B.......BB.B...==WW",
-  "BBBBBB.......BB.B...==WW",
-  "B...............BBBBBBWW",
-  "B....T...............BWW",
-  "B,,,,,,,,,...,,,,,,,,BWW",
-  "B,,,,,,,,,..T,,,,,,,,BWW",
-  "B,,,,,,,,,...,,D,,,,,BWW",
-  "B,,,,,,,,H...,,,,,,,,BWW",
-  "B,,,,,,R,,...,,,,,,,,BWW",
-  "B,,k,,,,,,...,,,,,,,,BWW",
-  "B,,,,,,,,,...,,,,,u,,BWW",
-  "Bo,,,,,,,,...,,,,,,,,BWW",
-  "B....................BWW",
-  "BBBBBBBBBBBBBBBBBBBBBBWW",
+  ".......F......WWWW......",
+  ".......F======WWWW......",
+  ".T.....F=D==T=WWWWT....T",
+  ".......F====3=WWWW......",
+  ".......F=k====WWWW.BB...",
+  ".......F======WWWW......",
+  ".......FFFFbFFWWWW......",
+  "FFFF..........WWWW...B..",
+  ",,,F..........WWWW..4...",
+  ",,,F.....BB...WWWW......",
+  ",L,F..........WWWW......",
+  ",,,F..........WWWW......",
+  ",,,F.....R.BB.WWWW...B..",
+  ",,,F..........WWWW......",
+  ",2,a..........WWWW......",
+  ",,,F......N...===c......",
+  ",,,F....1.....WWWW..T...",
+  ",,,F.BB.......WWWW......",
+  ",u,F.....BB...WWWW......",
+  ",,,F..........WWWW......",
+  ",,,F..PP......WWWW...H..",
+  "FFFF..........WWWW......",
+  "..............WWWW.B....",
+  "..............WWWW......",
+  "..............WWWW..o...",
+  "..............WWWW......",
+  "..............WWWW......",
+  "..............WWWW......",
+  ".T..........T.WWWW......",
+  "..............WWWW......",
 ];
 const MAP_H = ORIGINAL_MAP.length;       // 30
 const MAP_W = ORIGINAL_MAP[0].length;    // 24
@@ -760,7 +760,7 @@ const GROUND = {
 };
 /* emoji marker per tile (floors have none) */
 const EMOJI = {
-  'B':'🏢','W':'🌊','T':'🌴','F':'🚧',
+  'B':'🏢','W':'🌊','T':'🌴','F':'🧱',
   '1':'🥊','2':'🛤️','3':'⚓','4':'🗼',
   'a':'🚧','b':'🚧','c':'🚧',
   'N':'📰','D':'👷','R':'🔮',
@@ -1005,9 +1005,10 @@ function shakeScreen(){ flash('battle','shaking', 360); }
 
 /* district arrival banners — announced once each, the first time you enter */
 const DISTRICTS = [
-  { name:'rail', x0:1,  x1:5,  y0:11, y1:17, banner:"THE RAIL YARDS — rust, steam, and the groan of dredge-loaders." },
-  { name:'docks',x0:16, x1:21, y0:11, y1:18, banner:"THE DOCKS — dirigibles overhead, the Intracoastal slapping the planks." },
-  { name:'tower',x0:9,  x1:13, y0:1,  y1:4,  banner:"COMEAU TOWER — the Baron's spire, and something vast stirring in the water below." }
+  // trigger rectangles for the refined WPB geography
+  { name:'rail',   x0:0,  x1:2,  y0:8,  y1:20, banner:"THE RAIL YARDS — rust, steam, and the groan of dredge-loaders." },
+  { name:'docks',  x0:7,  x1:13, y0:0,  y1:5,  banner:"THE DOCKS — dirigibles overhead, the Intracoastal slapping the planks." },
+  { name:'island', x0:18, x1:23, y0:0,  y1:29, banner:"THE ISLAND SPIRE — the Baron's tower, and something vast stirring in the water below." }
 ];
 let seenDistricts = new Set();
 function showBanner(text){
