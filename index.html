@@ -301,6 +301,30 @@
     animation: sail 22s linear infinite; }
   @keyframes sail{ from{ left:-20%; } to{ left:120%; } }
 
+  /* ---- drifting dirigible silhouette over the overworld ---- */
+  #airship{ position:absolute; top:5%; left:-20%; width:38px; height:13px; z-index:5; pointer-events:none;
+    opacity:.5; background:linear-gradient(180deg,#2a2f37,#15181d); border-radius:50%/60%;
+    box-shadow:-11px 1px 0 -3px #20242b; animation: sail 40s linear infinite; }
+  #airship::after{ content:""; position:absolute; right:-3px; top:3px; width:7px; height:7px;
+    background:#20242b; clip-path:polygon(0 0,100% 50%,0 100%); }   /* tail fin */
+
+  /* ---- battle stage parallax: a slow far skyline behind combatants ---- */
+  #stage .stage-far{ position:absolute; left:-10%; right:-10%; bottom:24%; height:42%; z-index:0;
+    opacity:.35; pointer-events:none;
+    background: repeating-linear-gradient(90deg, transparent 0 10px, rgba(0,0,0,.45) 10px 15px, transparent 15px 28px);
+    animation: drift 44s ease-in-out infinite alternate; }
+
+  /* ---- optional film-noir overlay (settings toggle): scanlines + vignette + grain ---- */
+  #noir{ position:fixed; inset:0; z-index:45; pointer-events:none; display:none; }
+  #noir.on{ display:block; }
+  #noir::before{ content:""; position:absolute; inset:0;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,.12) 0 1px, transparent 1px 3px); }   /* scanlines */
+  #noir::after{ content:""; position:absolute; inset:0;
+    background: radial-gradient(transparent 58%, rgba(0,0,0,.28)); box-shadow: inset 0 0 140px rgba(0,0,0,.7); }  /* vignette */
+  #noir .grain{ position:absolute; inset:0; opacity:.06; mix-blend-mode:overlay; animation: grain .5s steps(2) infinite;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>"); }
+  @keyframes grain{ 0%{transform:translate(0,0)} 50%{transform:translate(-2%,1%)} 100%{transform:translate(1%,-1%)} }
+
   /* ---- particle sparks (hits, heals, level-ups) ---- */
   .spark{ position:absolute; left:50%; top:32%; width:6px; height:6px; border-radius:50%;
     pointer-events:none; z-index:21; animation: sparkFly .6s ease-out forwards; }
@@ -364,7 +388,8 @@
     #fog, #title .frame::before, #title .blimp, #banner.show, #battle.shaking,
     .float, .eface.enter, .eface.hit, .eface.lunge, .hpanel.hurt, .spark,
     #battle.danger::before, #flash.go, #cutscene .cs-emoji, #title h1,
-    .screen.active, .caret::after, .dust{ animation:none; }
+    .screen.active, .caret::after, .dust,
+    #airship, #stage .stage-far, #noir .grain{ animation:none; }
   }
 
   .dpad{ display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr);
@@ -486,6 +511,7 @@
   </div>
   <div class="board" id="board">
     <div id="fog"></div>
+    <div id="airship" aria-hidden="true"></div>
     <div id="grid"></div>
     <!-- Persistent hero sprite overlay (NOT rebuilt each move, so it can tween). -->
     <div id="player" class="larry" data-dir="down" aria-hidden="true">
@@ -612,6 +638,7 @@
   </div>
   <!-- side-view face-off stage: hero on the left (faces right), enemy on the right (faces left) -->
   <div id="stage" data-scene="harbor">
+    <div class="stage-far"></div>
     <div class="stage-haze"></div>
     <div class="stage-floor"></div>
     <div id="stage-hero" class="larry combatant" data-dir="right" aria-hidden="true"></div>
@@ -691,6 +718,8 @@
       <button class="toggle" id="set-sfx" onclick="toggleSfx()">ON</button></div>
     <div class="row"><span>Music</span>
       <button class="toggle" id="set-music" onclick="toggleMusic()">ON</button></div>
+    <div class="row"><span>Film-noir overlay</span>
+      <button class="toggle off" id="set-noir" onclick="toggleNoir()">OFF</button></div>
     <div class="row" style="opacity:.7;font-size:.78rem"><span>Tip: the ⚙ and 🔊 buttons are always here.</span></div>
     <button class="btn" style="width:100%;margin-top:6px" onclick="closeSettings()">Close</button>
   </div>
@@ -698,6 +727,9 @@
 
 <!-- crit / impact flash -->
 <div id="flash"></div>
+
+<!-- optional film-noir overlay (toggled in settings) -->
+<div id="noir" aria-hidden="true"><div class="grain"></div></div>
 
 <script>
 "use strict";
@@ -917,8 +949,17 @@ function openSettings(){
   document.getElementById('set-sfx').classList.toggle('off', !sfxEnabled);
   document.getElementById('set-music').textContent = musicEnabled ? 'ON' : 'OFF';
   document.getElementById('set-music').classList.toggle('off', !musicEnabled);
+  document.getElementById('set-noir').textContent = noirOn ? 'ON' : 'OFF';
+  document.getElementById('set-noir').classList.toggle('off', !noirOn);
 }
 function closeSettings(){ menuOpen = false; document.getElementById('settings').classList.remove('active'); }
+let noirOn = false;
+function toggleNoir(){
+  noirOn = !noirOn;
+  document.getElementById('noir').classList.toggle('on', noirOn);
+  const b = document.getElementById('set-noir');
+  b.textContent = noirOn ? 'ON' : 'OFF'; b.classList.toggle('off', !noirOn);
+}
 function setVolume(v){ volume = Math.max(0, Math.min(1, v/100)); initAudio(); applyVolume(); }
 function toggleSfx(){
   sfxEnabled = !sfxEnabled;
@@ -1249,31 +1290,52 @@ function cameraOrigin(){
 
 let facing = 'down';   // last direction the hero moved (drives the sprite view)
 
+/* The overworld viewport reuses a FIXED pool of VIEW_W*VIEW_H tile nodes
+   (built once). Each move only updates each tile's class / glyph / brightness
+   instead of rebuilding the grid's innerHTML — far less GC and layout churn. */
+let tilePool = null;
+function buildTilePool(){
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  tilePool = [];
+  for(let i=0; i<VIEW_W*VIEW_H; i++){
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    const span = document.createElement('span');
+    span.className = 'mk';
+    cell.appendChild(span);
+    grid.appendChild(cell);
+    tilePool.push({ cell, span });
+  }
+}
 function renderOverworld(instant){
   const {camX, camY} = cameraOrigin();
-  let html = '';
+  if(!tilePool || tilePool.length !== VIEW_W*VIEW_H) buildTilePool();
+  let i = 0;
   for(let vy=0; vy<VIEW_H; vy++){
-    for(let vx=0; vx<VIEW_W; vx++){
+    for(let vx=0; vx<VIEW_W; vx++, i++){
       const my = camY+vy, mx = camX+vx;
       const ch = map[my][mx];
       const base = (ch in GROUND) ? GROUND[ch] : ch;     // floor under markers
       const cls  = TCLASS[base] || 't-road';
       const glyph = EMOJI[ch] || '';
-      // Deterministic tiny brightness jitter on plain terrain so open areas
-      // don't read as one flat slab. Marker tiles keep full brightness.
-      let style = '', inner = '';
+      const t = tilePool[i];
+      t.cell.className = 'cell ' + cls;
       if(glyph){
-        const mkCls = INTERACTIVE.has(ch) ? ' marker' : '';   // pulse interactive tiles
-        inner = `<span class="mk${mkCls}">${glyph}</span>`;
+        t.cell.style.filter = '';
+        if(t.span.textContent !== glyph) t.span.textContent = glyph;
+        // pulse interactive markers (landmarks, pickups, NPCs, patrols)
+        t.span.className = INTERACTIVE.has(ch) ? 'mk marker' : 'mk';
       } else {
-        const v = (mx*7 + my*13) % 6;            // stable per-coordinate
-        style = ` style="filter:brightness(${(0.9 + v*0.035).toFixed(3)})"`;
+        // deterministic tiny brightness jitter so open areas aren't one flat slab
+        const v = (mx*7 + my*13) % 6;
+        t.cell.style.filter = `brightness(${(0.9 + v*0.035).toFixed(3)})`;
+        if(t.span.textContent) t.span.textContent = '';
+        t.span.className = 'mk';
       }
-      html += `<div class="cell ${cls}"${style}>${inner}</div>`;
     }
   }
-  document.getElementById('grid').innerHTML = html;   // hero is a separate overlay
-  positionPlayer(camX, camY, instant);
+  positionPlayer(camX, camY, instant);   // hero is a separate overlay
   updateHUD();
 }
 
@@ -1294,9 +1356,26 @@ function positionPlayer(camX, camY, instant){
   if(instant){ void pl.offsetWidth; pl.style.transition = ''; }  // restore tween
 }
 
-/* Keep the sprite aligned if the viewport is resized/rotated. */
+/* Keep the sprite aligned if the viewport is resized/rotated (debounced). */
+let resizeTimer = null;
 window.addEventListener('resize', ()=>{
-  if(mode==='overworld'){ const {camX,camY}=cameraOrigin(); positionPlayer(camX,camY,true); }
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(()=>{
+    if(mode==='overworld'){ const {camX,camY}=cameraOrigin(); positionPlayer(camX,camY,true); }
+  }, 120);
+});
+
+/* Pause the Web Audio scheduler (and suspend the context) while the tab is
+   hidden; resume on return. CSS animations are auto-throttled by the browser,
+   and there is no JS rAF loop to gate. */
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden){
+    stopMusic();
+    if(audioCtx && audioCtx.suspend) audioCtx.suspend();
+  } else {
+    if(audioCtx && audioCtx.resume) audioCtx.resume();
+    if(musicEnabled) startMusic();
+  }
 });
 
 function updateHUD(){
