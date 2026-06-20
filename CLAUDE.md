@@ -1,54 +1,79 @@
-# CLAUDE.md
+# CLAUDE.md — Salt & Diesel: The Ballad of Ocean Breeze
 
-Guidance for Claude Code working in this repository.
+> Claude reads this file at the start of every session. Keep it tight and
+> high-signal: everything in here is re-sent on every turn, so a bloated
+> CLAUDE.md quietly burns the usage budget.
 
-## Project
+---
 
-**Salt & Diesel — The Ballad of Ocean Breeze** is a single-file, browser-playable
-turn-based RPG. Everything ships in `index.html` (HTML + CSS + JS, no build step, no
-dependencies, no external assets). Open it in a browser to play.
+## About this project
+Single-file, browser-playable turn-based RPG. All code — HTML + CSS + vanilla
+JS — lives in `index.html`. No build step, no dependencies, no external assets.
+Run it by opening `index.html` in a browser. There is no automated test suite;
+verify changes by playing the game in the browser.
 
-- `index.html` — the entire game (markup, styles, game logic).
-- `README.md` — player-facing overview and controls.
-- `PROJECT_BRIEF.md` — collaboration/context doc.
-- `.github/workflows/` — GitHub Pages auto-deploy.
+---
 
-When editing the game, keep it self-contained: no new build tooling, package
-managers, or runtime dependencies unless explicitly requested.
+## How I want you to work
 
-## Budget / token discipline
+### Plan before doing
+- For anything beyond a trivial one-file change, propose a short numbered plan
+  and wait for my OK before editing. (Plan mode: Shift+Tab.)
+- I'm new — in the plan, flag which steps are risky or hard to undo.
 
-These rules keep each session inside the rolling usage window. The window is
-token-based, and every turn re-sends the whole accumulated context — so the goal
-is to keep context lean and avoid expensive operations unless they're needed.
+### Evidence before claims
+- Never say "done," "fixed," or "tests pass" without running the real command
+  and showing the output. If you didn't run it, say so plainly.
+- Use the smallest test that proves the change works.
 
-### Reading
-- Read only the files needed for the current task. Don't scan whole directories.
-- Don't re-read a file that's already in context.
-- For large files (e.g. `index.html`), read the relevant section, not the whole thing.
+### Keep context lean (this protects my usage limit)
+- Read only the files needed for the task. Don't re-read files already in context.
+- `index.html` is large — read the relevant section, not the whole file.
+- For "find all the X" / exploration / research, use a subagent so only the
+  distilled findings come back — don't dump every file into our main thread.
+- Batch related edits into one turn instead of many small round-trips.
+- When a chunk of work is done, tell me to run `/clear` before we switch tasks.
+- Before token-heavy operations (full-repo scans, big refactors, long or
+  repeated test loops), warn me it's expensive and confirm before running.
+- Don't load large MCP/tool sets unless needed — heavy tool definitions eat the
+  context budget before any real work starts.
 
-### Working
-- Batch related edits into a single turn instead of many small round-trips.
-- After finishing one logical chunk of work, tell the user to run `/clear` before
-  starting an unrelated task, so context doesn't pile up across jobs.
-- When context is getting large, write a short "resume note" (current state +
-  next steps) that the user can paste into a fresh session to continue cheaply.
+### Model use
+- Reserve the strongest model for planning and tricky reasoning; use a lighter
+  model for routine/mechanical work. Tell me when switching saves budget (`/model`).
 
-### Testing
-- Run targeted tests to confirm a fix. Only run the full suite at milestones,
-  not after every change.
-- Don't loop a test many times to "be sure" unless explicitly asked.
+### Teach me as you go (I'm a beginner)
+- The first time you use a new command, tool, or concept, add a one-line
+  plain-English note on what it does and why. One sentence — no lectures.
+- Define jargon the first time it appears.
+- Warn me before anything risky, not after.
 
-### Expensive operations — warn first
-Before any of these, tell the user it's token-heavy and confirm before running:
-- Full-repo scans or "read everything" passes
-- Large refactors touching many files
-- Long or repeated test loops
-- Re-summarizing large diffs repeatedly
+---
 
-### Quick commands (for the human)
-- `/clear`  — wipe context between unrelated tasks (biggest single saver)
-- `/cost`   — check what the current session has spent
-- `/model`  — drop to a lighter model for routine work
-- Compact / summarize at milestones to shrink carried context
-- For heavy agentic loops, run them under an API key (no rolling cap, pay per token)
+## Learning log (important to me)
+Keep a running log of our work at `docs/session-log.md` — a separate file, NOT
+inside CLAUDE.md (so it never bloats the per-session context).
+
+At the end of each work session, or right before I `/clear`, APPEND one entry:
+
+```
+## [YYYY-MM-DD] — <short title>
+- Goal:    what we set out to do
+- Did:     what actually changed (files touched, commands run)
+- Learned: new concepts/commands, one plain-English line each
+- Gotchas: anything that surprised us or broke, and the fix
+- Next:    where to pick up next time
+```
+
+Rules for the log:
+- Append only. Never rewrite or delete old entries.
+- Beginner-friendly language; briefly explain the "why."
+- Write it to the file, not into chat, to save tokens.
+- If I say "log this," do it right away.
+
+---
+
+## Guardrails (don't do these without explicit say-so)
+- Don't deploy, push to a main/master branch, or run destructive commands.
+- Don't refactor beyond what I asked.
+- Don't commit secrets/API keys. Flag them if you spot any.
