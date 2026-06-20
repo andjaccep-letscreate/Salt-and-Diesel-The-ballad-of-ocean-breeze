@@ -135,7 +135,7 @@
   #player.walking .body-bob{ animation: bobBody .30s ease-in-out infinite; }
   /* gentle idle breathing while standing still */
   @keyframes idle{ 0%,100%{ transform: translateY(0); } 50%{ transform: translateY(-0.6px); } }
-  #player:not(.walking) .body-bob{ animation: idle 2.8s ease-in-out infinite; }
+  .larry:not(.walking) .body-bob{ animation: idle 2.8s ease-in-out infinite; }
   /* faint electric arc along the bolt blade (always subtly alive) */
   .bolt-arc{ opacity:.0; }
   @keyframes arcIdle{ 0%,92%,100%{ opacity:.15; } 96%{ opacity:.7; } }
@@ -146,9 +146,50 @@
   @keyframes markerPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.14); } }
   .cell .mk.marker{ animation: markerPulse 1.8s ease-in-out infinite; }
 
-  /* ---- battle stage sprites (Larry + enemy as inline SVG) ---- */
-  #hero-sprite{ width:46px; height:60px; flex:0 0 auto; }
-  .eface svg{ width:3rem; height:3rem; display:block; }
+  /* ---- BATTLE STAGE: side-view face-off (hero left faces right, enemy right faces left) ---- */
+  #stage{ position:relative; width:100%; max-width:480px; height:min(42vw,168px);
+    border:2px solid var(--brass-d); border-radius:10px; overflow:hidden; background:#0e1116; }
+  #stage::before{ content:""; position:absolute; inset:0; z-index:0; }       /* per-scene backdrop */
+  #stage::after{ content:""; position:absolute; inset:0; z-index:3; pointer-events:none;
+    box-shadow: inset 0 0 50px rgba(0,0,0,.6); }                              /* vignette */
+  #stage .stage-haze{ position:absolute; inset:-25%; z-index:1; pointer-events:none; opacity:.10;
+    background: radial-gradient(55% 40% at 30% 30%, #cfe4f0 0%, transparent 60%),
+                radial-gradient(45% 35% at 75% 65%, #b9c9d6 0%, transparent 60%);
+    animation: drift 26s ease-in-out infinite alternate; }
+  #stage .stage-floor{ position:absolute; left:0; right:0; bottom:0; height:24%; z-index:1;
+    background:linear-gradient(180deg,#1b1e24,#0a0c10); border-top:2px solid rgba(217,164,65,.22); }
+  /* combatants are absolutely placed and grounded on the floor line */
+  #stage .combatant{ position:absolute; bottom:13%; z-index:2; }
+  #stage-hero{ left:7%;  height:64%; aspect-ratio:32/48; }
+  #stage-enemy{ right:7%; height:58%; aspect-ratio:1/1; }
+  #stage-hero .sprite{ width:100%; height:100%; }
+  #stage-enemy svg{ width:100%; height:100%; display:block; transform: scaleX(-1); } /* mirror to face left */
+
+  /* per-district backdrops (pure CSS, no images) */
+  #stage[data-scene="alley"]::before{ background:
+    radial-gradient(55% 38% at 28% 22%, rgba(229,138,166,.20), transparent 60%),
+    radial-gradient(40% 30% at 74% 24%, rgba(217,164,65,.20), transparent 60%),
+    radial-gradient(20% 12% at 58% 84%, #0c0e12 0 70%, transparent 72%),
+    repeating-linear-gradient(0deg,#2a2120 0 7px,#241b1a 7px 8px),
+    repeating-linear-gradient(90deg,transparent 0 13px,rgba(0,0,0,.28) 13px 14px),
+    linear-gradient(180deg,#241b1a,#140f0e); }
+  #stage[data-scene="rail"]::before{ background:
+    radial-gradient(50% 36% at 50% 8%, rgba(190,190,200,.12), transparent 60%),
+    repeating-linear-gradient(90deg, rgba(150,110,70,.22) 0 5px, transparent 5px 24px),
+    repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0 3px, transparent 3px 18px),
+    linear-gradient(180deg,#3a2c22,#181210); }
+  #stage[data-scene="docks"]::before{ background:
+    radial-gradient(26% 16% at 70% 24%, #2b3640 0 70%, transparent 73%),
+    repeating-linear-gradient(90deg, transparent 0 26px, rgba(0,0,0,.30) 26px 30px),
+    linear-gradient(180deg,#0f2233 0 62%, #123247 62% 100%); }
+  #stage[data-scene="tower"]::before{ background:
+    repeating-linear-gradient(90deg, rgba(217,164,65,.16) 0 3px, transparent 3px 17px),
+    radial-gradient(60% 40% at 50% 0%, rgba(217,164,65,.12), transparent 60%),
+    linear-gradient(180deg,#241d2e,#120f18); }
+  #stage[data-scene="harbor"]::before{ background:
+    radial-gradient(60% 50% at 50% 28%, rgba(150,170,185,.16), transparent 65%),
+    linear-gradient(180deg,#1a2730,#0c131a); }
+
   /* hero attack: a quick lunge while the bolt-arm slashes in an arc */
   @keyframes heroLunge   { 0%,100%{ transform:translateX(0); } 35%{ transform:translateX(7px); } }
   @keyframes heroLungeBig{ 0%,100%{ transform:translateX(0); } 30%{ transform:translateX(11px); } }
@@ -162,12 +203,43 @@
   .larry.atk-od .bolt-arm{ transform-origin: bottom center; animation: bladeSlashBig .42s ease; }
   .larry.atk-od .bolt-arc{ animation: arcZap .42s ease; opacity:1; }
 
+  /* per-creature enemy attacks (all move LEFT toward the hero), ≤0.46s so the
+     ~0.48s input re-enable always covers the full animation */
+  @keyframes atkJab  { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-10px)} 40%{transform:translateX(-2px)} 60%{transform:translateX(-12px)} 80%{transform:translateX(-3px)} } /* spider: quick jabs */
+  @keyframes atkRam  { 0%,100%{transform:translateX(0)} 45%{transform:translateX(-15px)} }                                   /* turtle: slow heavy ram */
+  @keyframes atkDash { 0%,100%{transform:translateX(0) scale(1)} 30%{transform:translateX(-22px) scale(1.05)} }             /* shark: fast charge */
+  @keyframes atkChomp{ 0%,100%{transform:translateX(0) rotate(0)} 30%{transform:translateX(-14px) rotate(-7deg)} 55%{transform:translateX(-9px) rotate(5deg)} } /* croc: bite */
+  @keyframes atkPeck { 0%,100%{transform:translate(0,0)} 30%{transform:translate(-8px,4px)} 55%{transform:translate(-4px,0)} } /* spoonbill: lamp peck */
+  @keyframes atkSnap { 0%,100%{transform:translateX(0) scaleY(1)} 25%{transform:translateX(-9px) scaleY(.9)} 45%{transform:translateX(-4px) scaleY(1)} 65%{transform:translateX(-9px) scaleY(.9)} } /* crab: pincer snap */
+  #stage-enemy.eatk-jab  { animation: atkJab  .42s ease; }
+  #stage-enemy.eatk-ram  { animation: atkRam  .46s ease; }
+  #stage-enemy.eatk-dash { animation: atkDash .40s ease; }
+  #stage-enemy.eatk-chomp{ animation: atkChomp .44s ease; }
+  #stage-enemy.eatk-peck { animation: atkPeck .40s ease; }
+  #stage-enemy.eatk-snap { animation: atkSnap .44s ease; }
+  /* knockback / flinch when struck */
+  @keyframes knockR { 0%,100%{ transform:translateX(0);} 30%{ transform:translateX(9px);} 60%{ transform:translateX(3px);} }
+  @keyframes flinchL{ 0%,100%{ transform:translateX(0);} 30%{ transform:translateX(-8px);} 55%{ transform:translateX(2px);} 80%{ transform:translateX(-3px);} }
+  #stage-enemy.knock{ animation: knockR .3s ease; }
+  #stage-hero.flinch{ animation: flinchL .3s ease; }
+  /* opacity-only hit blink — kept under reduced-motion as the fallback "flash" */
+  @keyframes struck{ 0%,100%{ opacity:1; } 40%{ opacity:.4; } }
+  #stage-hero.struck, #stage-enemy.struck{ animation: struck .2s ease; }
+  /* brace guard flash on the hero */
+  @keyframes guardFlash{ 0%,100%{ box-shadow:0 0 0 0 rgba(98,195,238,0); }
+    35%{ box-shadow:0 0 0 4px rgba(98,195,238,.7), 0 0 14px rgba(98,195,238,.6); } }
+  #stage-hero.guard{ border-radius:8px; animation: guardFlash .4s ease; }
+
   @media (prefers-reduced-motion: reduce){
     #player{ transition:none; }
     #player.walking .leg-a, #player.walking .leg-b, #player.walking .body-bob,
-    #player:not(.walking) .body-bob, .cell .mk.marker, .larry .bolt-arc,
+    .larry:not(.walking) .body-bob, .cell .mk.marker, .larry .bolt-arc,
     .larry.atk, .larry.atk .bolt-arm, .larry.atk-od, .larry.atk-od .bolt-arm,
-    .larry.atk .bolt-arc, .larry.atk-od .bolt-arc{ animation:none; }
+    .larry.atk .bolt-arc, .larry.atk-od .bolt-arc,
+    #stage .stage-haze, #stage-enemy.knock, #stage-hero.flinch,
+    #stage-enemy.eatk-jab, #stage-enemy.eatk-ram, #stage-enemy.eatk-dash,
+    #stage-enemy.eatk-chomp, #stage-enemy.eatk-peck, #stage-enemy.eatk-snap{ animation:none; }
+    /* under reduced motion, .struck (opacity blink) and .guard remain as the hit feedback */
   }
 
   /* ---- battle feedback animations ---- */
@@ -320,14 +392,16 @@
 
   /* ============================ BATTLE ============================ */
   #battle{ gap:10px; }
-  .epanel,.hpanel{ width:100%; max-width:480px; background:var(--panel);
+  .epanel,.hpanel,.estatus{ width:100%; max-width:480px; background:var(--panel);
     border:2px solid var(--brass-d); border-radius:10px; padding:12px; }
   .epanel{ display:flex; gap:12px; align-items:center; }
+  .estatus{ padding:8px 12px; }                 /* slim enemy name + HP bar */
   .eface{ font-size:3rem; }
   .epanel .info{ flex:1; }
   .ename{ font-size:1.05rem; color:var(--brass); }
+  #stage, .log, .hpanel, .estatus, .actions{ margin-bottom:0; }
   .log{
-    width:100%; max-width:480px; height:140px; background:#05070a;
+    width:100%; max-width:480px; height:104px; background:#05070a;
     border:2px solid var(--rivet); border-radius:8px; padding:8px 10px;
     font-family:"Courier New",monospace; font-size:.8rem; line-height:1.45; color:#9fe6c4;
     overflow:hidden; display:flex; flex-direction:column; justify-content:flex-end;
@@ -531,17 +605,21 @@
 
 <!-- ============================ BATTLE ============================ -->
 <div id="battle" class="screen">
-  <div class="epanel" id="epanel">
-    <div class="eface" id="e-face">🥊</div>
-    <div class="info">
-      <div class="ename deco" id="e-name">ENEMY</div>
-      <div class="gauge hp" style="margin-top:6px"><div class="fill" id="e-hp-fill"></div><div class="lbl" id="e-hp-lbl">HP</div></div>
-    </div>
+  <!-- slim enemy status bar (name + HP gauge); the enemy itself stands on the stage -->
+  <div class="estatus" id="epanel">
+    <div class="ename deco" id="e-name">ENEMY</div>
+    <div class="gauge hp" style="margin-top:4px"><div class="fill" id="e-hp-fill"></div><div class="lbl" id="e-hp-lbl">HP</div></div>
+  </div>
+  <!-- side-view face-off stage: hero on the left (faces right), enemy on the right (faces left) -->
+  <div id="stage" data-scene="harbor">
+    <div class="stage-haze"></div>
+    <div class="stage-floor"></div>
+    <div id="stage-hero" class="larry combatant" data-dir="right" aria-hidden="true"></div>
+    <div id="stage-enemy" class="combatant" aria-hidden="true"></div>
   </div>
   <div class="log" id="log"></div>
   <div class="hpanel" id="hpanel">
     <div class="top">
-      <div id="hero-sprite" class="larry" data-dir="right" aria-hidden="true"></div>
       <div style="flex:1">
         <span class="deco accent">SPARKPLUG</span>
         <span class="stat" style="font-size:.72rem"> &middot; LV <b id="b-lv">1</b> &middot; 🧰 <b id="b-kits">3</b></span>
@@ -883,15 +961,35 @@ function kickDust(pl){
   }
 }
 
-/* Play Larry's bolt-sword swing in battle. 'strike' = quick slash, 'overdrive'
+/* Play Larry's bolt-sword swing on the stage. 'strike' = quick slash, 'overdrive'
    = bigger two-handed arc. Input is already locked (busy) while this plays. */
 function attackAnim(kind){
-  const h = document.getElementById('hero-sprite');
+  const h = document.getElementById('stage-hero');
   if(!h) return;
   const cls = (kind === 'overdrive') ? 'atk-od' : 'atk';
   h.classList.remove('atk','atk-od'); void h.offsetWidth;   // restart the animation
   h.classList.add(cls);
   setTimeout(()=> h.classList.remove(cls), kind==='overdrive' ? 440 : 370);
+}
+/* Each creature has its own attack motion toward Larry (shark dash, crab snap,
+   spider jab, croc bite, turtle ram, spoonbill peck). */
+const ENEMY_ATK = { '1':'jab', '2':'ram', '3':'dash', '4':'chomp', 'L':'peck', 'H':'snap' };
+function enemyAttackAnim(){
+  const e = document.getElementById('stage-enemy');
+  if(!e) return;
+  const cls = 'eatk-' + (ENEMY_ATK[enc.ch] || 'dash');
+  ['jab','ram','dash','chomp','peck','snap'].forEach(n => e.classList.remove('eatk-'+n));
+  void e.offsetWidth;                       // restart the animation
+  e.classList.add(cls);
+  setTimeout(()=> e.classList.remove(cls), 480);
+}
+/* one-shot helper: add a class, auto-remove after ms (for knock/flinch/struck/guard) */
+function pulse(id, cls, ms){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.classList.remove(cls); void el.offsetWidth;
+  el.classList.add(cls);
+  setTimeout(()=> el.classList.remove(cls), ms);
 }
 
 /* floating combat number over the enemy ('epanel') or hero ('hpanel') panel */
@@ -1294,23 +1392,27 @@ function startBattle(ch, y, x){
   hero.braced = false;
   mode = 'battle'; busy = false;
   logLines = [];
-  // Enemy: inline SVG sprite (fallback to the emoji if one is missing).
-  const eFace = document.getElementById('e-face');
-  if(ENEMY_SVG[ch]) eFace.innerHTML = ENEMY_SVG[ch]; else eFace.textContent = enc.face;
-  // Hero: clone Larry's sprite into the battle stage, facing the enemy (right).
-  const heroSprite = document.getElementById('hero-sprite');
+  // Stage backdrop per district (patrol fights use the generic harbor fog).
+  document.getElementById('stage').setAttribute('data-scene', SCENE_OF[ch] || 'harbor');
+  // Enemy: inline SVG on the right of the stage (CSS mirrors it to face left).
+  const stageEnemy = document.getElementById('stage-enemy');
+  if(stageEnemy) stageEnemy.innerHTML = ENEMY_SVG[ch] || ('<div style="font-size:2.4rem">'+enc.face+'</div>');
+  // Hero: clone Larry's sprite onto the left of the stage, side-view facing right.
+  const stageHero = document.getElementById('stage-hero');
   const plEl = document.getElementById('player');
-  if(heroSprite && plEl) heroSprite.innerHTML = plEl.innerHTML;
+  if(stageHero && plEl){ stageHero.innerHTML = plEl.innerHTML; stageHero.setAttribute('data-dir','right'); }
   document.getElementById('e-name').textContent = enc.name;
   pushLog(def.intro, 'sys');
   showScreen('battle');
   renderBattle();
-  flash('e-face', 'enter', 420);   // enemy scales into view
-  if(def.kind==='boss'){           // dramatic reveal for the Baron
+  pulse('stage-enemy', 'struck', 260);   // enemy "appears" blink
+  if(def.kind==='boss'){                  // dramatic reveal for the Baron
     flashScreen(); shakeScreen();
     pushLog('⚠ THE LEVIATHAN AWAKENS ⚠', 'crit');
   }
 }
+/* which backdrop each fight uses */
+const SCENE_OF = { '1':'alley', '2':'rail', '3':'docks', '4':'tower', 'L':'harbor', 'H':'harbor' };
 
 function pushLog(text, cls){
   logLines.push({text, cls:cls||''});
@@ -1359,10 +1461,10 @@ function playerAction(kind){
     const dmg = rollDamage(base, 0.15, 1.6);
     enc.hp = Math.max(0, enc.hp - dmg);
     pushLog(`Wrench strike for ${dmg}${lastCrit?' — CRITICAL!':''}.`, lastCrit?'crit':'');
-    flash('e-face', 'hit', 320);                         // enemy recoils
-    floatDamage('epanel', dmg, lastCrit?'crit':'dmg');
-    burst('epanel', lastCrit?12:6, lastCrit?'crit':'hit');
     attackAnim('strike');                                 // Larry's bolt-sword slash
+    pulse('stage-enemy','knock',300); pulse('stage-enemy','struck',220);   // recoil + blink
+    floatDamage('stage-enemy', dmg, lastCrit?'crit':'dmg');
+    burst('stage-enemy', lastCrit?12:6, lastCrit?'crit':'hit');
     SFX.strike(); if(lastCrit){ shakeScreen(); flashScreen(); }
   }
   else if(kind==='overdrive'){
@@ -1373,10 +1475,10 @@ function playerAction(kind){
     const dmg = rollDamage(base, 0.25, 1.7);
     enc.hp = Math.max(0, enc.hp - dmg);
     pushLog(`OVERDRIVE blast for ${dmg}${lastCrit?' — CRITICAL!':''}!`, lastCrit?'crit':'');
-    flash('e-face', 'hit', 320);                         // enemy recoils
-    floatDamage('epanel', dmg, lastCrit?'crit':'dmg');
-    burst('epanel', lastCrit?16:10, lastCrit?'crit':'hit');
     attackAnim('overdrive');                              // bigger two-handed bolt arc
+    pulse('stage-enemy','knock',300); pulse('stage-enemy','struck',220);
+    floatDamage('stage-enemy', dmg, lastCrit?'crit':'dmg');
+    burst('stage-enemy', lastCrit?16:10, lastCrit?'crit':'hit');
     SFX.overdrive(); shakeScreen(); if(lastCrit) flashScreen();
   }
   else if(kind==='brace'){
@@ -1391,8 +1493,8 @@ function playerAction(kind){
     const heal = Math.floor(hero.maxHp * 0.4);          // heal 40% max HP
     hero.hp = Math.min(hero.maxHp, hero.hp + heal);
     pushLog(`Field repair: +${heal} HP. (${hero.kits} kit${hero.kits===1?'':'s'} left)`, 'sys');
-    floatDamage('hpanel', '+'+heal, 'heal');
-    burst('hpanel', 8, 'heal');
+    floatDamage('stage-hero', '+'+heal, 'heal');
+    burst('stage-hero', 8, 'heal');
     SFX.repair();
   }
   else { acted = false; }
@@ -1414,6 +1516,7 @@ function enemyTurn(){
   if(barks && Math.random() < 0.30) pushLog(`${enc.name}: ${barks[(Math.random()*barks.length)|0]}`, 'sys');
   // base = max(1, enemyATK - heroDEF); ±18%; 22% heavy x1.4; 10% crit x1.5;
   // if hero braced this round, halve afterward; min 1.
+  const wasBraced = hero.braced;                        // for the guard visual
   const base = Math.max(1, enc.atk - hero.def);
   let d = base * (1 + (Math.random()*0.36 - 0.18));     // variance
   const heavy = Math.random() < 0.22;
@@ -1429,10 +1532,16 @@ function enemyTurn(){
   if(crit)  tag += ' CRIT';
   if(hero.braced) tag += ' (braced)';
   pushLog(`${enc.name} hits you for ${dmg}.${tag}`, 'hurt');
-  flash('e-face', 'lunge', 350);                         // enemy lunges in
+  enemyAttackAnim();                                     // enemy's own attack motion toward Larry
   flash('hpanel', 'hurt', 460);                          // hero panel flashes red
-  floatDamage('hpanel', dmg, (heavy||crit)?'crit':'dmg');
-  burst('hpanel', (heavy||crit)?10:6, 'hurt');
+  if(wasBraced){                                         // guarded: guard flash + light recoil
+    pulse('stage-hero','guard',420);
+    burst('stage-hero', 5, 'hit');
+  } else {                                               // normal: flinch + spark
+    pulse('stage-hero','flinch',300); pulse('stage-hero','struck',220);
+    burst('stage-hero', (heavy||crit)?10:6, 'hurt');
+  }
+  floatDamage('stage-hero', dmg, (heavy||crit)?'crit':'dmg');
   SFX.hurt(); if(heavy||crit) shakeScreen();
 
   hero.braced = false;                                  // guard consumed
@@ -1440,8 +1549,9 @@ function enemyTurn(){
 
   if(hero.hp <= 0){ renderBattle(); gameOver(); return; }
 
-  busy = false;
-  renderBattle();
+  renderBattle();   // update gauges now; buttons stay disabled (busy still true)
+  // Re-enable input only after the enemy's animation finishes — turn stays deterministic.
+  setTimeout(()=>{ busy = false; renderBattle(); }, 480);
 }
 
 /* ----------------------- WIN / REWARD / END ----------------------- */
@@ -1465,7 +1575,7 @@ function winBattle(){
     hero.hp = hero.maxHp; hero.fuel = hero.maxFuel;     // full restore
   }
 
-  if(levels>0 && enc.kind!=='boss'){ SFX.level(); burst('hpanel', 18, 'heal'); }
+  if(levels>0 && enc.kind!=='boss'){ SFX.level(); burst('stage-hero', 18, 'heal'); }
   if(enc.kind==='boss'){ SFX.win(); clearSave(); mode='victory'; showScreen('victory'); return; }
 
   // Reward screen (non-boss only).
