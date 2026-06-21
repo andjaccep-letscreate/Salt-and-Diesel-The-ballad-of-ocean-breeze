@@ -19,6 +19,11 @@
     --fuel:#3fa7d6;
     --rivet:#3a4350;
     --good:#6fbf73;
+    /* Aethel-Diesel cyan blend (cosmetic flavor tokens; zero rules change) */
+    --cobalt:#1b6ef3;     --cobalt-l:#3fa9ff;
+    --verdigris:#2e8b6f;  --verdigris-l:#3fcf9e;
+    --indigo:#1a1f3a;     --indigo-l:#2b2f5c;
+    --warm:#ff9d3c;       --warm-d:#e0792a;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0; padding:0; background:var(--bg); color:var(--ink);
@@ -152,9 +157,10 @@
   #stage::before{ content:""; position:absolute; inset:0; z-index:0; }       /* per-scene backdrop */
   #stage::after{ content:""; position:absolute; inset:0; z-index:3; pointer-events:none;
     box-shadow: inset 0 0 50px rgba(0,0,0,.6); }                              /* vignette */
-  #stage .stage-haze{ position:absolute; inset:-25%; z-index:1; pointer-events:none; opacity:.10;
-    background: radial-gradient(55% 40% at 30% 30%, #cfe4f0 0%, transparent 60%),
-                radial-gradient(45% 35% at 75% 65%, #b9c9d6 0%, transparent 60%);
+  /* low drifting indigo/sepia smog haze over every scene */
+  #stage .stage-haze{ position:absolute; inset:-25%; z-index:1; pointer-events:none; opacity:.14;
+    background: radial-gradient(55% 40% at 30% 32%, rgba(43,47,92,.55) 0%, transparent 60%),
+                radial-gradient(45% 35% at 75% 68%, rgba(120,96,64,.45) 0%, transparent 60%);
     animation: drift 26s ease-in-out infinite alternate; }
   #stage .stage-floor{ position:absolute; left:0; right:0; bottom:0; height:24%; z-index:1;
     background:linear-gradient(180deg,#1b1e24,#0a0c10); border-top:2px solid rgba(217,164,65,.22); }
@@ -165,27 +171,36 @@
   #stage-hero .sprite{ width:100%; height:100%; }
   #stage-enemy svg{ width:100%; height:100%; display:block; transform: scaleX(-1); } /* mirror to face left */
 
-  /* per-district backdrops (pure CSS, no images) */
+  /* per-district battle backdrops — Aethel-Diesel cyan blend (pure CSS, no images) */
+  /* Alley/Clematis: kept feel + smog + cobalt/warm signage glow */
   #stage[data-scene="alley"]::before{ background:
-    radial-gradient(55% 38% at 28% 22%, rgba(229,138,166,.20), transparent 60%),
-    radial-gradient(40% 30% at 74% 24%, rgba(217,164,65,.20), transparent 60%),
+    radial-gradient(45% 32% at 26% 22%, rgba(63,169,255,.16), transparent 60%),
+    radial-gradient(38% 28% at 74% 24%, rgba(255,157,60,.18), transparent 60%),
     radial-gradient(20% 12% at 58% 84%, #0c0e12 0 70%, transparent 72%),
-    repeating-linear-gradient(0deg,#2a2120 0 7px,#241b1a 7px 8px),
-    repeating-linear-gradient(90deg,transparent 0 13px,rgba(0,0,0,.28) 13px 14px),
-    linear-gradient(180deg,#241b1a,#140f0e); }
+    repeating-linear-gradient(0deg,#241d22 0 7px,#1e171b 7px 8px),
+    repeating-linear-gradient(90deg,transparent 0 13px,rgba(0,0,0,.30) 13px 14px),
+    linear-gradient(180deg,#221a20,#120d11); }
+  /* Rail yards "Rust-Tide Reef": grey storm sky, rusted rig towers, verdigris coral, oil-slick */
   #stage[data-scene="rail"]::before{ background:
-    radial-gradient(50% 36% at 50% 8%, rgba(190,190,200,.12), transparent 60%),
-    repeating-linear-gradient(90deg, rgba(150,110,70,.22) 0 5px, transparent 5px 24px),
-    repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0 3px, transparent 3px 18px),
-    linear-gradient(180deg,#3a2c22,#181210); }
+    radial-gradient(11% 15% at 18% 80%, rgba(63,207,158,.32) 0 60%, transparent 64%),
+    radial-gradient(9% 13% at 82% 82%, rgba(46,139,111,.36) 0 60%, transparent 64%),
+    repeating-linear-gradient(90deg, transparent 0 30px, rgba(120,70,40,.5) 30px 36px, transparent 36px 60px),
+    linear-gradient(180deg, transparent 60%, rgba(63,169,255,.10) 72%, rgba(46,139,111,.13) 100%),
+    linear-gradient(180deg,#3a3f47 0%, #2a2e35 55%, #1a1d22 100%); }
+  /* Docks "Silt-Port": oily water sheen, verdigris-roof shanties, warm lantern dots */
   #stage[data-scene="docks"]::before{ background:
-    radial-gradient(26% 16% at 70% 24%, #2b3640 0 70%, transparent 73%),
-    repeating-linear-gradient(90deg, transparent 0 26px, rgba(0,0,0,.30) 26px 30px),
-    linear-gradient(180deg,#0f2233 0 62%, #123247 62% 100%); }
+    radial-gradient(3px 3px at 22% 40%, rgba(255,157,60,.9) 0 60%, transparent 62%),
+    radial-gradient(3px 3px at 40% 34%, rgba(224,121,42,.9) 0 60%, transparent 62%),
+    radial-gradient(3px 3px at 63% 38%, rgba(255,157,60,.9) 0 60%, transparent 62%),
+    repeating-linear-gradient(90deg, transparent 0 18px, rgba(46,139,111,.45) 18px 22px, transparent 22px 40px),
+    linear-gradient(180deg, transparent 58%, rgba(63,169,255,.10) 66%, rgba(46,139,111,.16) 100%),
+    linear-gradient(180deg,#10222e 0 58%, #0c2f3f 58% 100%); }
+  /* Tower/boss "Leviathan's Wake": indigo->black sky, deco skyline, glowing cobalt Mana-Spire behind the boss */
   #stage[data-scene="tower"]::before{ background:
-    repeating-linear-gradient(90deg, rgba(217,164,65,.16) 0 3px, transparent 3px 17px),
-    radial-gradient(60% 40% at 50% 0%, rgba(217,164,65,.12), transparent 60%),
-    linear-gradient(180deg,#241d2e,#120f18); }
+    linear-gradient(90deg, transparent calc(72% - 4px), rgba(63,169,255,.55) calc(72% - 4px), rgba(63,169,255,.85) 72%, rgba(63,169,255,.55) calc(72% + 4px), transparent calc(72% + 4px)),
+    radial-gradient(15% 66% at 72% 56%, rgba(63,169,255,.40) 0 38%, rgba(27,110,243,.20) 55%, transparent 72%),
+    repeating-linear-gradient(90deg, transparent 0 16px, rgba(0,0,0,.55) 16px 26px, transparent 26px 44px),
+    linear-gradient(180deg,#10132a 0%, #0a0c1c 60%, #05060c 100%); }
   #stage[data-scene="harbor"]::before{ background:
     radial-gradient(60% 50% at 50% 28%, rgba(150,170,185,.16), transparent 65%),
     linear-gradient(180deg,#1a2730,#0c131a); }
@@ -301,15 +316,43 @@
     animation: sail 22s linear infinite; }
   @keyframes sail{ from{ left:-20%; } to{ left:120%; } }
 
+  /* ---- drifting dirigible silhouette over the overworld ---- */
+  #airship{ position:absolute; top:5%; left:-20%; width:38px; height:13px; z-index:5; pointer-events:none;
+    opacity:.5; background:linear-gradient(180deg,#2a2f37,#15181d); border-radius:50%/60%;
+    box-shadow:-11px 1px 0 -3px #20242b; animation: sail 40s linear infinite; }
+  #airship::after{ content:""; position:absolute; right:-3px; top:3px; width:7px; height:7px;
+    background:#20242b; clip-path:polygon(0 0,100% 50%,0 100%); }   /* tail fin */
+
+  /* ---- battle stage parallax: a slow far skyline behind combatants ---- */
+  #stage .stage-far{ position:absolute; left:-10%; right:-10%; bottom:24%; height:42%; z-index:0;
+    opacity:.35; pointer-events:none;
+    background: repeating-linear-gradient(90deg, transparent 0 10px, rgba(0,0,0,.45) 10px 15px, transparent 15px 28px);
+    animation: drift 44s ease-in-out infinite alternate; }
+
+  /* ---- optional film-noir overlay (settings toggle): scanlines + vignette + grain ---- */
+  #noir{ position:fixed; inset:0; z-index:45; pointer-events:none; display:none; }
+  #noir.on{ display:block; }
+  #noir::before{ content:""; position:absolute; inset:0;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,.12) 0 1px, transparent 1px 3px); }   /* scanlines */
+  #noir::after{ content:""; position:absolute; inset:0;
+    background: radial-gradient(transparent 58%, rgba(0,0,0,.28)); box-shadow: inset 0 0 140px rgba(0,0,0,.7); }  /* vignette */
+  #noir .grain{ position:absolute; inset:0; opacity:.06; mix-blend-mode:overlay; animation: grain .5s steps(2) infinite;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>"); }
+  @keyframes grain{ 0%{transform:translate(0,0)} 50%{transform:translate(-2%,1%)} 100%{transform:translate(1%,-1%)} }
+
   /* ---- particle sparks (hits, heals, level-ups) ---- */
-  .spark{ position:absolute; left:50%; top:32%; width:6px; height:6px; border-radius:50%;
-    pointer-events:none; z-index:21; animation: sparkFly .6s ease-out forwards; }
-  @keyframes sparkFly{ from{ transform:translate(-50%,-50%); opacity:1; }
-    to{ transform:translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.2); opacity:0; } }
-  .spark.hit{ background:#ffd479; }
-  .spark.crit{ background:#fff2c2; box-shadow:0 0 6px #ffd479; width:7px; height:7px; }
-  .spark.heal{ background:#8fe39a; }
-  .spark.hurt{ background:#ff7a5c; }
+  /* ---- pooled FX nodes (motion driven by the JS rAF loop, not CSS) ---- */
+  .fx{ position:absolute; z-index:21; pointer-events:none;
+       font-family:"Courier New",monospace; font-weight:800; text-shadow:0 1px 2px #000; }
+  .fx-spark{ width:6px; height:6px; border-radius:50%; }
+  .fx-spark.hit{ background:#ffd479; }
+  .fx-spark.crit{ background:#fff2c2; box-shadow:0 0 6px #ffd479; width:7px; height:7px; }
+  .fx-spark.heal{ background:#8fe39a; }
+  .fx-spark.hurt{ background:#ff7a5c; }
+  .fx-float.dmg{ color:#ff8a6e; font-size:1.2rem; }
+  .fx-float.crit{ color:#ffd479; font-size:1.65rem; }
+  .fx-float.heal{ color:#8fe39a; font-size:1.2rem; }
+  .fx-dust{ width:5px; height:5px; border-radius:50%; background:rgba(180,170,150,.55); }
 
   /* ---- enemy lunge, low-HP danger, crit flash ---- */
   #battle{ position:relative; }
@@ -364,7 +407,8 @@
     #fog, #title .frame::before, #title .blimp, #banner.show, #battle.shaking,
     .float, .eface.enter, .eface.hit, .eface.lunge, .hpanel.hurt, .spark,
     #battle.danger::before, #flash.go, #cutscene .cs-emoji, #title h1,
-    .screen.active, .caret::after, .dust{ animation:none; }
+    .screen.active, .caret::after, .dust,
+    #airship, #stage .stage-far, #noir .grain{ animation:none; }
   }
 
   .dpad{ display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr);
@@ -443,6 +487,7 @@
     <div class="sub deco">West Palm Beach &middot; 1947</div>
     <h1>Salt &amp; Diesel</h1>
     <div class="sub deco">The Ballad of Ocean Breeze</div>
+    <div class="sub deco" style="color:var(--cobalt-l);margin-top:-8px">Volume 1: Florida — Episode 1</div>
     <p class="blurb">Art-deco towers claw at a bruised sky. Dirigibles hang over the
     Intracoastal like fat brass wasps, and every oil-fired engine in town answers to one
     man: <span class="accent">Baron Castellane</span>. His syndicate runs the docks, the
@@ -479,13 +524,14 @@
   <div class="hud">
     <div class="stat">LV <b id="hud-lv" class="accent">1</b></div>
     <div class="minigauge"><div class="gauge hp"><div class="fill" id="hud-hp-fill"></div><div class="lbl" id="hud-hp-lbl">HP</div></div></div>
-    <div class="minigauge"><div class="gauge"><div class="fill" id="hud-fuel-fill" style="background:linear-gradient(180deg,#62c3ee,#1d6f97)"></div><div class="lbl" id="hud-fuel-lbl">FUEL</div></div></div>
+    <div class="minigauge"><div class="gauge"><div class="fill" id="hud-fuel-fill" style="background:linear-gradient(180deg,#3fa9ff,#1b6ef3)"></div><div class="lbl" id="hud-fuel-lbl">FUEL</div></div></div>
     <div class="stat">🧰 <b id="hud-kits" class="accent">3</b></div>
     <button class="muteBtn" onclick="toggleMute()">🔊</button>
     <button class="gearBtn" onclick="openSettings()">⚙</button>
   </div>
   <div class="board" id="board">
     <div id="fog"></div>
+    <div id="airship" aria-hidden="true"></div>
     <div id="grid"></div>
     <!-- Persistent hero sprite overlay (NOT rebuilt each move, so it can tween). -->
     <div id="player" class="larry" data-dir="down" aria-hidden="true">
@@ -525,7 +571,7 @@
               <rect x="24.4" y="23.5" width="3" height="6.5" rx="1" fill="#a9772b"/>
               <rect x="22.4" y="23" width="7" height="1.8" rx="0.9" fill="#d9a441"/>
               <polygon points="27,5 23.4,15 26.2,15 24.2,24 30.2,12.5 27.2,12.5" fill="#dcebfb" stroke="#8fb6d6" stroke-width="0.5"/>
-              <polyline class="bolt-arc" points="27,5 24.6,14 26.6,14 24.8,23" fill="none" stroke="#7fe9ff" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round"/>
+              <polyline class="bolt-arc" points="27,5 24.6,14 26.6,14 24.8,23" fill="none" stroke="#3fa9ff" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round"/>
             </g>
           </g>
         </g>
@@ -553,7 +599,7 @@
               <rect x="24.4" y="23.5" width="3" height="6.5" rx="1" fill="#a9772b"/>
               <rect x="22.4" y="23" width="7" height="1.8" rx="0.9" fill="#d9a441"/>
               <polygon points="27,5 23.4,15 26.2,15 24.2,24 30.2,12.5 27.2,12.5" fill="#dcebfb" stroke="#8fb6d6" stroke-width="0.5"/>
-              <polyline class="bolt-arc" points="27,5 24.6,14 26.6,14 24.8,23" fill="none" stroke="#7fe9ff" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round"/>
+              <polyline class="bolt-arc" points="27,5 24.6,14 26.6,14 24.8,23" fill="none" stroke="#3fa9ff" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round"/>
             </g>
           </g>
         </g>
@@ -585,7 +631,7 @@
               <rect x="24.4" y="23.5" width="3" height="6.5" rx="1" fill="#a9772b"/>
               <rect x="22.4" y="23" width="7" height="1.8" rx="0.9" fill="#d9a441"/>
               <polygon points="27,5 23.4,15 26.2,15 24.2,24 30.2,12.5 27.2,12.5" fill="#dcebfb" stroke="#8fb6d6" stroke-width="0.5"/>
-              <polyline class="bolt-arc" points="27,5 24.6,14 26.6,14 24.8,23" fill="none" stroke="#7fe9ff" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round"/>
+              <polyline class="bolt-arc" points="27,5 24.6,14 26.6,14 24.8,23" fill="none" stroke="#3fa9ff" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round"/>
             </g>
           </g>
         </g>
@@ -612,6 +658,7 @@
   </div>
   <!-- side-view face-off stage: hero on the left (faces right), enemy on the right (faces left) -->
   <div id="stage" data-scene="harbor">
+    <div class="stage-far"></div>
     <div class="stage-haze"></div>
     <div class="stage-floor"></div>
     <div id="stage-hero" class="larry combatant" data-dir="right" aria-hidden="true"></div>
@@ -628,7 +675,7 @@
       <button class="gearBtn" onclick="openSettings()">⚙</button>
     </div>
     <div class="gauge hp"><div class="fill" id="b-hp-fill"></div><div class="lbl" id="b-hp-lbl">HP</div></div>
-    <div class="gauge" style="margin-top:6px"><div class="fill" id="b-fuel-fill" style="background:linear-gradient(180deg,#62c3ee,#1d6f97)"></div><div class="lbl" id="b-fuel-lbl">FUEL</div></div>
+    <div class="gauge" style="margin-top:6px"><div class="fill" id="b-fuel-fill" style="background:linear-gradient(180deg,#3fa9ff,#1b6ef3)"></div><div class="lbl" id="b-fuel-lbl">FUEL</div></div>
   </div>
   <div class="actions">
     <button class="btn" id="a-strike"    onclick="playerAction('strike')">Strike<small>free attack</small></button>
@@ -691,6 +738,8 @@
       <button class="toggle" id="set-sfx" onclick="toggleSfx()">ON</button></div>
     <div class="row"><span>Music</span>
       <button class="toggle" id="set-music" onclick="toggleMusic()">ON</button></div>
+    <div class="row"><span>Film-noir overlay</span>
+      <button class="toggle off" id="set-noir" onclick="toggleNoir()">OFF</button></div>
     <div class="row" style="opacity:.7;font-size:.78rem"><span>Tip: the ⚙ and 🔊 buttons are always here.</span></div>
     <button class="btn" style="width:100%;margin-top:6px" onclick="closeSettings()">Close</button>
   </div>
@@ -698,6 +747,9 @@
 
 <!-- crit / impact flash -->
 <div id="flash"></div>
+
+<!-- optional film-noir overlay (toggled in settings) -->
+<div id="noir" aria-hidden="true"><div class="grain"></div></div>
 
 <script>
 "use strict";
@@ -917,8 +969,17 @@ function openSettings(){
   document.getElementById('set-sfx').classList.toggle('off', !sfxEnabled);
   document.getElementById('set-music').textContent = musicEnabled ? 'ON' : 'OFF';
   document.getElementById('set-music').classList.toggle('off', !musicEnabled);
+  document.getElementById('set-noir').textContent = noirOn ? 'ON' : 'OFF';
+  document.getElementById('set-noir').classList.toggle('off', !noirOn);
 }
 function closeSettings(){ menuOpen = false; document.getElementById('settings').classList.remove('active'); }
+let noirOn = false;
+function toggleNoir(){
+  noirOn = !noirOn;
+  document.getElementById('noir').classList.toggle('on', noirOn);
+  const b = document.getElementById('set-noir');
+  b.textContent = noirOn ? 'ON' : 'OFF'; b.classList.toggle('off', !noirOn);
+}
 function setVolume(v){ volume = Math.max(0, Math.min(1, v/100)); initAudio(); applyVolume(); }
 function toggleSfx(){
   sfxEnabled = !sfxEnabled;
@@ -933,31 +994,81 @@ function toggleMusic(){
   if(musicEnabled) startMusic(); else stopMusic();
 }
 
-/* ----------------------- particle sparks ----------------------- */
-function burst(parentId, n, cls){
+/* =================================================================
+   FX ENGINE — object-pooled transient nodes (damage numbers, sparks, dust)
+   advanced by ONE requestAnimationFrame loop. No per-hit create/destroy:
+   nodes are recycled from a fixed pool; the loop updates transform/opacity
+   only (no layout thrash) and self-pauses when idle or the tab is hidden.
+   ================================================================= */
+const FX_MAX = 80;              // hard cap on simultaneous particles
+const fxPool = [];             // recycled {node, active, ...} slots
+let fxRAF = 0, fxLast = 0;
+function fxNow(){ return (typeof performance!=='undefined' && performance.now) ? performance.now() : Date.now(); }
+function fxMakeNode(){
+  const s = document.createElement('span');
+  s.className = 'fx';
+  if(s.style){ s.style.position='absolute'; s.style.willChange='transform,opacity'; s.style.pointerEvents='none'; }
+  return s;
+}
+function fxGet(){
+  for(let i=0;i<fxPool.length;i++) if(!fxPool[i].active) return fxPool[i];
+  if(fxPool.length < FX_MAX){ const o={node:fxMakeNode(),active:false}; fxPool.push(o); return o; }
+  return null;                 // pool exhausted — drop the request (cap)
+}
+function spawnFx(parentId, o){
   const p = document.getElementById(parentId);
   if(!p || !p.appendChild) return;
-  for(let i=0;i<n;i++){
-    const s = document.createElement('span');
-    s.className = 'spark ' + cls;
-    const ang = Math.random()*Math.PI*2, dist = 14 + Math.random()*22;
-    s.style.setProperty('--dx', Math.cos(ang)*dist + 'px');
-    s.style.setProperty('--dy', Math.sin(ang)*dist + 'px');
-    p.appendChild(s);
-    setTimeout(()=>{ if(s.remove) s.remove(); }, 650);
+  const s = fxGet(); if(!s) return;
+  const rm = reducedMotion();  // graceful: no travel/scale under reduced-motion, just a fade
+  s.active = true; s.life = 0; s.ttl = o.ttl || 0.7;
+  s.x0 = o.x0||0; s.y0 = o.y0||0;
+  s.vx = rm ? 0 : (o.vx||0); s.vy = rm ? 0 : (o.vy||0);
+  s.sc0 = o.sc0!=null ? o.sc0 : 1; s.sc1 = rm ? s.sc0 : (o.sc1!=null ? o.sc1 : 1);
+  const n = s.node;
+  n.className = 'fx ' + (o.cls||'');
+  n.textContent = o.text!=null ? o.text : '';
+  if(n.style){ n.style.left = o.left||'50%'; n.style.top = o.top||'30%'; n.style.opacity='1';
+    n.style.transform = 'translate(-50%,-50%)'; }
+  if(n.parentNode !== p) p.appendChild(n);
+  fxStart();
+}
+function fxStart(){ if(fxRAF || typeof requestAnimationFrame!=='function') return; fxLast = fxNow(); fxRAF = requestAnimationFrame(fxTick); }
+function fxTick(){
+  fxRAF = 0;
+  const t = fxNow(); let dt = (t - fxLast)/1000; if(dt>0.05) dt=0.05; fxLast = t;
+  let any = false;
+  for(const s of fxPool){
+    if(!s.active) continue; any = true;
+    s.life += dt;
+    const k = Math.min(1, s.life/s.ttl);
+    const x = s.x0 + s.vx*s.life, y = s.y0 + s.vy*s.life;
+    const sc = s.sc0 + (s.sc1 - s.sc0)*k;
+    if(s.node.style){
+      s.node.style.transform = `translate(-50%,-50%) translate(${x.toFixed(1)}px,${y.toFixed(1)}px) scale(${sc.toFixed(2)})`;
+      s.node.style.opacity = (1-k).toFixed(3);
+    }
+    if(s.life >= s.ttl){ s.active = false; if(s.node.remove) s.node.remove(); }
+  }
+  if(any && !document.hidden) fxRAF = requestAnimationFrame(fxTick);
+}
+
+/* radial spark burst (hit/heal feedback) */
+function burst(parentId, n, cls){
+  const count = Math.min(n, 18);
+  for(let i=0;i<count;i++){
+    const ang = Math.random()*Math.PI*2, dist = 14 + Math.random()*22, ttl = 0.6;
+    spawnFx(parentId, { cls:'fx-spark '+cls, ttl, top:'32%',
+      vx:Math.cos(ang)*dist/ttl, vy:Math.sin(ang)*dist/ttl, sc0:1, sc1:0.2 });
   }
 }
 function flashScreen(){ flash('flash', 'go', 240); }
 
-/* little puffs of dust kicked up under the hero as he walks */
+/* little puffs of dust kicked up under the hero as he walks (pl = #player element) */
 function kickDust(pl){
-  if(!pl || !pl.appendChild) return;
+  if(!pl) return;
   for(let i=0;i<2;i++){
-    const s = document.createElement('span');
-    s.className = 'dust';
-    s.style.setProperty('--dx', (Math.random()*10 - 5) + 'px');
-    pl.appendChild(s);
-    setTimeout(()=>{ if(s.remove) s.remove(); }, 480);
+    spawnFx('player', { cls:'fx-dust', ttl:0.45, top:'88%',
+      vx:(Math.random()*16-8), vy:-14, sc0:0.7, sc1:1.4 });
   }
 }
 
@@ -994,12 +1105,8 @@ function pulse(id, cls, ms){
 
 /* floating combat number over the enemy ('epanel') or hero ('hpanel') panel */
 function floatDamage(parentId, text, kind){
-  const p = document.getElementById(parentId);
-  if(!p || !p.appendChild) return;
-  const s = document.createElement('span');
-  s.className = 'float ' + kind; s.textContent = text;
-  p.appendChild(s);
-  setTimeout(()=>{ if(s.remove) s.remove(); }, 900);
+  spawnFx(parentId, { cls:'fx-float '+kind, text:String(text), ttl:0.85,
+    top:'16%', y0:8, vy:-44, sc0:0.8, sc1:1.1 });
 }
 function shakeScreen(){ flash('battle','shaking', 360); }
 
@@ -1249,31 +1356,52 @@ function cameraOrigin(){
 
 let facing = 'down';   // last direction the hero moved (drives the sprite view)
 
+/* The overworld viewport reuses a FIXED pool of VIEW_W*VIEW_H tile nodes
+   (built once). Each move only updates each tile's class / glyph / brightness
+   instead of rebuilding the grid's innerHTML — far less GC and layout churn. */
+let tilePool = null;
+function buildTilePool(){
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  tilePool = [];
+  for(let i=0; i<VIEW_W*VIEW_H; i++){
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    const span = document.createElement('span');
+    span.className = 'mk';
+    cell.appendChild(span);
+    grid.appendChild(cell);
+    tilePool.push({ cell, span });
+  }
+}
 function renderOverworld(instant){
   const {camX, camY} = cameraOrigin();
-  let html = '';
+  if(!tilePool || tilePool.length !== VIEW_W*VIEW_H) buildTilePool();
+  let i = 0;
   for(let vy=0; vy<VIEW_H; vy++){
-    for(let vx=0; vx<VIEW_W; vx++){
+    for(let vx=0; vx<VIEW_W; vx++, i++){
       const my = camY+vy, mx = camX+vx;
       const ch = map[my][mx];
       const base = (ch in GROUND) ? GROUND[ch] : ch;     // floor under markers
       const cls  = TCLASS[base] || 't-road';
       const glyph = EMOJI[ch] || '';
-      // Deterministic tiny brightness jitter on plain terrain so open areas
-      // don't read as one flat slab. Marker tiles keep full brightness.
-      let style = '', inner = '';
+      const t = tilePool[i];
+      t.cell.className = 'cell ' + cls;
       if(glyph){
-        const mkCls = INTERACTIVE.has(ch) ? ' marker' : '';   // pulse interactive tiles
-        inner = `<span class="mk${mkCls}">${glyph}</span>`;
+        t.cell.style.filter = '';
+        if(t.span.textContent !== glyph) t.span.textContent = glyph;
+        // pulse interactive markers (landmarks, pickups, NPCs, patrols)
+        t.span.className = INTERACTIVE.has(ch) ? 'mk marker' : 'mk';
       } else {
-        const v = (mx*7 + my*13) % 6;            // stable per-coordinate
-        style = ` style="filter:brightness(${(0.9 + v*0.035).toFixed(3)})"`;
+        // deterministic tiny brightness jitter so open areas aren't one flat slab
+        const v = (mx*7 + my*13) % 6;
+        t.cell.style.filter = `brightness(${(0.9 + v*0.035).toFixed(3)})`;
+        if(t.span.textContent) t.span.textContent = '';
+        t.span.className = 'mk';
       }
-      html += `<div class="cell ${cls}"${style}>${inner}</div>`;
     }
   }
-  document.getElementById('grid').innerHTML = html;   // hero is a separate overlay
-  positionPlayer(camX, camY, instant);
+  positionPlayer(camX, camY, instant);   // hero is a separate overlay
   updateHUD();
 }
 
@@ -1294,9 +1422,28 @@ function positionPlayer(camX, camY, instant){
   if(instant){ void pl.offsetWidth; pl.style.transition = ''; }  // restore tween
 }
 
-/* Keep the sprite aligned if the viewport is resized/rotated. */
+/* Keep the sprite aligned if the viewport is resized/rotated (debounced). */
+let resizeTimer = null;
 window.addEventListener('resize', ()=>{
-  if(mode==='overworld'){ const {camX,camY}=cameraOrigin(); positionPlayer(camX,camY,true); }
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(()=>{
+    if(mode==='overworld'){ const {camX,camY}=cameraOrigin(); positionPlayer(camX,camY,true); }
+  }, 120);
+});
+
+/* Pause the Web Audio scheduler (and suspend the context) while the tab is
+   hidden; resume on return. The FX rAF loop self-pauses when hidden (fxTick
+   checks document.hidden); we restart it on return. CSS keyframe animations are
+   auto-throttled by the browser. */
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden){
+    stopMusic();
+    if(audioCtx && audioCtx.suspend) audioCtx.suspend();
+  } else {
+    if(audioCtx && audioCtx.resume) audioCtx.resume();
+    if(musicEnabled) startMusic();
+    fxStart();                 // resume the particle loop if any are mid-flight
+  }
 });
 
 function updateHUD(){
