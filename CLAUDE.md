@@ -77,3 +77,22 @@ Rules for the log:
 - Don't deploy, push to a main/master branch, or run destructive commands.
 - Don't refactor beyond what I asked.
 - Don't commit secrets/API keys. Flag them if you spot any.
+
+## Project hard rules (Salt & Diesel — always apply)
+- One self-contained `index.html` (inline CSS + vanilla JS; no libraries, no external assets; backdrops are pure CSS/SVG).
+- Emoji icons: single-codepoint or VS16 only — never ZWJ or compound emoji.
+- Mobile-first; deterministic; lock input when it isn't the player's turn; respect `prefers-reduced-motion`.
+- Do NOT change combat balance / stats / formulas unless that is the explicit goal of the phase (e.g. the Phase 5 party rebalance). When a phase DOES change balance, re-run the full balance sim and report before/after numbers.
+- Verify headlessly with a ~200-run full-loop simulation before every merge; report stat-drift explicitly. No "done/fixed/verified" without real command output.
+- Workflow: build on a branch → give a `raw.githack` `?v=N` preview link → merge only after Andres confirms. One phase at a time; never start the next phase without being asked.
+- Teach-as-you-go: when introducing a new command or term, add a one-line plain-English note (Andres is a learner / non-coder).
+
+## What this game is (series framing)
+- Salt & Diesel is an episodic anthology. This build = **Volume 1: Florida, Episode 1** — 1947 West Palm Beach, dieselpunk, top-down overworld + turn-based combat; hero Larry "Sparkplug."
+- Setting = grounded real WPB with light cyan "Aethel-Diesel" flavor (cosmetic). Real Palm Beach County landmarks may appear as fantasy-named zones; do not invent a generic fantasy world.
+- Future episodes reuse this engine; the crew keeps tools/artifacts, not inflated stats (level-band + sync-down). Do NOT build episodic save / level-sync plumbing until explicitly asked.
+
+## Roadmap pointer
+- Phases 1–4 are LIVE (WPB map; Florida-animal enemies + bolt sword; side-view battle stage; graphics + cyan blend).
+- Phase 5 = the 4-member party + Arsenal — build only when handed the party design file (`claude-code-party-system-prompt.md`). It WILL change balance, so rescale the boss and re-verify.
+- Deeper systems (elemental weakness, MP/TP, CTB turn order, isometric, county overworld) are banked in the Vault — do not build without explicit instruction.
