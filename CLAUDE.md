@@ -96,3 +96,12 @@ Rules for the log:
 - Phases 1–4 are LIVE (WPB map; Florida-animal enemies + bolt sword; side-view battle stage; graphics + cyan blend).
 - Phase 5 = the 4-member party + Arsenal — build only when handed the party design file (`claude-code-party-system-prompt.md`). It WILL change balance, so rescale the boss and re-verify.
 - Deeper systems (elemental weakness, MP/TP, CTB turn order, isometric, county overworld) are banked in the Vault — do not build without explicit instruction.
+
+## Copyright & IP safety (always apply)
+- Original assets and code only. NEVER copy art, code, music, fonts, or text from any third-party or copyrighted source.
+- No trademarked or franchised names, characters, logos, or branding anywhere player-facing (e.g. never "Final Fantasy," Pokémon, Marvel, real brand/product names). The game title is "Salt & Diesel: The Ballad of Ocean Breeze" and must stay original.
+- Emoji (Unicode) are fine. CSS/SVG art must be original and generic — never a recreation of a copyrighted character or a real company's logo.
+- Audio: original or synthesized (Web Audio) only — no copyrighted music or sound clips.
+- Fonts: system fonts or open-licensed (SIL OFL) only; never bundle a commercial font.
+- Real place names may be used as setting flavor, but keep depictions original — no real institution's logo or trademarked branding.
+- If anything you're about to add could resemble existing IP, STOP and flag it to Andres instead of proceeding.
