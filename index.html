@@ -166,10 +166,46 @@
     background:linear-gradient(180deg,#1b1e24,#0a0c10); border-top:2px solid rgba(217,164,65,.22); }
   /* combatants are absolutely placed and grounded on the floor line */
   #stage .combatant{ position:absolute; bottom:13%; z-index:2; }
-  #stage-hero{ left:7%;  height:64%; aspect-ratio:32/48; }
-  #stage-enemy{ right:7%; height:58%; aspect-ratio:1/1; }
+  #stage-hero{ left:6%;  height:64%; aspect-ratio:32/48; }
   #stage-hero .sprite{ width:100%; height:100%; }
-  #stage-enemy svg{ width:100%; height:100%; display:block; transform: scaleX(-1); } /* mirror to face left */
+  /* enemy row on the right of the stage (1–3 foes, mirrored to face left) */
+  #stage-enemies{ position:absolute; right:3%; bottom:11%; z-index:2; display:flex; align-items:flex-end; gap:4px; }
+  .foe{ width:62px; text-align:center; cursor:default; }
+  .foe.boss{ width:78px; }
+  .foe-spr{ height:62px; }
+  .foe.boss .foe-spr{ height:80px; }
+  .foe-spr svg{ width:100%; height:100%; display:block; transform: scaleX(-1); }
+  .foe-bar{ height:5px; background:#0a0c10; border:1px solid var(--rivet); border-radius:3px; overflow:hidden; margin-top:1px; }
+  .foe-bar i{ display:block; height:100%; background:linear-gradient(180deg,#e2613f,#8c2417); }
+  .foe-nm{ font-size:.56rem; letter-spacing:.04em; color:#cdd3da; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .foe-nm .dn{ color:#7fb3ff; }
+  .foe.targetable{ cursor:pointer; outline:2px solid var(--brass); outline-offset:2px; border-radius:6px; animation: tgtPulse 1s ease-in-out infinite; }
+  @keyframes tgtPulse{ 0%,100%{ outline-color:var(--brass); } 50%{ outline-color:#fff2c2; } }
+  @keyframes foeLunge{ 0%,100%{ transform:translateX(0); } 35%{ transform:translateX(-12px); } }
+  .foe.foe-atk{ animation: foeLunge .4s ease; }
+  .foe.knock{ animation: knockR .3s ease; }
+  .foe.struck{ animation: struck .2s ease; }
+  /* active-ally swing (works for any member sprite, not just Larry) */
+  #stage-hero.swing{ animation: heroLunge .35s ease; }
+
+  /* ---- party HUD (ally cards) ---- */
+  #party-hud{ width:100%; max-width:480px; display:flex; gap:5px; margin:6px 0 4px; }
+  .pcard{ flex:1 1 0; min-width:0; background:var(--panel); border:2px solid var(--rivet); border-radius:8px;
+    padding:5px 5px 6px; font-size:.62rem; line-height:1.3; }
+  .pcard b{ font-size:.66rem; }
+  .pcard small{ opacity:.7; }
+  .pcard .pc-em{ font-size:.9rem; }
+  .pcard.active{ border-color:var(--brass); box-shadow:0 0 0 1px var(--brass), 0 0 10px rgba(217,164,65,.35); }
+  .pcard.ko{ opacity:.45; filter:grayscale(.7); }
+  .pcard.targetable{ border-color:var(--good); cursor:pointer; box-shadow:0 0 0 1px var(--good); }
+  .pc-bar{ height:7px; background:#0a0c10; border:1px solid var(--rivet); border-radius:3px; overflow:hidden; margin:2px 0; }
+  .pc-bar i{ display:block; height:100%; background:linear-gradient(180deg,#e2613f,#8c2417); transition:width .2s; }
+  .pc-res{ font-size:.58rem; opacity:.85; white-space:nowrap; }
+  /* dynamic action buttons */
+  #actions.actions{ width:100%; max-width:480px; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  #actions .abil small{ display:block; font-size:.6rem; letter-spacing:.04em; opacity:.8; margin-top:2px; }
+  .act-hint{ grid-column:1/-1; text-align:center; color:var(--brass); letter-spacing:.1em; padding:6px; }
+  .bbar{ width:100%; max-width:480px; display:flex; justify-content:flex-end; gap:8px; margin-top:6px; }
 
   /* per-district battle backdrops — Aethel-Diesel cyan blend (pure CSS, no images) */
   /* Alley/Clematis: kept feel + smog + cobalt/warm signage glow */
@@ -253,7 +289,8 @@
     .larry.atk .bolt-arc, .larry.atk-od .bolt-arc,
     #stage .stage-haze, #stage-enemy.knock, #stage-hero.flinch,
     #stage-enemy.eatk-jab, #stage-enemy.eatk-ram, #stage-enemy.eatk-dash,
-    #stage-enemy.eatk-chomp, #stage-enemy.eatk-peck, #stage-enemy.eatk-snap{ animation:none; }
+    #stage-enemy.eatk-chomp, #stage-enemy.eatk-peck, #stage-enemy.eatk-snap,
+    #stage-hero.swing, .foe.foe-atk, .foe.knock, .foe.targetable{ animation:none; }
     /* under reduced motion, .struck (opacity blink) and .guard remain as the hit feedback */
   }
 
@@ -568,10 +605,14 @@
             <path d="M9 10 Q9 3.4 16 3.1 Q23 3.4 23 10 Q21 6.7 16 6.4 Q11 6.7 9 10 Z" fill="#1c1410"/>
             <!-- bolt sword: brass hilt + jagged lightning blade + electric arc -->
             <g class="bolt-arm">
-              <rect x="24.4" y="23.5" width="3" height="6.5" rx="1" fill="#a9772b"/>
-              <rect x="22.4" y="23" width="7" height="1.8" rx="0.9" fill="#d9a441"/>
-              <polygon points="27,5 23.4,15 26.2,15 24.2,24 30.2,12.5 27.2,12.5" fill="#dcebfb" stroke="#8fb6d6" stroke-width="0.5"/>
-              <polyline class="bolt-arc" points="27,5 24.6,14 26.6,14 24.8,23" fill="none" stroke="#3fa9ff" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round"/>
+              <rect x="24.6" y="23.5" width="2.8" height="6.5" rx="1" fill="#a9772b"/>          <!-- brass grip Larry holds -->
+              <circle cx="26" cy="4.8" r="2.1" fill="none" stroke="#9aa3ad" stroke-width="1.4"/>  <!-- crown ring -->
+              <rect x="25" y="6" width="2" height="17.6" rx="1" fill="#c7ced6" stroke="#5b6772" stroke-width="0.5"/>  <!-- shank -->
+              <rect x="21.8" y="8.4" width="8.4" height="1.7" rx="0.85" fill="#9aa3ad"/>          <!-- stock crossbar -->
+              <path d="M21.5 15 Q22.4 22.6 26 23 Q29.6 22.6 30.5 15 L29 15.8 Q28.4 20.4 26 20.6 Q23.6 20.4 23 15.8 Z" fill="#c7ced6" stroke="#5b6772" stroke-width="0.5"/>  <!-- fluke crescent -->
+              <path d="M21.5 15 L20.3 12.4 L23.2 15.3 Z" fill="#9aa3ad"/>                        <!-- left fluke barb -->
+              <path d="M30.5 15 L31.4 12.4 L28.8 15.3 Z" fill="#9aa3ad"/>                        <!-- right fluke barb -->
+              <polyline class="bolt-arc" points="26,6 24.8,11.5 27.2,11.5 26,20" fill="none" stroke="#3fa9ff" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round"/>
             </g>
           </g>
         </g>
@@ -596,10 +637,14 @@
             <circle cx="16" cy="10" r="6.5" fill="#c98a5e"/>
             <path d="M9.2 11 Q9 3.4 16 3.1 Q23 3.4 22.8 11 Q22.6 12.6 16 12.6 Q9.4 12.6 9.2 11 Z" fill="#1c1410"/>
             <g class="bolt-arm">
-              <rect x="24.4" y="23.5" width="3" height="6.5" rx="1" fill="#a9772b"/>
-              <rect x="22.4" y="23" width="7" height="1.8" rx="0.9" fill="#d9a441"/>
-              <polygon points="27,5 23.4,15 26.2,15 24.2,24 30.2,12.5 27.2,12.5" fill="#dcebfb" stroke="#8fb6d6" stroke-width="0.5"/>
-              <polyline class="bolt-arc" points="27,5 24.6,14 26.6,14 24.8,23" fill="none" stroke="#3fa9ff" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round"/>
+              <rect x="24.6" y="23.5" width="2.8" height="6.5" rx="1" fill="#a9772b"/>          <!-- brass grip Larry holds -->
+              <circle cx="26" cy="4.8" r="2.1" fill="none" stroke="#9aa3ad" stroke-width="1.4"/>  <!-- crown ring -->
+              <rect x="25" y="6" width="2" height="17.6" rx="1" fill="#c7ced6" stroke="#5b6772" stroke-width="0.5"/>  <!-- shank -->
+              <rect x="21.8" y="8.4" width="8.4" height="1.7" rx="0.85" fill="#9aa3ad"/>          <!-- stock crossbar -->
+              <path d="M21.5 15 Q22.4 22.6 26 23 Q29.6 22.6 30.5 15 L29 15.8 Q28.4 20.4 26 20.6 Q23.6 20.4 23 15.8 Z" fill="#c7ced6" stroke="#5b6772" stroke-width="0.5"/>  <!-- fluke crescent -->
+              <path d="M21.5 15 L20.3 12.4 L23.2 15.3 Z" fill="#9aa3ad"/>                        <!-- left fluke barb -->
+              <path d="M30.5 15 L31.4 12.4 L28.8 15.3 Z" fill="#9aa3ad"/>                        <!-- right fluke barb -->
+              <polyline class="bolt-arc" points="26,6 24.8,11.5 27.2,11.5 26,20" fill="none" stroke="#3fa9ff" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round"/>
             </g>
           </g>
         </g>
@@ -628,10 +673,14 @@
             <path d="M11 10.5 Q11 3.4 18 3.2 Q23.2 3.6 22.8 9.4 Q22 6.6 18 6.5 Q13 6.7 11 10.5 Z" fill="#1c1410"/>
             <rect x="10.6" y="6.6" width="3.4" height="5" rx="1.6" fill="#1c1410"/>
             <g class="bolt-arm">
-              <rect x="24.4" y="23.5" width="3" height="6.5" rx="1" fill="#a9772b"/>
-              <rect x="22.4" y="23" width="7" height="1.8" rx="0.9" fill="#d9a441"/>
-              <polygon points="27,5 23.4,15 26.2,15 24.2,24 30.2,12.5 27.2,12.5" fill="#dcebfb" stroke="#8fb6d6" stroke-width="0.5"/>
-              <polyline class="bolt-arc" points="27,5 24.6,14 26.6,14 24.8,23" fill="none" stroke="#3fa9ff" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round"/>
+              <rect x="24.6" y="23.5" width="2.8" height="6.5" rx="1" fill="#a9772b"/>          <!-- brass grip Larry holds -->
+              <circle cx="26" cy="4.8" r="2.1" fill="none" stroke="#9aa3ad" stroke-width="1.4"/>  <!-- crown ring -->
+              <rect x="25" y="6" width="2" height="17.6" rx="1" fill="#c7ced6" stroke="#5b6772" stroke-width="0.5"/>  <!-- shank -->
+              <rect x="21.8" y="8.4" width="8.4" height="1.7" rx="0.85" fill="#9aa3ad"/>          <!-- stock crossbar -->
+              <path d="M21.5 15 Q22.4 22.6 26 23 Q29.6 22.6 30.5 15 L29 15.8 Q28.4 20.4 26 20.6 Q23.6 20.4 23 15.8 Z" fill="#c7ced6" stroke="#5b6772" stroke-width="0.5"/>  <!-- fluke crescent -->
+              <path d="M21.5 15 L20.3 12.4 L23.2 15.3 Z" fill="#9aa3ad"/>                        <!-- left fluke barb -->
+              <path d="M30.5 15 L31.4 12.4 L28.8 15.3 Z" fill="#9aa3ad"/>                        <!-- right fluke barb -->
+              <polyline class="bolt-arc" points="26,6 24.8,11.5 27.2,11.5 26,20" fill="none" stroke="#3fa9ff" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round"/>
             </g>
           </g>
         </g>
@@ -651,37 +700,20 @@
 
 <!-- ============================ BATTLE ============================ -->
 <div id="battle" class="screen">
-  <!-- slim enemy status bar (name + HP gauge); the enemy itself stands on the stage -->
-  <div class="estatus" id="epanel">
-    <div class="ename deco" id="e-name">ENEMY</div>
-    <div class="gauge hp" style="margin-top:4px"><div class="fill" id="e-hp-fill"></div><div class="lbl" id="e-hp-lbl">HP</div></div>
-  </div>
-  <!-- side-view face-off stage: hero on the left (faces right), enemy on the right (faces left) -->
+  <!-- side-view face-off stage: active ally (left, faces right) vs enemies (right) -->
   <div id="stage" data-scene="harbor">
     <div class="stage-far"></div>
     <div class="stage-haze"></div>
     <div class="stage-floor"></div>
     <div id="stage-hero" class="larry combatant" data-dir="right" aria-hidden="true"></div>
-    <div id="stage-enemy" class="combatant" aria-hidden="true"></div>
+    <div id="stage-enemies"></div>
   </div>
   <div class="log" id="log"></div>
-  <div class="hpanel" id="hpanel">
-    <div class="top">
-      <div style="flex:1">
-        <span class="deco accent">SPARKPLUG</span>
-        <span class="stat" style="font-size:.72rem"> &middot; LV <b id="b-lv">1</b> &middot; 🧰 <b id="b-kits">3</b></span>
-      </div>
-      <button class="muteBtn" onclick="toggleMute()">🔊</button>
-      <button class="gearBtn" onclick="openSettings()">⚙</button>
-    </div>
-    <div class="gauge hp"><div class="fill" id="b-hp-fill"></div><div class="lbl" id="b-hp-lbl">HP</div></div>
-    <div class="gauge" style="margin-top:6px"><div class="fill" id="b-fuel-fill" style="background:linear-gradient(180deg,#3fa9ff,#1b6ef3)"></div><div class="lbl" id="b-fuel-lbl">FUEL</div></div>
-  </div>
-  <div class="actions">
-    <button class="btn" id="a-strike"    onclick="playerAction('strike')">Strike<small>free attack</small></button>
-    <button class="btn" id="a-overdrive" onclick="playerAction('overdrive')">Overdrive<small>−4 fuel · big hit</small></button>
-    <button class="btn" id="a-brace"     onclick="playerAction('brace')">Brace<small>guard · +3 fuel</small></button>
-    <button class="btn" id="a-repair"    onclick="playerAction('repair')">Repair<small>heal · −1 kit</small></button>
+  <div id="party-hud"></div>
+  <div id="actions" class="actions"></div>
+  <div class="bbar">
+    <button class="muteBtn" onclick="toggleMute()">🔊</button>
+    <button class="gearBtn" onclick="openSettings()">⚙</button>
   </div>
 </div>
 
@@ -1082,18 +1114,6 @@ function attackAnim(kind){
   h.classList.add(cls);
   setTimeout(()=> h.classList.remove(cls), kind==='overdrive' ? 440 : 370);
 }
-/* Each creature has its own attack motion toward Larry (shark dash, crab snap,
-   spider jab, croc bite, turtle ram, spoonbill peck). */
-const ENEMY_ATK = { '1':'jab', '2':'ram', '3':'dash', '4':'chomp', 'L':'peck', 'H':'snap' };
-function enemyAttackAnim(){
-  const e = document.getElementById('stage-enemy');
-  if(!e) return;
-  const cls = 'eatk-' + (ENEMY_ATK[enc.ch] || 'dash');
-  ['jab','ram','dash','chomp','peck','snap'].forEach(n => e.classList.remove('eatk-'+n));
-  void e.offsetWidth;                       // restart the animation
-  e.classList.add(cls);
-  setTimeout(()=> e.classList.remove(cls), 480);
-}
 /* one-shot helper: add a class, auto-remove after ms (for knock/flinch/struck/guard) */
 function pulse(id, cls, ms){
   const el = document.getElementById(id);
@@ -1142,13 +1162,22 @@ const ENEMIES = {
   'H':{name:"Barnacle Cur",      face:"🦀", hp:26, atk:7,  def:1, xp:16, kind:'patrol',
        intro:"A scrap-welded crab-mech scuttles from the weeds, pincers snapping."},
   '1':{name:"“Salt-Knuckle” Inez Vega", face:"🕷️", hp:38, atk:9,  def:2, xp:28, kind:'story', opens:'a',
+       adds:['H'],
        intro:"Inez Vega fans out four grafted brass arms, green visor glinting. \"Wrong web, hermano.\""},
   '2':{name:"“Ironback” Odell Reese", face:"🐢", hp:58, atk:12, def:5, xp:44, kind:'story', opens:'b',
+       adds:['L'],
        intro:"Odell Reese hunches under a riveted sea-turtle carapace. \"Hit the shell all day.\""},
   '3':{name:"Capt. Marisol “Riptide” Delacroix", face:"🦈", hp:74, atk:15, def:6, xp:60, kind:'story', opens:'c',
+       adds:['H','L'],
        intro:"Capt. Delacroix lowers a brass shark-jaw helm, calm as deep water. \"My harbor. My teeth.\""},
-  '4':{name:"Baron Castellane",  face:"🐊", hp:130,atk:19, def:8, xp:100,kind:'boss',
+  // Phase 5 rescale: 4-party-tuned boss — 560 HP, AoE Tail Sweep, Phase 2 < 50% HP
+  '4':{name:"Baron Castellane",  face:"🐊", hp:560,atk:30, def:9, xp:160,kind:'boss',
        intro:"Anchor-chains scream as the Baron's riveted crocodile-walker rises, dripping bay water. \"Behold my leviathan!\""}
+};
+/* small add enemies for district fights (so targeting/rows matter) */
+const ADD_DEFS = {
+  'H':{name:"Barnacle Cur", face:"🦀", hp:26, atk:7, def:1, xp:8, svg:'H'},
+  'L':{name:"Spoonbill-Rig", face:"🦩", hp:30, atk:8, def:2, xp:9, svg:'L'},
 };
 const NPC_LINES = {
   'N':{face:"📰", say:"EXTRA! EXTRA! Castellane's dirigibles choke the skyline — and the mayor calls it 'progress'! Read all about it, mister!"},
@@ -1231,22 +1260,165 @@ const ENEMY_SVG = {
     <circle cx="20" cy="30" r="1.8" fill="#b9c6b0"/><circle cx="29" cy="32" r="1.8" fill="#b9c6b0"/></svg>`
 };
 
+/* =================================================================
+   PHASE 5 — PARTY SYSTEM (data model + abilities + battle sprites)
+   Numbers mirror the verified balance sim (87% smart-play boss win).
+   Resource model: NO mana pool — cooldowns (cd) + limited charges; Larry
+   keeps Fuel. Skill trees (5b), Limits/combos/rows (5c), shop (Phase 6) are
+   intentionally NOT built here.
+   ================================================================= */
+/* battle sprites for the three recruits (Larry reuses his overworld sprite) */
+const MEMBER_SVG = {
+  silver:`<svg class="sprite" viewBox="0 0 32 48" preserveAspectRatio="xMidYMax meet" aria-label="Silver">
+    <ellipse cx="16" cy="45" rx="9" ry="2.6" fill="rgba(0,0,0,.28)"/>
+    <rect x="12" y="31" width="4.4" height="8" rx="2" fill="#2b3038"/><rect x="15.6" y="31" width="4.6" height="8" rx="2" fill="#343a44"/>
+    <rect x="10.5" y="38.2" width="8" height="4" rx="2" fill="#11151b"/><rect x="15" y="38.2" width="9" height="4" rx="2" fill="#11151b"/>
+    <rect x="11" y="20" width="12" height="13" rx="3" fill="#2f3742"/><rect x="11" y="20" width="12" height="6" rx="3" fill="#39424f"/>
+    <circle cx="17" cy="13" r="6" fill="#c9966b"/>
+    <rect x="11.5" y="7.5" width="10" height="3" rx="1.4" fill="#6f7886"/>
+    <circle cx="14" cy="9" r="1" fill="#3fa9ff"/><circle cx="18.6" cy="9" r="1" fill="#3fa9ff"/>
+    <rect x="20" y="22" width="11" height="2.4" rx="1" fill="#9aa3ad"/><rect x="29.4" y="21" width="2.3" height="4.6" rx="1" fill="#c7ced6"/>
+    <rect x="19" y="23.4" width="4" height="2.2" rx="1" fill="#5b6772"/></svg>`,
+  titanium:`<svg class="sprite" viewBox="0 0 32 48" preserveAspectRatio="xMidYMax meet" aria-label="Titanium">
+    <ellipse cx="16" cy="45" rx="10" ry="2.8" fill="rgba(0,0,0,.28)"/>
+    <rect x="11" y="31" width="5" height="8" rx="2" fill="#3a3f47"/><rect x="16" y="31" width="5" height="8" rx="2" fill="#454b54"/>
+    <rect x="9.5" y="38.2" width="8" height="4" rx="2" fill="#14171c"/><rect x="15.5" y="38.2" width="9" height="4" rx="2" fill="#14171c"/>
+    <rect x="9" y="19" width="15" height="14" rx="3.5" fill="#4a4f57"/><rect x="9" y="19" width="15" height="5" rx="3" fill="#565c66"/>
+    <circle cx="16" cy="12" r="6.2" fill="#c9966b"/>
+    <path d="M10 13 Q16 19 22 13 Q21 16 16 16.5 Q11 16 10 13Z" fill="#2a211a"/>
+    <rect x="10.5" y="9" width="11" height="2.6" rx="1.2" fill="#1c2a1f"/>
+    <circle cx="13.5" cy="10.2" r="1" fill="#3fcf9e"/><circle cx="18.5" cy="10.2" r="1" fill="#3fcf9e"/>
+    <rect x="22" y="8" width="2.4" height="20" rx="1" fill="#6b4e2a"/>
+    <path d="M22 8 q8 1 8 8 q-8 1 -8 -2 Z" fill="#9aa3ad" stroke="#5b6772" stroke-width="0.6"/>
+    <circle cx="27.5" cy="30" r="1.7" fill="#3fcf9e"/></svg>`,
+  platinum:`<svg class="sprite" viewBox="0 0 32 48" preserveAspectRatio="xMidYMax meet" aria-label="Platinum">
+    <ellipse cx="16" cy="45" rx="9" ry="2.6" fill="rgba(0,0,0,.28)"/>
+    <path d="M10 39 L13 22 L20 22 L23 39 Z" fill="#26406b"/><rect x="11" y="20" width="11" height="6" rx="3" fill="#2e4d80"/>
+    <circle cx="16.5" cy="13" r="6" fill="#6f5240"/>
+    <path d="M11 12 q1 -7 6 -7 q5 0 6 7 q-3 -3 -6 -3 q-3 0 -6 3Z" fill="#1c1410"/>
+    <rect x="12" y="11.5" width="9.4" height="2.2" rx="1" fill="#3a3f46"/>
+    <circle cx="14.6" cy="12.6" r="1.4" fill="none" stroke="#cfd6de" stroke-width="0.7"/>
+    <circle cx="18.8" cy="12.6" r="1.4" fill="none" stroke="#cfd6de" stroke-width="0.7"/>
+    <rect x="20" y="24" width="4" height="5" rx="1" fill="#c7ced6"/>
+    <g stroke="#cfd6de" stroke-width="1.2" stroke-linecap="round"><path d="M24 25 L30 23"/><path d="M24 26.5 L30 26.5"/><path d="M24 28 L30 30"/></g></svg>`
+};
+
+/* the four crew members — stats per the locked numbers; growth per class */
+const MEMBER_DEFS = {
+  gold:    {key:'gold',    codename:'GOLD',     emoji:'⚓', name:'Larry "Sparkplug"', role:'Leader / Control',
+            base:{hp:60,atk:13,def:4,crit:0.15}, grow:{hp:10,atk:3,def:1}, fuel:true,
+            abils:['strike','overdrive','anchorCast','breachingBlow','brace','repair']},
+  silver:  {key:'silver',  codename:'SILVER',   emoji:'🎯', name:'Silver', role:'Ranged DPS',
+            base:{hp:50,atk:12,def:3,crit:0.25}, grow:{hp:7,atk:3,def:1},
+            abils:['kinetic','net','magnetic','flak','incendiary','dagger']},
+  titanium:{key:'titanium',codename:'TITANIUM', emoji:'🪓', name:'Titanium', role:'Bruiser / Commander',
+            base:{hp:80,atk:13,def:6,crit:0.10}, grow:{hp:12,atk:2,def:2},
+            abils:['deployDrone','markTarget','axeStrike','axeBasic']},
+  platinum:{key:'platinum',codename:'PLATINUM', emoji:'🦾', name:'Platinum', role:'Armor-breaker / Support',
+            base:{hp:64,atk:11,def:5,crit:0.12}, grow:{hp:9,atk:2,def:1},
+            abils:['pneumaticPunch','precisionBolt','patch','staticField']},
+};
+
+/* ---- combat helpers (shared by abilities, enemy AI, and the headless sim) ---- */
+function stAdd(t,k,v){ t.st=t.st||{}; t.st[k]=Math.max(t.st[k]||0, v); }
+function stHas(t,k){ return !!(t.st && t.st[k]>0); }
+function critRoll(base, critCh, critMul){
+  let d=Math.max(1,base)*(1+(Math.random()*0.36-0.18));   // ±18% variance
+  lastCrit = Math.random()<critCh; if(lastCrit) d*=critMul;
+  return Math.max(1,Math.floor(d));
+}
+/* deterministic order: base → −DEF(/2 if pierce) → ±18% → ×crit → ×mark → floor, min 1 */
+function dealTo(tgt, base, critCh, critMul, opts){
+  opts=opts||{};
+  let def=(tgt.def||0)-((tgt.st&&tgt.st.defDown)||0);
+  let b=base-Math.floor(Math.max(0,def)*(opts.pierce?0.5:1));
+  let dmg=critRoll(b, critCh, critMul);
+  if(stHas(tgt,'mark')) dmg=Math.floor(dmg*1.25);
+  tgt.hp=Math.max(0,tgt.hp-dmg); if(tgt.hp<=0) tgt.alive=false;
+  return dmg;
+}
+function aliveMembers(){ return party.filter(m=>m.alive); }
+function aliveFoes(){ return battle ? battle.enemies.filter(e=>e.alive) : []; }
+
+/* ---- abilities. resolve(a,t) mutates state and returns a descriptor:
+   {log, kind:'hit'|'heal'|'buff'|'summon', val, aoe, anim:'strike'|'overdrive', sfx} ---- */
+const ABIL = {
+  // GOLD / Larry
+  strike:{name:'Strike', icon:'⚓', tgt:'enemy', desc:'free attack',
+    run:(a,t)=>{ const d=dealTo(t,a.atk,0.15,1.6); return {log:`${a.name} anchors ${t.name} for ${d}${lastCrit?' — CRIT!':''}.`,kind:'hit',anim:'strike',sfx:'strike',crit:lastCrit,val:d}; }},
+  overdrive:{name:'Overdrive', icon:'⚡', tgt:'enemy', cost:{fuel:4}, desc:'−4 fuel · big hit',
+    run:(a,t)=>{ a.fuel-=4; const d=dealTo(t,Math.floor(a.atk*1.4)-Math.floor((t.def||0)/2),0.25,1.7); return {log:`${a.name} OVERDRIVE — ${d}${lastCrit?' CRIT!':''}!`,kind:'hit',anim:'overdrive',sfx:'overdrive',crit:lastCrit,val:d}; }},
+  anchorCast:{name:'Anchor Cast', icon:'🕸️', tgt:'enemy', cd:3, desc:'pull + delay turn',
+    run:(a,t)=>{ const d=dealTo(t,Math.floor(a.atk*0.6),0.1,1.5); stAdd(t,'stun',1); return {log:`${a.name} hooks ${t.name} (${d}) and drags it off-balance.`,kind:'hit',anim:'strike',sfx:'strike',val:d}; }},
+  breachingBlow:{name:'Breaching Blow', icon:'⚓', tgt:'enemy', cd:3, desc:'heavy · may Stun',
+    run:(a,t)=>{ const d=dealTo(t,Math.floor(a.atk*1.4),0.20,1.7); const s=Math.random()<0.25; if(s)stAdd(t,'stun',1); return {log:`${a.name} Breaching Blow — ${d}${s?' · STUN!':''}.`,kind:'hit',anim:'overdrive',sfx:'overdrive',crit:lastCrit,val:d}; }},
+  brace:{name:'Brace', icon:'🛡', tgt:'self', desc:'guard · +3 fuel',
+    run:(a)=>{ stAdd(a,'guard',1); a.fuel=Math.min(a.maxFuel,a.fuel+3); return {log:`${a.name} braces — guard up, +3 fuel.`,kind:'buff',sfx:'brace'}; }},
+  repair:{name:'Repair', icon:'🧰', tgt:'self', charge:'kits', desc:'heal · −1 kit',
+    run:(a)=>{ a.kits--; const h=Math.floor(a.maxHp*0.4); a.hp=Math.min(a.maxHp,a.hp+h); return {log:`${a.name} patches up +${h} HP (${a.kits} kits).`,kind:'heal',val:h,sfx:'repair'}; }},
+  // SILVER — Payload Selector + dagger
+  kinetic:{name:'Kinetic', icon:'🎯', tgt:'enemy', ammo:true, desc:'high dmg + crit',
+    run:(a,t)=>{ const d=dealTo(t,Math.floor(a.atk*1.0),a.crit+0.05,1.7); return {log:`${a.name} fires Kinetic — ${d}${lastCrit?' CRIT!':''}.`,kind:'hit',anim:'strike',sfx:'strike',crit:lastCrit,val:d}; }},
+  net:{name:'Net', icon:'🕸️', tgt:'enemy', ammo:true, cd:2, desc:'may skip turn',
+    run:(a,t)=>{ const d=dealTo(t,Math.floor(a.atk*0.7),a.crit,1.5); const s=Math.random()<0.5; if(s)stAdd(t,'stun',1); return {log:`${a.name} fires Net — ${d}${s?' · tangled!':''}.`,kind:'hit',sfx:'strike',val:d}; }},
+  magnetic:{name:'Magnetic', icon:'🧲', tgt:'enemy', ammo:true, cd:2, desc:'pull · −DEF',
+    run:(a,t)=>{ const d=dealTo(t,Math.floor(a.atk*0.8),a.crit,1.5); stAdd(t,'defDown',2); return {log:`${a.name} fires Magnetic — ${d}, armor weakened.`,kind:'hit',sfx:'strike',val:d}; }},
+  flak:{name:'Flak', icon:'💥', tgt:'allenemies', ammo:true, cd:3, desc:'hit ALL',
+    run:(a)=>{ let tot=0; aliveFoes().forEach(f=>tot+=dealTo(f,Math.floor(a.atk*0.6),a.crit,1.5)); return {log:`${a.name} sprays Flak across the field — ${tot} total.`,kind:'hit',aoe:true,sfx:'overdrive'}; }},
+  incendiary:{name:'Incendiary', icon:'🔥', tgt:'enemy', ammo:true, cd:3, desc:'burn',
+    run:(a,t)=>{ const d=dealTo(t,Math.floor(a.atk*0.9),a.crit,1.5); stAdd(t,'burn',3); return {log:`${a.name} fires Incendiary — ${d}, ${t.name} is burning.`,kind:'hit',sfx:'strike',val:d}; }},
+  dagger:{name:'Dagger', icon:'🗡️', tgt:'enemy', desc:'free melee',
+    run:(a,t)=>{ const d=dealTo(t,Math.floor(a.atk*0.9),a.crit,1.5); return {log:`${a.name} slashes — ${d}.`,kind:'hit',anim:'strike',sfx:'strike',val:d}; }},
+  // TITANIUM
+  deployDrone:{name:'Deploy Drone', icon:'🪰', tgt:'self', cd:3, desc:'auto-attacks each round',
+    run:(a)=>{ a.drone={hp:18,dmg:5}; return {log:`${a.name} deploys a brass drone 🪰.`,kind:'summon',sfx:'brace'}; }},
+  markTarget:{name:'Mark Target', icon:'🎯', tgt:'enemy', cd:2, desc:'party +25% dmg to it',
+    run:(a,t)=>{ stAdd(t,'mark',99); return {log:`${a.name} marks ${t.name} — the crew zeroes in.`,kind:'buff'}; }},
+  axeStrike:{name:'Braced Axe Strike', icon:'🪓', tgt:'enemy', cd:2, desc:'heavy · armor-pierce',
+    run:(a,t)=>{ const d=dealTo(t,Math.floor(a.atk*1.35),0.10,1.5,{pierce:true}); return {log:`${a.name} brings the axe down — ${d}${lastCrit?' CRIT!':''}.`,kind:'hit',anim:'overdrive',sfx:'overdrive',crit:lastCrit,val:d}; }},
+  axeBasic:{name:'Axe Swing', icon:'🪓', tgt:'enemy', desc:'free attack',
+    run:(a,t)=>{ const d=dealTo(t,Math.floor(a.atk*0.85),0.10,1.5); return {log:`${a.name} swings — ${d}.`,kind:'hit',anim:'strike',sfx:'strike',val:d}; }},
+  // PLATINUM
+  pneumaticPunch:{name:'Pneumatic Punch', icon:'👊', tgt:'enemy', cd:2, desc:'−DEF · may Stun',
+    run:(a,t)=>{ const d=dealTo(t,Math.floor(a.atk*1.3),0.12,1.5); stAdd(t,'defDown',2); const s=Math.random()<0.25; if(s)stAdd(t,'stun',1); return {log:`${a.name} shatters armor — ${d}${s?' · STUN!':''}.`,kind:'hit',anim:'overdrive',sfx:'overdrive',val:d}; }},
+  precisionBolt:{name:'Precision Bolt', icon:'🏹', tgt:'enemy', desc:'free ranged',
+    run:(a,t)=>{ const d=dealTo(t,Math.floor(a.atk*0.8),0.12,1.5); return {log:`${a.name} fires a bolt — ${d}.`,kind:'hit',anim:'strike',sfx:'strike',val:d}; }},
+  patch:{name:'Patch', icon:'🩹', tgt:'ally', charge:'patchCharges', desc:'heal ally',
+    run:(a,t)=>{ const h=Math.floor(t.maxHp*0.4); t.hp=Math.min(t.maxHp,t.hp+h); a.patchCharges--; return {log:`${a.name} patches ${t.name} +${h} HP.`,kind:'heal',val:h,sfx:'repair'}; }},
+  staticField:{name:'Static Field', icon:'🌀', tgt:'enemy', cd:2, desc:'−ATK',
+    run:(a,t)=>{ stAdd(t,'atkDown',2); return {log:`${a.name} static-fields ${t.name} — its attack falters.`,kind:'buff'}; }},
+};
+
+function makeMember(key, lv){
+  const d=MEMBER_DEFS[key], n=lv-1;
+  const maxHp=d.base.hp+d.grow.hp*n, atk=d.base.atk+d.grow.atk*n, def=d.base.def+d.grow.def*n;
+  const m={ key, codename:d.codename, name:d.name, emoji:d.emoji, role:d.role, abils:d.abils.slice(),
+    lv, xp:0, xpNext:30, maxHp, hp:maxHp, atk, def, crit:d.base.crit,
+    alive:true, st:{}, cd:{}, drone:null, ammo:'kinetic' };
+  if(d.fuel){ m.fuel=6; m.maxFuel=12; m.kits=3; } else { m.fuel=0; m.maxFuel=0; m.kits=0; }
+  if(key==='platinum') m.patchCharges=3;
+  return m;
+}
+
 /* ----------------------- GAME STATE ------------------------------- */
 let map;          // mutable 2D array of chars
-let hero, player, mode, busy, enc, lastCrit;
-
-function freshHero(){
-  return { lv:1, xp:0, xpNext:30,
-           hp:60, maxHp:60, fuel:6, maxFuel:12,
-           atk:13, def:4, kits:3, braced:false };
-}
+let party, recruited, hero, player, mode, busy, battle, lastCrit;
 
 function resetState(){
   map = ORIGINAL_MAP.map(row => row.split(''));   // deep copy
-  hero = freshHero();
+  party = [ makeMember('gold', 1) ];              // Larry leads; recruits join via NPCs
+  recruited = { silver:false, titanium:false, platinum:false };
+  hero = party[0];                               // overworld HUD/persistence use the leader
   player = { y:START.y, x:START.x };
-  mode = 'title'; busy = false; enc = null;
+  mode = 'title'; busy = false; battle = null;
   facing = 'down'; seenDistricts = new Set();
+}
+/* recruit a friend at the leader's current level (level-band: no inflated stats) */
+function recruitMember(key){
+  if(recruited[key]) return;
+  const m = makeMember(key, party[0].lv);
+  recruited[key] = true;
+  party.push(m);
 }
 /* Return to the title. NOTE: does NOT clear the save (so a page reload can
    still offer Continue). A fresh run is begun from "Start the Job". */
@@ -1311,32 +1483,54 @@ function cutsceneSkip(){ enterWorld(true); }
    We snapshot everything the run needs: stats, position, facing, the mutated
    map (cleared landmarks / opened gates / taken pickups) and seen districts.
    All wrapped in try/catch so private-mode browsers degrade gracefully. */
-const SAVE_KEY = 'salt_diesel_save_v1';
+const SAVE_KEY = 'salt_diesel_save_v2';
+const SAVE_KEY_V1 = 'salt_diesel_save_v1';
 function saveGame(){
   try{
     if(!map) return;
-    const data = { hero, player, facing,
+    const data = { v:2, party, recruited, player, facing,
       map: map.map(r => r.join('')), seen: [...seenDistricts] };
     localStorage.setItem(SAVE_KEY, JSON.stringify(data));
   }catch(e){ /* storage unavailable — skip silently */ }
 }
-function hasSave(){ try{ return !!localStorage.getItem(SAVE_KEY); }catch(e){ return false; } }
-function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
+function hasSave(){ try{ return !!(localStorage.getItem(SAVE_KEY)||localStorage.getItem(SAVE_KEY_V1)); }catch(e){ return false; } }
+function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); localStorage.removeItem(SAVE_KEY_V1); }catch(e){} }
 function refreshContinueBtn(){
   const b = document.getElementById('continueBtn');
   if(b) b.style.display = hasSave() ? 'block' : 'none';
 }
 function continueGame(){
   try{
-    const data = JSON.parse(localStorage.getItem(SAVE_KEY));
-    if(!data) { enterWorld(true); return; }
-    hero = data.hero;
-    player = data.player;
-    facing = data.facing || 'down';
-    map = data.map.map(r => r.split(''));
-    seenDistricts = new Set(data.seen || []);
-    busy = false; enc = null;
-    enterWorld(false);          // resume quietly, no welcome banner
+    let raw = localStorage.getItem(SAVE_KEY);
+    if(raw){
+      const data = JSON.parse(raw);
+      party = data.party; hero = party[0];
+      recruited = data.recruited || { silver:false, titanium:false, platinum:false };
+      player = data.player; facing = data.facing || 'down';
+      map = data.map.map(r => r.split('')); seenDistricts = new Set(data.seen || []);
+      busy = false; battle = null;
+      enterWorld(false); return;
+    }
+    // ---- migrate a v1 (single-hero) save: rebuild party from Larry's stats ----
+    raw = localStorage.getItem(SAVE_KEY_V1);
+    if(raw){
+      const d = JSON.parse(raw);
+      resetState();
+      if(d.hero){ const L=party[0], h=d.hero;   // carry Larry's progress forward
+        L.lv=h.lv||1; L.xp=h.xp||0; L.xpNext=h.xpNext||30;
+        L.maxHp=h.maxHp||L.maxHp; L.hp=Math.min(L.maxHp, h.hp||L.maxHp);
+        L.atk=h.atk||L.atk; L.def=h.def||L.def;
+        L.fuel=h.fuel!=null?h.fuel:L.fuel; L.maxFuel=h.maxFuel||L.maxFuel; L.kits=h.kits!=null?h.kits:L.kits;
+      }
+      if(d.player) player=d.player;
+      facing=d.facing||'down';
+      if(d.map) map=d.map.map(r=>r.split(''));
+      seenDistricts=new Set(d.seen||[]);
+      localStorage.removeItem(SAVE_KEY_V1); saveGame();   // upgrade to v2
+      busy=false; battle=null;
+      enterWorld(false); return;
+    }
+    enterWorld(true);
   }catch(e){ enterWorld(true); }
 }
 
@@ -1446,6 +1640,13 @@ document.addEventListener('visibilitychange', ()=>{
   }
 });
 
+/* riveted pressure-gauge fill (overworld HUD) */
+function setGauge(id, val, max, label){
+  const f=document.getElementById(id+'-fill'), l=document.getElementById(id+'-lbl');
+  const pct = max>0 ? Math.max(0, Math.min(100, (val/max)*100)) : 0;
+  if(f){ f.style.right=(100-pct)+'%'; f.style.width='100%'; }
+  if(l) l.textContent=label;
+}
 function updateHUD(){
   document.getElementById('hud-lv').textContent   = hero.lv;
   document.getElementById('hud-kits').textContent = hero.kits;
@@ -1514,12 +1715,23 @@ function toastHint(msg){
   toastHint._t = setTimeout(()=>{ el.innerHTML = "Arrow keys / D-pad to roam &middot; walk into markers to act"; }, 3200);
 }
 
+/* the three NPC tiles each recruit a friend (names are editable data fields) */
+const RECRUIT = {
+  'N':{key:'silver',  face:'🎯', join:"A sharp gunner times his shots off a brass chronometer. \"SILVER. Point me at trouble.\"  ★ Silver 🎯 joined the crew!", after:"Silver thumbs his chronometer. \"Say the word.\""},
+  'D':{key:'titanium',face:'🪓', join:"A broad dock-loader hefts a clockwork axe, a drone buzzing at his shoulder. \"Name's TITANIUM. I'll take the hits.\"  ★ Titanium 🪓 joined the crew!", after:"Titanium cracks his knuckles. \"Ready when you are.\""},
+  'R':{key:'platinum',face:'🦾', join:"A bespectacled artificer flexes claw-tipped gauntlets. \"They call me PLATINUM. Precision is everything.\"  ★ Platinum 🦾 joined the crew!", after:"Platinum recalibrates a gauntlet. \"I've patched worse.\""},
+};
 function openDialogue(ch){
   mode = 'dialogue';                       // freezes overworld movement
-  const d = NPC_LINES[ch];
-  document.getElementById('d-face').textContent = d.face;
+  let face, say;
+  if(RECRUIT[ch]){
+    const r=RECRUIT[ch]; face=r.face;
+    if(!recruited[r.key]){ recruitMember(r.key); SFX.level(); say=r.join; saveGame(); }
+    else say=r.after;
+  } else { const d=NPC_LINES[ch]||{face:'❓',say:'…'}; face=d.face; say=d.say; }
+  document.getElementById('d-face').textContent = face;
   document.getElementById('dialogue').classList.add('active');
-  typeText(document.getElementById('d-say'), d.say);     // typewriter reveal
+  typeText(document.getElementById('d-say'), say);       // typewriter reveal
 }
 function closeDialogue(){
   if(!twDone){ typeFinish(); return; }    // first tap finishes the line
@@ -1532,214 +1744,235 @@ function closeDialogue(){
    ================================================================= */
 let logLines = [];
 
-function startBattle(ch, y, x){
-  const def = ENEMIES[ch];
-  enc = { ch, y, x, name:def.name, face:def.face, maxHp:def.hp, hp:def.hp,
-          atk:def.atk, def:def.def, xp:def.xp, kind:def.kind, opens:def.opens };
-  hero.braced = false;
-  mode = 'battle'; busy = false;
-  logLines = [];
-  // Stage backdrop per district (patrol fights use the generic harbor fog).
-  document.getElementById('stage').setAttribute('data-scene', SCENE_OF[ch] || 'harbor');
-  // Enemy: inline SVG on the right of the stage (CSS mirrors it to face left).
-  const stageEnemy = document.getElementById('stage-enemy');
-  if(stageEnemy) stageEnemy.innerHTML = ENEMY_SVG[ch] || ('<div style="font-size:2.4rem">'+enc.face+'</div>');
-  // Hero: clone Larry's sprite onto the left of the stage, side-view facing right.
-  const stageHero = document.getElementById('stage-hero');
-  const plEl = document.getElementById('player');
-  if(stageHero && plEl){ stageHero.innerHTML = plEl.innerHTML; stageHero.setAttribute('data-dir','right'); }
-  document.getElementById('e-name').textContent = enc.name;
-  pushLog(def.intro, 'sys');
-  showScreen('battle');
-  renderBattle();
-  pulse('stage-enemy', 'struck', 260);   // enemy "appears" blink
-  if(def.kind==='boss'){                  // dramatic reveal for the Baron
-    flashScreen(); shakeScreen();
-    pushLog('⚠ THE LEVIATHAN AWAKENS ⚠', 'crit');
-  }
-}
 /* which backdrop each fight uses */
 const SCENE_OF = { '1':'alley', '2':'rail', '3':'docks', '4':'tower', 'L':'harbor', 'H':'harbor' };
-
 function pushLog(text, cls){
   logLines.push({text, cls:cls||''});
   if(logLines.length > 6) logLines = logLines.slice(-6);
   const box = document.getElementById('log');
-  box.innerHTML = logLines.map(l=>`<div class="line ${l.cls}">${l.text}</div>`).join('');
+  if(box) box.innerHTML = logLines.map(l=>`<div class="line ${l.cls}">${l.text}</div>`).join('');
 }
 
-function setGauge(id, val, max, label){
-  const pct = max>0 ? Math.max(0, Math.min(100, (val/max)*100)) : 0;
-  document.getElementById(id+'-fill').style.right = (100-pct)+'%';
-  document.getElementById(id+'-fill').style.width = '100%';
-  document.getElementById(id+'-lbl').textContent = label;
+/* =================== PARTY BATTLE ENGINE (Phase 5) ===================
+   Round = each living ally acts (player picks ability + target), then drones,
+   then enemies act. Deterministic; input locked off-turn and during the enemy
+   phase. Pure resolution (ABIL[].run / enemyAIact / endOfRound) is DOM-free so
+   the headless sim drives it via autoPickAndAct(policy). */
+function firstLivingAlly(from){ for(let i=Math.max(0,from);i<party.length;i++) if(party[i].alive) return i; return -1; }
+function enemiesCleared(){ return aliveFoes().length===0; }
+function partyWiped(){ return aliveMembers().length===0; }
+function enemyHit(e, ally, base, critCh, critMul){           // enemy → ally (respects Brace guard)
+  let b=base-Math.max(0, ally.def);
+  let dmg=critRoll(b, critCh, critMul);
+  if(stHas(ally,'guard')) dmg=Math.ceil(dmg/2);
+  ally.hp=Math.max(0,ally.hp-dmg); if(ally.hp<=0) ally.alive=false;
+  return dmg;
+}
+function abilUsable(m,id){
+  const ab=ABIL[id]; if(!ab) return false;
+  if(m.cd[id]>0) return false;
+  if(ab.cost&&ab.cost.fuel&&m.fuel<ab.cost.fuel) return false;
+  if(ab.charge && (m[ab.charge]||0)<=0) return false;
+  return true;
+}
+function cdLabel(m,id){ return m.cd[id]>0 ? ('CD '+m.cd[id]) : ''; }
+
+function buildEnemies(ch){
+  const d=ENEMIES[ch]; const out=[];
+  out.push({key:ch,name:d.name,face:d.face,svg:ENEMY_SVG[ch],maxHp:d.hp,hp:d.hp,atk:d.atk,def:d.def,boss:d.kind==='boss',xp:d.xp,alive:true,st:{},t:0,phase:1});
+  (d.adds||[]).forEach(ak=>{ const a=ADD_DEFS[ak]; out.push({key:ak,name:a.name,face:a.face,svg:ENEMY_SVG[a.svg],maxHp:a.hp,hp:a.hp,atk:a.atk,def:a.def,add:true,xp:a.xp,alive:true,st:{},t:0,phase:1}); });
+  return out;
 }
 
+function startBattle(ch, y, x){
+  battle = { ch, y, x, enemies:buildEnemies(ch), activeIdx:0, round:1, await:null, payload:false,
+             over:false, kind:ENEMIES[ch].kind, opens:ENEMIES[ch].opens };
+  // per-fight reset: statuses, cooldowns, drones, Platinum's Patch charges; revive KO'd to 1 HP
+  party.forEach(m=>{ m.st={}; m.cd={}; m.drone=null; if(m.key==='platinum') m.patchCharges=3; if(m.hp<=0) m.hp=1; m.alive=true; });
+  mode='battle'; busy=false; logLines=[];
+  document.getElementById('stage').setAttribute('data-scene', SCENE_OF[ch]||'harbor');
+  pushLog(ENEMIES[ch].intro, 'sys');
+  battle.activeIdx = firstLivingAlly(0);
+  showScreen('battle');
+  renderBattle();
+  if(battle.kind==='boss'){ flashScreen(); shakeScreen(); pushLog('⚠ THE LEVIATHAN AWAKENS ⚠','crit'); }
+}
+
+/* ----- rendering ----- */
+function setStageSprite(m){
+  const el=document.getElementById('stage-hero'); if(!el) return;
+  if(m.key==='gold'){ const pl=document.getElementById('player'); el.innerHTML=pl?pl.innerHTML:''; el.classList.add('larry'); el.setAttribute('data-dir','right'); }
+  else { el.innerHTML=MEMBER_SVG[m.key]||('<div style="font-size:2rem">'+m.emoji+'</div>'); el.classList.remove('larry'); }
+}
+function foeStatus(e){ let s=''; if(stHas(e,'mark'))s+='🎯'; if(stHas(e,'burn'))s+='🔥'; if(stHas(e,'stun'))s+='💫'; if(stHas(e,'defDown'))s+='<span class="dn">DEF↓</span>'; if(stHas(e,'atkDown'))s+='<span class="dn">ATK↓</span>'; return s; }
+function renderEnemies(){
+  const wrap=document.getElementById('stage-enemies'); if(!wrap) return;
+  wrap.innerHTML = battle.enemies.map((e,i)=>{
+    if(!e.alive) return '';
+    const pct=Math.max(0,Math.min(100,e.hp/e.maxHp*100));
+    const tgt = (battle.await&&battle.await.tgt==='enemy') ? ' targetable':'';
+    return `<div class="foe${e.boss?' boss':''}${tgt}" id="foe${i}" onclick="pickTarget(${i})">
+      <div class="foe-spr">${e.svg||('<span style=\"font-size:1.7rem\">'+e.face+'</span>')}</div>
+      <div class="foe-bar"><i style="width:${pct}%"></i></div>
+      <div class="foe-nm">${e.name.split(' ')[0]} ${foeStatus(e)}</div></div>`;
+  }).join('');
+}
+function renderPartyHud(){
+  const hud=document.getElementById('party-hud'); if(!hud) return;
+  hud.innerHTML = party.map((m,i)=>{
+    const pct=Math.max(0,Math.min(100,m.hp/m.maxHp*100));
+    const active=(!busy && i===battle.activeIdx && !battle.over)?' active':'';
+    const ko=m.hp<=0?' ko':'';
+    const pickAlly=(battle.await&&battle.await.tgt==='ally'&&m.alive)?' targetable':'';
+    let res = m.key==='gold'?('⛽'+m.fuel) : m.key==='platinum'?('🩹'+m.patchCharges) : (m.drone?'🪰':'');
+    return `<div class="pcard${active}${ko}${pickAlly}" id="phud${i}" onclick="pickAlly(${i})">
+      <span class="pc-em">${m.emoji}</span><b>${m.name.split(' ')[0]}</b> <small>L${m.lv}</small>
+      <div class="pc-bar"><i style="width:${pct}%"></i></div>
+      <div class="pc-res">${m.hp}/${m.maxHp} ${res}</div></div>`;
+  }).join('');
+}
+function renderActions(){
+  const box=document.getElementById('actions'); if(!box) return;
+  if(busy || battle.over){ box.innerHTML=''; return; }
+  if(battle.await){
+    box.innerHTML = `<div class="act-hint">Choose a ${battle.await.tgt==='ally'?'crew member':'target'}…</div><button class="btn" onclick="cancelTarget()">Cancel</button>`;
+    return;
+  }
+  const m=party[battle.activeIdx]; if(!m){ box.innerHTML=''; return; }
+  let ids;
+  if(m.key==='silver' && battle.payload){ ids=['kinetic','net','magnetic','flak','incendiary']; }
+  else if(m.key==='silver'){ ids=['__payload','dagger']; }
+  else ids=m.abils;
+  let html = ids.map(id=>{
+    if(id==='__payload') return `<button class="btn abil" onclick="openPayload()">🎯 Payload ▾<small>select ammo</small></button>`;
+    const ab=ABIL[id]; const ok=abilUsable(m,id);
+    return `<button class="btn abil" ${ok?'':'disabled'} onclick="chooseAbility('${id}')">${ab.icon} ${ab.name}<small>${cdLabel(m,id)||ab.desc}</small></button>`;
+  }).join('');
+  if(m.key==='silver' && battle.payload) html = `<button class="btn" onclick="closePayload()">↩ Back</button>`+html;
+  box.innerHTML = html;
+}
 function renderBattle(){
-  setGauge('e-hp', enc.hp, enc.maxHp, enc.name.toUpperCase()+'  '+enc.hp+'/'+enc.maxHp);
-  setGauge('b-hp', hero.hp, hero.maxHp, 'HP '+hero.hp+'/'+hero.maxHp);
-  setGauge('b-fuel', hero.fuel, hero.maxFuel, 'FUEL '+hero.fuel+'/'+hero.maxFuel);
-  document.getElementById('b-lv').textContent = hero.lv;
-  document.getElementById('b-kits').textContent = hero.kits;
-  // enable/disable action buttons (also disabled while enemy is acting)
-  document.getElementById('a-strike').disabled    = busy;
-  document.getElementById('a-overdrive').disabled = busy || hero.fuel < 4;
-  document.getElementById('a-brace').disabled     = busy;
-  document.getElementById('a-repair').disabled    = busy || hero.kits <= 0;
-  // low-HP danger vignette
-  document.getElementById('battle').classList.toggle('danger', hero.hp > 0 && hero.hp < hero.maxHp*0.25);
+  if(!battle) return;
+  const am = party[battle.activeIdx];
+  if(am && !busy && !battle.over) setStageSprite(am);
+  renderEnemies(); renderPartyHud(); renderActions();
+  document.getElementById('battle').classList.toggle('danger', am && am.alive && am.hp>0 && am.hp < am.maxHp*0.25);
 }
 
-/* --- shared damage roll: apply ±18% variance, then crit factor; min 1 --- */
-function rollDamage(base, critChance, critMult){
-  let d = base * (1 + (Math.random()*0.36 - 0.18));   // ±18% variance
-  lastCrit = Math.random() < critChance;              // crit check
-  if(lastCrit) d *= critMult;                          // crit multiplier
-  return Math.max(1, Math.floor(d));                   // never below 1
+/* ----- input: ability selection + targeting ----- */
+function openPayload(){ if(busy)return; battle.payload=true; renderBattle(); }
+function closePayload(){ battle.payload=false; renderBattle(); }
+function cancelTarget(){ battle.await=null; renderBattle(); }
+function chooseAbility(id){
+  if(busy||battle.over||menuOpen) return;
+  const m=party[battle.activeIdx]; if(!m||!abilUsable(m,id)) return;
+  const ab=ABIL[id];
+  if(ab.tgt==='enemy'){ const foes=aliveFoes(); if(foes.length===1){ commitAbility(id, battle.enemies.indexOf(foes[0])); } else { battle.await={id,tgt:'enemy'}; renderBattle(); } return; }
+  if(ab.tgt==='ally'){ const al=aliveMembers(); if(al.length===1){ commitAbility(id, party.indexOf(al[0])); } else { battle.await={id,tgt:'ally'}; renderBattle(); } return; }
+  commitAbility(id, -1);   // self / allenemies / none
 }
+function pickTarget(i){ if(!battle.await||battle.await.tgt!=='enemy')return; const e=battle.enemies[i]; if(!e||!e.alive)return; commitAbility(battle.await.id, i); }
+function pickAlly(i){ if(!battle.await||battle.await.tgt!=='ally')return; const m=party[i]; if(!m||!m.alive)return; commitAbility(battle.await.id, i); }
 
-function playerAction(kind){
-  if(mode!=='battle' || busy || menuOpen) return;
-  let acted = true;
-
-  if(kind==='strike'){
-    // free basic attack: max(1, ATK - DEF), ±18%, 15% crit x1.6
-    const base = Math.max(1, hero.atk - enc.def);
-    const dmg = rollDamage(base, 0.15, 1.6);
-    enc.hp = Math.max(0, enc.hp - dmg);
-    pushLog(`Wrench strike for ${dmg}${lastCrit?' — CRITICAL!':''}.`, lastCrit?'crit':'');
-    attackAnim('strike');                                 // Larry's bolt-sword slash
-    pulse('stage-enemy','knock',300); pulse('stage-enemy','struck',220);   // recoil + blink
-    floatDamage('stage-enemy', dmg, lastCrit?'crit':'dmg');
-    burst('stage-enemy', lastCrit?12:6, lastCrit?'crit':'hit');
-    SFX.strike(); if(lastCrit){ shakeScreen(); flashScreen(); }
-  }
-  else if(kind==='overdrive'){
-    if(hero.fuel < 4){ return; }                        // safety guard
-    hero.fuel -= 4;                                      // fuel cost
-    // floor(ATK*1.7) - floor(DEF/2), ±18%, 25% crit x1.7
-    const base = Math.max(1, Math.floor(hero.atk*1.7) - Math.floor(enc.def/2));
-    const dmg = rollDamage(base, 0.25, 1.7);
-    enc.hp = Math.max(0, enc.hp - dmg);
-    pushLog(`OVERDRIVE blast for ${dmg}${lastCrit?' — CRITICAL!':''}!`, lastCrit?'crit':'');
-    attackAnim('overdrive');                              // bigger two-handed bolt arc
-    pulse('stage-enemy','knock',300); pulse('stage-enemy','struck',220);
-    floatDamage('stage-enemy', dmg, lastCrit?'crit':'dmg');
-    burst('stage-enemy', lastCrit?16:10, lastCrit?'crit':'hit');
-    SFX.overdrive(); shakeScreen(); if(lastCrit) flashScreen();
-  }
-  else if(kind==='brace'){
-    hero.braced = true;                                 // halves next incoming hit
-    hero.fuel = Math.min(hero.maxFuel, hero.fuel + 3);  // +3 fuel
-    pushLog(`You brace behind the wrench. (guard up, +3 fuel)`, 'sys');
-    SFX.brace();
-  }
-  else if(kind==='repair'){
-    if(hero.kits <= 0){ return; }                       // safety guard
-    hero.kits -= 1;
-    const heal = Math.floor(hero.maxHp * 0.4);          // heal 40% max HP
-    hero.hp = Math.min(hero.maxHp, hero.hp + heal);
-    pushLog(`Field repair: +${heal} HP. (${hero.kits} kit${hero.kits===1?'':'s'} left)`, 'sys');
-    floatDamage('stage-hero', '+'+heal, 'heal');
-    burst('stage-hero', 8, 'heal');
-    SFX.repair();
-  }
-  else { acted = false; }
-
-  if(!acted) return;
+function commitAbility(id, targetIdx){
+  const m=party[battle.activeIdx]; const ab=ABIL[id]; if(!ab) return;
+  battle.await=null; battle.payload=false;
+  if(ab.cd) m.cd[id]=ab.cd;
+  const target = ab.tgt==='enemy' ? battle.enemies[targetIdx]
+               : ab.tgt==='ally'  ? party[targetIdx]
+               : (ab.tgt==='allenemies' ? null : m);
+  const r = ab.run(m, target) || {};
+  // hero swing animation
+  pulse('stage-hero','swing',360);
+  if(m.key==='gold') attackAnim((id==='overdrive'||id==='breachingBlow')?'overdrive':'strike');
+  if(r.sfx && SFX[r.sfx]) SFX[r.sfx]();
+  if(r.kind==='hit'){
+    if(r.aoe){ aliveFoes().forEach(f=>{ const i=battle.enemies.indexOf(f); pulse('foe'+i,'struck',220); }); shakeScreen(); }
+    else if(target){ const i=battle.enemies.indexOf(target); pulse('foe'+i,'knock',300); pulse('foe'+i,'struck',220); floatDamage('foe'+i, r.val||0, r.crit?'crit':'dmg'); burst('foe'+i, r.crit?12:6, r.crit?'crit':'hit'); if(r.crit){ shakeScreen(); flashScreen(); } }
+  } else if(r.kind==='heal'){ floatDamage('stage-hero','+'+(r.val||0),'heal'); burst('stage-hero',8,'heal'); }
+  pushLog(r.log, r.crit?'crit':'');
   renderBattle();
-
-  if(enc.hp <= 0){ winBattle(); return; }
-
-  // Pace the enemy's response, with buttons locked so input can't double-fire.
-  busy = true;
+  if(enemiesCleared()){ winBattle(); return; }
+  advanceAlly();
+}
+function advanceAlly(){
+  const n=firstLivingAlly(battle.activeIdx+1);
+  if(n===-1) allyPhaseDone(); else { battle.activeIdx=n; renderBattle(); }
+}
+function allyPhaseDone(){
+  busy=true; renderBattle();
+  // drones act (ally side)
+  party.forEach(m=>{ if(m.drone && m.alive){ const f=aliveFoes()[0]; if(f){ const i=battle.enemies.indexOf(f); const d=dealTo(f,m.drone.dmg,0.10,1.5); pulse('foe'+i,'struck',200); floatDamage('foe'+i,d,'dmg'); pushLog(`🪰 ${m.name.split(' ')[0]}'s drone hits ${f.name} for ${d}.`,'sys'); } } });
   renderBattle();
-  setTimeout(enemyTurn, 800);
+  if(enemiesCleared()){ winBattle(); return; }
+  setTimeout(enemyPhase, 600);
 }
-
-function enemyTurn(){
-  // Cosmetic flavor bark (does not affect the fight).
-  const barks = TAUNTS[enc.ch];
-  if(barks && Math.random() < 0.30) pushLog(`${enc.name}: ${barks[(Math.random()*barks.length)|0]}`, 'sys');
-  // base = max(1, enemyATK - heroDEF); ±18%; 22% heavy x1.4; 10% crit x1.5;
-  // if hero braced this round, halve afterward; min 1.
-  const wasBraced = hero.braced;                        // for the guard visual
-  const base = Math.max(1, enc.atk - hero.def);
-  let d = base * (1 + (Math.random()*0.36 - 0.18));     // variance
-  const heavy = Math.random() < 0.22;
-  const crit  = Math.random() < 0.10;
-  if(heavy) d *= 1.4;
-  if(crit)  d *= 1.5;
-  if(hero.braced) d *= 0.5;                              // guard halves the hit
-  let dmg = Math.max(1, Math.floor(d));
-  hero.hp = Math.max(0, hero.hp - dmg);
-
-  let tag = '';
-  if(heavy) tag += ' HEAVY';
-  if(crit)  tag += ' CRIT';
-  if(hero.braced) tag += ' (braced)';
-  pushLog(`${enc.name} hits you for ${dmg}.${tag}`, 'hurt');
-  enemyAttackAnim();                                     // enemy's own attack motion toward Larry
-  flash('hpanel', 'hurt', 460);                          // hero panel flashes red
-  if(wasBraced){                                         // guarded: guard flash + light recoil
-    pulse('stage-hero','guard',420);
-    burst('stage-hero', 5, 'hit');
-  } else {                                               // normal: flinch + spark
-    pulse('stage-hero','flinch',300); pulse('stage-hero','struck',220);
-    burst('stage-hero', (heavy||crit)?10:6, 'hurt');
+function enemyBark(e){ const t=TAUNTS[e.key]; if(t && Math.random()<0.25) pushLog(`${e.name}: ${t[(Math.random()*t.length)|0]}`,'sys'); }
+function enemyAIact(e){
+  if(stHas(e,'stun')){ e.st.stun--; pushLog(`${e.name} is stunned!`,'sys'); return; }
+  e.t++;
+  e.phase = (e.boss && e.hp < e.maxHp*0.5) ? 2 : 1;
+  if(e.boss && e.phase===2 && !e._p2){ e._p2=true; pushLog('The Leviathan SURGES — Phase 2!','crit'); flashScreen(); shakeScreen(); }
+  const atk = e.atk * (e.phase===2?1.6:1) * (stHas(e,'atkDown')?0.75:1);
+  const allies=aliveMembers(); if(!allies.length) return;
+  const i=battle.enemies.indexOf(e);
+  const sweepEvery = e.phase===2?1:2;
+  if(e.boss && e.t % sweepEvery===0){
+    pushLog(`${e.name} — TAIL SWEEP! 🌀 (hits the whole crew)`,'hurt');
+    allies.forEach(a=>{ enemyHit(e,a,Math.floor(atk*0.9),0.10,1.5); });
+    pulse('foe'+i,'foe-atk',420); pulse('stage-hero','flinch',300); shakeScreen(); SFX.hurt(); enemyBark(e); return;
   }
-  floatDamage('stage-hero', dmg, (heavy||crit)?'crit':'dmg');
-  SFX.hurt(); if(heavy||crit) shakeScreen();
-
-  hero.braced = false;                                  // guard consumed
-  hero.fuel = Math.min(hero.maxFuel, hero.fuel + 1);    // +1 fuel regen end of enemy turn
-
-  if(hero.hp <= 0){ renderBattle(); gameOver(); return; }
-
-  renderBattle();   // update gauges now; buttons stay disabled (busy still true)
-  // Re-enable input only after the enemy's animation finishes — turn stays deterministic.
-  setTimeout(()=>{ busy = false; renderBattle(); }, 480);
+  const tgt=allies[(Math.random()*allies.length)|0];
+  let base=atk; const heavy=Math.random()<0.22; if(heavy)base*=1.4;
+  const dmg=enemyHit(e,tgt,Math.floor(base),0.10,1.5);
+  pushLog(`${e.name} hits ${tgt.name.split(' ')[0]} for ${dmg}.${heavy?' HEAVY':''}${stHas(tgt,'guard')?' (guarded)':''}`,'hurt');
+  pulse('foe'+i,'foe-atk',400); pulse('stage-hero','flinch',300); SFX.hurt(); if(heavy)shakeScreen(); enemyBark(e);
+}
+function enemyPhase(){
+  const foes=aliveFoes(); let k=0;
+  (function step(){
+    if(battle.over) return;
+    if(k>=foes.length){ endOfRound(); return; }
+    const e=foes[k++]; if(!e.alive){ step(); return; }
+    enemyAIact(e); renderBattle();
+    if(partyWiped()){ gameOver(); return; }
+    setTimeout(step, 480);
+  })();
+}
+function endOfRound(){
+  if(battle.over) return;
+  // burn ticks
+  battle.enemies.forEach(e=>{ if(e.alive && stHas(e,'burn')){ const b=Math.max(2,Math.floor(e.maxHp*0.03)); e.hp=Math.max(0,e.hp-b); if(e.hp<=0)e.alive=false; e.st.burn--; pushLog(`${e.name} burns for ${b}.`,'sys'); } });
+  if(enemiesCleared()){ winBattle(); return; }
+  party.forEach(m=>{ for(const k in m.cd) if(m.cd[k]>0) m.cd[k]--; m.st.guard=0; });
+  battle.enemies.forEach(e=>{ ['defDown','atkDown','mark'].forEach(k=>{ if(e.st[k]>0) e.st[k]--; }); });
+  battle.round++; battle.activeIdx=firstLivingAlly(0); busy=false; renderBattle();
 }
 
-/* ----------------------- WIN / REWARD / END ----------------------- */
+function grantXP(m, xp){
+  m.xp+=xp; let lv=0;
+  while(m.xp>=m.xpNext){ m.xp-=m.xpNext; m.lv++; lv++; const g=MEMBER_DEFS[m.key].grow;
+    m.maxHp+=g.hp; m.atk+=g.atk; m.def+=g.def; if(m.maxFuel) m.maxFuel+=2;
+    m.xpNext=Math.round(m.xpNext*1.55); m.hp=m.maxHp; if(m.maxFuel) m.fuel=m.maxFuel; }
+  return lv;
+}
 function winBattle(){
-  pushLog(`${enc.name} is down!`, 'sys');
-  // Clear the tile from the overworld (no respawn) and open the next gate.
-  if(enc.kind!=='boss'){
-    map[enc.y][enc.x] = GROUND[enc.ch];
-  }
-  if(enc.opens){ openGate(enc.opens); }
-
-  // Apply XP and any level-ups (full restore on level up).
-  const before = { lv:hero.lv };
-  hero.xp += enc.xp;
-  let levels = 0;
-  while(hero.xp >= hero.xpNext){
-    hero.xp -= hero.xpNext;
-    hero.lv += 1; levels++;
-    hero.maxHp += 10; hero.maxFuel += 2; hero.atk += 3; hero.def += 1;
-    hero.xpNext = Math.round(hero.xpNext * 1.55);
-    hero.hp = hero.maxHp; hero.fuel = hero.maxFuel;     // full restore
-  }
-
-  if(levels>0 && enc.kind!=='boss'){ SFX.level(); burst('stage-hero', 18, 'heal'); }
-  if(enc.kind==='boss'){ SFX.win(); clearSave(); mode='victory'; showScreen('victory'); return; }
-
-  // Reward screen (non-boss only).
-  let s = `XP gained: +${enc.xp}\n`;
-  if(levels>0){
-    s += `\nLEVEL UP!  ${before.lv} → ${hero.lv}\n`;
-    s += `Max HP ${hero.maxHp} · Max Fuel ${hero.maxFuel}\n`;
-    s += `Attack ${hero.atk} · Defense ${hero.def}\n`;
-    s += `(HP & Fuel fully restored)\n`;
-  } else {
-    s += `\nNo level this time.\n`;
-  }
-  s += `\nXP to next: ${hero.xp}/${hero.xpNext}`;
-  if(enc.opens){ s += `\n\nA gate 🚧 grinds open ahead...`; }
-  document.getElementById('r-face').textContent = enc.face;
-  document.getElementById('r-summary').textContent = s;
-  mode='reward'; showScreen('reward');
+  if(battle.over && mode!=='battle') return;
+  battle.over=true;
+  const ch=battle.ch;
+  pushLog('Target down — the crew stands tall!','sys');
+  if(battle.kind!=='boss') map[battle.y][battle.x]=GROUND[ch];
+  if(battle.opens) openGate(battle.opens);
+  const xp = ENEMIES[ch].xp + (ENEMIES[ch].adds||[]).reduce((s,a)=>s+ADD_DEFS[a].xp,0);
+  const lvUps=[];
+  party.forEach(m=>{ if(m.hp<=0){ m.hp=1; m.alive=true; } if(grantXP(m,xp)>0) lvUps.push(m.name.split(' ')[0]+'→L'+m.lv); });
+  if(battle.kind==='boss'){ SFX.win(); clearSave(); mode='victory'; showScreen('victory'); return; }
+  if(lvUps.length) SFX.level();
+  let s = `XP +${xp} (shared)\n` + (lvUps.length ? ('LEVEL UP: '+lvUps.join(', ')+'\n(HP & Fuel restored on level)') : 'No level this time.');
+  if(battle.opens) s += `\n\nA gate 🚧 grinds open ahead...`;
+  document.getElementById('r-face').textContent='⚓';
+  document.getElementById('r-summary').textContent=s;
+  mode='reward'; showScreen('reward'); saveGame();
 }
 
 function openGate(gateChar){
@@ -1747,24 +1980,46 @@ function openGate(gateChar){
     if(map[y][x]===gateChar){ map[y][x] = '.'; SFX.gate(); return; }
   }
 }
-
 function closeReward(){
-  mode='overworld';
-  showScreen('overworld');
-  renderOverworld(true);      // player is right where they were, next to the cleared spot
-  saveGame();                 // persist cleared landmark / opened gate / new stats
+  mode='overworld'; showScreen('overworld'); renderOverworld(true); saveGame();
 }
-
 function gameOver(){
-  mode='gameover';
-  clearSave();                // a lost run can't be resumed
-  SFX.lose();
+  if(battle) battle.over=true;
+  mode='gameover'; clearSave(); SFX.lose();
+  const boss = battle && battle.enemies.find(e=>e.boss);
   document.getElementById('go-text').innerHTML =
-    `The streets go quiet as <span class="accent">${enc.name}</span> stands over a busted `+
-    `pair of goggles. The syndicate breathes easy tonight... but Larry's been counted out `+
-    `before. Wind the springs and try again.`;
+    `The crew goes down as <span class="accent">${boss?boss.name:'the syndicate'}</span> stands over the wreckage. `+
+    `The harbor breathes easy tonight... but Sparkplug's been counted out before. Wind the springs and try again.`;
   showScreen('gameover');
 }
+
+/* headless-sim hook: act for the current ally via a policy returning {id,target}.
+   Resolves a sane default target by ability type so the sim never passes an
+   invalid index (mirrors the UI's auto-targeting). */
+function resolveTarget(id, want){
+  const ab=ABIL[id]; if(!ab) return -1;
+  if(ab.tgt==='enemy'){
+    if(want!=null && battle.enemies[want] && battle.enemies[want].alive) return want;
+    const f=aliveFoes()[0]; return f?battle.enemies.indexOf(f):-1;
+  }
+  if(ab.tgt==='ally'){
+    if(want!=null && party[want] && party[want].alive) return want;
+    // default: lowest-HP living ally (so heals land usefully)
+    const al=aliveMembers().slice().sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp)[0];
+    return al?party.indexOf(al):-1;
+  }
+  return -1; // self / allenemies / none
+}
+function autoPickAndAct(policy){
+  if(!battle || battle.over || busy) return false;
+  const m=party[battle.activeIdx]; if(!m) return false;
+  let p=policy(m, battle);
+  if(!p) { const f=aliveFoes()[0]; p={id:m.abils[0]}; }
+  if(!ABIL[p.id] || !abilUsable(m,p.id)) p={id:m.abils[0]}; // fall back to free basic
+  commitAbility(p.id, resolveTarget(p.id, p.target));
+  return true;
+}
+
 
 /* ----------------------- BOOT ------------------------------------- */
 newGame();
