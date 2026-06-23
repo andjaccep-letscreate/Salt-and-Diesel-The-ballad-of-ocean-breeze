@@ -1947,11 +1947,13 @@ function updateStatus(){
     const lv=document.getElementById('lv'+i); if(lv) lv.textContent='L'+m.lv;
   });
 }
-/* sort each ability into one of the four FF commands from its ABIL shape:
+/* sort each ability into one of the FF commands from its ABIL shape:
+   Payload = ammo (Silver's 5 variants, shown in a nested selector under Skill) ·
    Item = consumable (charge) · Fuel = costs fuel · Fight = free basic strike ·
    Skill = everything else (cooldowns, buffs, debuffs, AoE). */
 function abilBucket(id){
   const ab=ABIL[id]; if(!ab) return 'skill';
+  if(ab.ammo) return 'payload';
   if(ab.charge) return 'item';
   if(ab.cost && ab.cost.fuel) return 'fuel';
   if(!ab.cd && !ab.cost && !ab.charge && (ab.tgt==='enemy'||ab.tgt==='allenemies')) return 'fight';
@@ -1967,18 +1969,27 @@ function renderActions(){
     return;
   }
   const m=party[battle.activeIdx]; if(!m){ box.innerHTML=''; return; }
-  if(battle.menu){                      // a command is open → list its abilities
-    const ids=bucketAbils(m, battle.menu);
-    let html = ids.map(id=>{ const ab=ABIL[id]; const ok=abilUsable(m,id);
-      return `<button class="btn abil" ${ok?'':'disabled'} onclick="chooseAbility('${id}')">${ab.icon} ${ab.name}<small>${cdLabel(m,id)||ab.desc}</small></button>`;
-    }).join('');
-    if(!ids.length) html = `<div class="act-hint">No ${battle.menu} options.</div>`;
+  const abilBtn=(id)=>{ const ab=ABIL[id]; const ok=abilUsable(m,id);
+    return `<button class="btn abil" ${ok?'':'disabled'} onclick="chooseAbility('${id}')">${ab.icon} ${ab.name}<small>${cdLabel(m,id)||ab.desc}</small></button>`; };
+  const hasPayload = bucketAbils(m,'payload').length>0;
+
+  if(battle.menu==='payload'){          // nested ammo selector (Back returns to Skill)
+    box.innerHTML = `<button class="btn" onclick="backTo('skill')">↩ Back</button>`
+      + bucketAbils(m,'payload').map(abilBtn).join('');
+    return;
+  }
+  if(battle.menu){                       // a command is open → list its abilities
+    let html = bucketAbils(m, battle.menu).map(abilBtn).join('');
+    if(battle.menu==='skill' && hasPayload)   // Payload Selector lives inside Skill
+      html += `<button class="btn abil" onclick="backTo('payload')">🎯 Payload Selector<small>choose ammo</small></button>`;
+    if(!html) html = `<div class="act-hint">No ${battle.menu} options.</div>`;
     box.innerHTML = `<button class="btn" onclick="closeCmd()">↩ Back</button>`+html;
     return;
   }
   // top level: the four FF commands (disabled if the member has nothing in that bucket)
   box.innerHTML = CMD_DEFS.map(([k,icon,label])=>{
-    const has=bucketAbils(m,k).length>0;
+    let has=bucketAbils(m,k).length>0;
+    if(k==='skill' && hasPayload) has=true;   // Skill stays live to reach Payload
     return `<button class="btn cmd" ${has?'':'disabled'} onclick="openCmd('${k}')">${icon} ${label}<span class="cmd-sub">${has?'':'—'}</span></button>`;
   }).join('');
 }
@@ -1986,6 +1997,7 @@ function openCmd(k){ if(busy||battle.over||battle.await) return; const m=party[b
   const ids=bucketAbils(m,k);
   if(ids.length===1){ chooseAbility(ids[0]); return; }   // single option → go straight to targeting
   battle.menu=k; renderBattle(); }
+function backTo(menu){ if(busy||battle.over||battle.await) return; battle.menu=menu; renderBattle(); }
 function closeCmd(){ battle.menu=null; renderBattle(); }
 function renderBattle(){
   if(!battle) return;

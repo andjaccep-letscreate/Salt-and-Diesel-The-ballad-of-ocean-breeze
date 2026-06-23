@@ -72,3 +72,19 @@ Beginner-friendly on purpose — see `CLAUDE.md` for the format and rules.
            pre-UI Phase 5 baseline (cosmetic-only, as required).
 - Next:    Andres previews ?v=6. No PR/merge. Phase 5c (real ultimate moves on
            the gauge) still deferred; repo-setup docs still gated on Phase 5 merge.
+
+## [2026-06-23] — Restore Silver's Payload Selector (nested under Skill)
+- Goal:    Andres flagged: the FF reorg must keep Silver's Payload Selector with
+           all 5 ammo types reachable as a nested selector, not scattered.
+- Did:     index.html — abilBucket now routes every ammo:true ability into a
+           'payload' bucket; renderActions shows a "🎯 Payload Selector" entry
+           inside Silver's Skill menu that opens a sub-list of all 5 ammo
+           (Kinetic/Net/Magnetic/Flak/Incendiary), then target. Added backTo()
+           so Payload's Back returns to Skill. Dagger (Dual Blades basic) sits
+           under Fight. Verified all 5 ammo resolve; re-ran 300-run sim.
+- Gotchas: My first FF pass had scattered the ammo (Kinetic->Fight, rest->Skill)
+           with no unified selector — did NOT match the intended flow. Fixed.
+- Numbers: 300 runs: Districts 100/100/100, Boss 76% smart / 0% careless, loop
+           70% / 0%, zero exceptions — within RNG noise of baseline; engine and
+           abilities untouched (menu-only change).
+- Next:    Andres previews ?v=7 and plays before any merge. No PR/merge/5b/5c.
