@@ -188,24 +188,64 @@
   /* active-ally swing (works for any member sprite, not just Larry) */
   #stage-hero.swing{ animation: heroLunge .35s ease; }
 
-  /* ---- party HUD (ally cards) ---- */
-  #party-hud{ width:100%; max-width:480px; display:flex; gap:5px; margin:6px 0 4px; }
-  .pcard{ flex:1 1 0; min-width:0; background:var(--panel); border:2px solid var(--rivet); border-radius:8px;
-    padding:5px 5px 6px; font-size:.62rem; line-height:1.3; }
-  .pcard b{ font-size:.66rem; }
-  .pcard small{ opacity:.7; }
-  .pcard .pc-em{ font-size:.9rem; }
-  .pcard.active{ border-color:var(--brass); box-shadow:0 0 0 1px var(--brass), 0 0 10px rgba(217,164,65,.35); }
-  .pcard.ko{ opacity:.45; filter:grayscale(.7); }
-  .pcard.targetable{ border-color:var(--good); cursor:pointer; box-shadow:0 0 0 1px var(--good); }
-  .pc-bar{ height:7px; background:#0a0c10; border:1px solid var(--rivet); border-radius:3px; overflow:hidden; margin:2px 0; }
-  .pc-bar i{ display:block; height:100%; background:linear-gradient(180deg,#e2613f,#8c2417); transition:width .2s; }
-  .pc-res{ font-size:.58rem; opacity:.85; white-space:nowrap; }
-  /* dynamic action buttons */
-  #actions.actions{ width:100%; max-width:480px; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-  #actions .abil small{ display:block; font-size:.6rem; letter-spacing:.04em; opacity:.8; margin-top:2px; }
-  .act-hint{ grid-column:1/-1; text-align:center; color:var(--brass); letter-spacing:.1em; padding:6px; }
+  /* ---- LEFT crew formation: 4 silhouette chips stacked diagonally on the stage ---- */
+  #stage-crew{ position:absolute; left:3%; top:7%; z-index:2; display:flex; flex-direction:column;
+    gap:3px; pointer-events:none; }
+  .crew-chip{ display:flex; align-items:center; gap:3px; padding:1px 5px 1px 3px; border-radius:8px;
+    background:rgba(8,11,16,.62); border:1.5px solid var(--rivet); font-size:.6rem; color:#cdd3da;
+    transition:box-shadow .25s, border-color .25s, opacity .25s, transform .25s; opacity:.78; }
+  .crew-chip .cc-sil{ width:13px; height:18px; border-radius:3px 3px 1px 1px;
+    background:linear-gradient(180deg, var(--cc,#9aa3ad), #2b3038); box-shadow:inset 0 0 3px rgba(0,0,0,.5); }
+  .crew-chip .cc-em{ font-size:.72rem; }
+  .crew-chip:nth-child(1){ margin-left:0; }   .crew-chip:nth-child(2){ margin-left:14px; }
+  .crew-chip:nth-child(3){ margin-left:28px; } .crew-chip:nth-child(4){ margin-left:42px; }
+  .crew-chip.active{ opacity:1; border-color:var(--cc,#fff2c2); transform:translateX(4px);
+    box-shadow:0 0 0 1px var(--cc,#fff2c2), 0 0 9px var(--cc,#fff2c2); }
+  .crew-chip.ko{ opacity:.32; filter:grayscale(.85); }
+
+  /* RIGHT enemy zone: pre-allocated slots */
+  #stage-enemies{ min-width:64px; min-height:40px; }
+  #stage-enemies .foe-slot{ width:62px; opacity:.0; }   /* reserved empty slot keeps spacing stable */
+
+  /* ---- LOWER combat HUD: Action Menu (left) + Status Window (right) ---- */
+  #combat-hud{ width:100%; max-width:480px; display:flex; gap:8px; margin:6px 0 4px; align-items:stretch; }
+  #actions.actions{ flex:1 1 44%; min-width:0; display:grid; grid-template-columns:1fr 1fr; gap:6px;
+    align-content:start; }
+  #actions .abil small{ display:block; font-size:.58rem; letter-spacing:.03em; opacity:.8; margin-top:2px; }
+  .act-hint{ grid-column:1/-1; text-align:center; color:var(--brass); letter-spacing:.08em; padding:4px; font-size:.7rem; }
+  .cmd{ font-weight:700; letter-spacing:.06em; }
+  .cmd .cmd-sub{ display:block; font-size:.54rem; font-weight:400; opacity:.7; letter-spacing:.02em; margin-top:1px; }
+
+  /* Status Window: all 4 crew vitals at once, with smoothly-mutated meters */
+  #status-window{ flex:1 1 56%; min-width:0; display:flex; flex-direction:column; gap:4px; }
+  .svc{ background:var(--panel); border:2px solid var(--rivet); border-radius:8px; padding:3px 6px 4px;
+    transition:border-color .2s, box-shadow .2s, opacity .2s, filter .2s; }
+  .svc.active{ border-color:var(--brass); box-shadow:0 0 0 1px var(--brass), 0 0 9px rgba(217,164,65,.32); }
+  .svc.ko{ opacity:.45; filter:grayscale(.7); }
+  .svc.targetable{ border-color:var(--good); cursor:pointer; box-shadow:0 0 0 1px var(--good); }
+  .svc-top{ display:flex; align-items:center; gap:4px; line-height:1.1; }
+  .svc-em{ font-size:.82rem; } .svc-nm{ font-size:.64rem; font-weight:700; }
+  .svc-lv{ font-size:.54rem; opacity:.65; margin-left:auto; }
+  .svc-badges{ display:inline-flex; gap:2px; }
+  .badge{ font-size:.5rem; line-height:1; padding:1px 2px; border-radius:4px;
+    border:1px solid var(--cobalt-l); color:#dff1ff; background:rgba(63,169,255,.12); box-shadow:0 0 4px rgba(63,169,255,.35); }
+  /* meter rows: built once, only style.width / color class mutate (no innerHTML thrash) */
+  .meter{ display:flex; align-items:center; gap:4px; margin-top:2px; }
+  .meter .mlbl{ font-size:.46rem; letter-spacing:.06em; opacity:.7; width:13px; flex:none; }
+  .meter .mtrk{ position:relative; flex:1 1 auto; height:6px; background:#0a0c10; border:1px solid var(--rivet);
+    border-radius:3px; overflow:hidden; }
+  .meter .mfill{ display:block; height:100%; width:0%; transition:width .28s ease, background-color .28s ease; }
+  .meter .mval{ font-size:.46rem; opacity:.78; width:30px; flex:none; text-align:right; white-space:nowrap; }
+  /* HP gradient by percentage (color via class swap) */
+  .mfill.hp-hi{ background:linear-gradient(180deg,#7fd07f,#3f8c4a); }
+  .mfill.hp-mid{ background:linear-gradient(180deg,#e6c451,#b58a1e); }
+  .mfill.hp-lo{ background:linear-gradient(180deg,#e2613f,#8c2417); }
+  .mfill.fuel{ background:linear-gradient(180deg,#ffc14d,#e0792a); }       /* diesel amber */
+  .mfill.special{ background:linear-gradient(180deg,#5fe0ff,#1b6ef3); box-shadow:0 0 6px rgba(63,169,255,.5); } /* neon cyan */
+  .meter.dim{ opacity:.32; }
+
   .bbar{ width:100%; max-width:480px; display:flex; justify-content:flex-end; gap:8px; margin-top:6px; }
+  @media (max-width:380px){ #combat-hud{ flex-direction:column; } }
 
   /* per-district battle backdrops — Aethel-Diesel cyan blend (pure CSS, no images) */
   /* Alley/Clematis: kept feel + smog + cobalt/warm signage glow */
@@ -292,6 +332,7 @@
     #stage-enemy.eatk-chomp, #stage-enemy.eatk-peck, #stage-enemy.eatk-snap,
     #stage-hero.swing, .foe.foe-atk, .foe.knock, .foe.targetable{ animation:none; }
     /* under reduced motion, .struck (opacity blink) and .guard remain as the hit feedback */
+    .meter .mfill, .crew-chip, .svc{ transition:none; }   /* meters snap instead of sliding */
   }
 
   /* ---- battle feedback animations ---- */
@@ -705,12 +746,16 @@
     <div class="stage-far"></div>
     <div class="stage-haze"></div>
     <div class="stage-floor"></div>
+    <div id="stage-crew" aria-hidden="true"></div>
     <div id="stage-hero" class="larry combatant" data-dir="right" aria-hidden="true"></div>
     <div id="stage-enemies"></div>
   </div>
   <div class="log" id="log"></div>
-  <div id="party-hud"></div>
-  <div id="actions" class="actions"></div>
+  <!-- FF-style combat HUD: command menu (left) + 4-crew status window (right) -->
+  <div id="combat-hud">
+    <div id="actions" class="actions"></div>
+    <div id="status-window"></div>
+  </div>
   <div class="bbar">
     <button class="muteBtn" onclick="toggleMute()">🔊</button>
     <button class="gearBtn" onclick="openSettings()">⚙</button>
@@ -1303,18 +1348,27 @@ const MEMBER_SVG = {
     <g stroke="#cfd6de" stroke-width="1.2" stroke-linecap="round"><path d="M24 25 L30 23"/><path d="M24 26.5 L30 26.5"/><path d="M24 28 L30 30"/></g></svg>`
 };
 
-/* the four crew members — stats per the locked numbers; growth per class */
+/* the four crew members — stats per the locked numbers; growth per class.
+   combatRole = archetype; weapon = canonical signature (cosmetic metadata). */
 const MEMBER_DEFS = {
-  gold:    {key:'gold',    codename:'GOLD',     emoji:'⚓', name:'Larry "Sparkplug"', role:'Leader / Control',
+  gold:    {key:'gold',    codename:'GOLD',     emoji:'⚓', name:'Larry "Sparkplug"',
+            role:'Leader / Control', combatRole:'Ultimate Survivalist / Vanguard',
+            weapon:{name:'Gilded Anchor-Sword Flail', type:'melee'},
             base:{hp:60,atk:13,def:4,crit:0.15}, grow:{hp:10,atk:3,def:1}, fuel:true,
             abils:['strike','overdrive','anchorCast','breachingBlow','brace','repair']},
-  silver:  {key:'silver',  codename:'SILVER',   emoji:'🎯', name:'Silver', role:'Ranged DPS',
+  silver:  {key:'silver',  codename:'SILVER',   emoji:'🎯', name:'Silver',
+            role:'Ranged DPS', combatRole:'Infiltrator / Striker',
+            weapon:{name:'Multi-Barrel Turret Harpoon-Gatling Gun / Dual Blades', type:'ranged'},
             base:{hp:50,atk:12,def:3,crit:0.25}, grow:{hp:7,atk:3,def:1},
             abils:['kinetic','net','magnetic','flak','incendiary','dagger']},
-  titanium:{key:'titanium',codename:'TITANIUM', emoji:'🪓', name:'Titanium', role:'Bruiser / Commander',
+  titanium:{key:'titanium',codename:'TITANIUM', emoji:'🪓', name:'Titanium',
+            role:'Bruiser / Commander', combatRole:'Engineer / Tactician',
+            weapon:{name:'Drone Swarm Controller', type:'summon'},
             base:{hp:80,atk:13,def:6,crit:0.10}, grow:{hp:12,atk:2,def:2},
             abils:['deployDrone','markTarget','axeStrike','axeBasic']},
-  platinum:{key:'platinum',codename:'PLATINUM', emoji:'🦾', name:'Platinum', role:'Armor-breaker / Support',
+  platinum:{key:'platinum',codename:'PLATINUM', emoji:'🦾', name:'Platinum',
+            role:'Armor-breaker / Support', combatRole:'Heavy / Brawler',
+            weapon:{name:'Pneumatic Cybernetic Gauntlet & Crossbow Arms', type:'heavy'},
             base:{hp:64,atk:11,def:5,crit:0.12}, grow:{hp:9,atk:2,def:1},
             abils:['pneumaticPunch','precisionBolt','patch','staticField']},
 };
@@ -1392,8 +1446,10 @@ const ABIL = {
 function makeMember(key, lv){
   const d=MEMBER_DEFS[key], n=lv-1;
   const maxHp=d.base.hp+d.grow.hp*n, atk=d.base.atk+d.grow.atk*n, def=d.base.def+d.grow.def*n;
-  const m={ key, codename:d.codename, name:d.name, emoji:d.emoji, role:d.role, abils:d.abils.slice(),
+  const m={ key, id:key, codename:d.codename, name:d.name, emoji:d.emoji,
+    role:d.role, combatRole:d.combatRole, weapon:d.weapon, abils:d.abils.slice(),
     lv, xp:0, xpNext:30, maxHp, hp:maxHp, atk, def, crit:d.base.crit,
+    special:0, maxSpecial:100,   // cosmetic ultimate gauge (no logic yet — Phase 5c)
     alive:true, st:{}, cd:{}, drone:null, ammo:'kinetic' };
   if(d.fuel){ m.fuel=6; m.maxFuel=12; m.kits=3; } else { m.fuel=0; m.maxFuel=0; m.kits=0; }
   if(key==='platinum') m.patchCharges=3;
@@ -1785,10 +1841,11 @@ function buildEnemies(ch){
 }
 
 function startBattle(ch, y, x){
-  battle = { ch, y, x, enemies:buildEnemies(ch), activeIdx:0, round:1, await:null, payload:false,
+  battle = { ch, y, x, enemies:buildEnemies(ch), activeIdx:0, round:1, await:null, menu:null,
              over:false, kind:ENEMIES[ch].kind, opens:ENEMIES[ch].opens };
+  svBuilt=0;   // force a fresh Status Window build for this fight's party
   // per-fight reset: statuses, cooldowns, drones, Platinum's Patch charges; revive KO'd to 1 HP
-  party.forEach(m=>{ m.st={}; m.cd={}; m.drone=null; if(m.key==='platinum') m.patchCharges=3; if(m.hp<=0) m.hp=1; m.alive=true; });
+  party.forEach(m=>{ m.st={}; m.cd={}; m.drone=null; m.special=0; if(!m.maxSpecial) m.maxSpecial=100; if(m.key==='platinum') m.patchCharges=3; if(m.hp<=0) m.hp=1; m.alive=true; });
   mode='battle'; busy=false; logLines=[];
   document.getElementById('stage').setAttribute('data-scene', SCENE_OF[ch]||'harbor');
   pushLog(ENEMIES[ch].intro, 'sys');
@@ -1807,7 +1864,7 @@ function setStageSprite(m){
 function foeStatus(e){ let s=''; if(stHas(e,'mark'))s+='🎯'; if(stHas(e,'burn'))s+='🔥'; if(stHas(e,'stun'))s+='💫'; if(stHas(e,'defDown'))s+='<span class="dn">DEF↓</span>'; if(stHas(e,'atkDown'))s+='<span class="dn">ATK↓</span>'; return s; }
 function renderEnemies(){
   const wrap=document.getElementById('stage-enemies'); if(!wrap) return;
-  wrap.innerHTML = battle.enemies.map((e,i)=>{
+  let html = battle.enemies.map((e,i)=>{
     if(!e.alive) return '';
     const pct=Math.max(0,Math.min(100,e.hp/e.maxHp*100));
     const tgt = (battle.await&&battle.await.tgt==='enemy') ? ' targetable':'';
@@ -1816,21 +1873,92 @@ function renderEnemies(){
       <div class="foe-bar"><i style="width:${pct}%"></i></div>
       <div class="foe-nm">${e.name.split(' ')[0]} ${foeStatus(e)}</div></div>`;
   }).join('');
+  // pre-allocate the enemy zone to 3 slots so the layout stays stable as foes fall
+  const liveSlots = battle.enemies.filter(e=>e.alive).length;
+  for(let s=liveSlots; s<3; s++) html += '<div class="foe-slot"></div>';
+  wrap.innerHTML = html;
 }
-function renderPartyHud(){
-  const hud=document.getElementById('party-hud'); if(!hud) return;
-  hud.innerHTML = party.map((m,i)=>{
-    const pct=Math.max(0,Math.min(100,m.hp/m.maxHp*100));
+/* LEFT crew formation: 4 diagonal silhouette chips (cosmetic team presence) */
+const CREW_TINT={ gold:'#d9a441', silver:'#cfd6de', titanium:'#3fcf9e', platinum:'#3fa9ff' };
+function renderCrew(){
+  const wrap=document.getElementById('stage-crew'); if(!wrap) return;
+  wrap.innerHTML = party.map((m,i)=>{
     const active=(!busy && i===battle.activeIdx && !battle.over)?' active':'';
     const ko=m.hp<=0?' ko':'';
-    const pickAlly=(battle.await&&battle.await.tgt==='ally'&&m.alive)?' targetable':'';
-    let res = m.key==='gold'?('⛽'+m.fuel) : m.key==='platinum'?('🩹'+m.patchCharges) : (m.drone?'🪰':'');
-    return `<div class="pcard${active}${ko}${pickAlly}" id="phud${i}" onclick="pickAlly(${i})">
-      <span class="pc-em">${m.emoji}</span><b>${m.name.split(' ')[0]}</b> <small>L${m.lv}</small>
-      <div class="pc-bar"><i style="width:${pct}%"></i></div>
-      <div class="pc-res">${m.hp}/${m.maxHp} ${res}</div></div>`;
+    return `<div class="crew-chip${active}${ko}" style="--cc:${CREW_TINT[m.key]||'#9aa3ad'}">
+      <span class="cc-sil"></span><span class="cc-em">${m.emoji}</span></div>`;
   }).join('');
 }
+/* Status Window: structure is BUILT ONCE per fight; updateStatus() then only
+   mutates style.width / classes / textContent so the CSS meters slide smoothly
+   (no innerHTML rebuild = no layout thrashing). */
+let svBuilt=0;
+function buildStatusWindow(){
+  const sw=document.getElementById('status-window'); if(!sw) return;
+  sw.innerHTML = party.map((m,i)=>{
+    const fuelRow = `<div class="meter${m.maxFuel>0?'':' dim'}" id="fu${i}"><span class="mlbl">FUE</span>
+        <div class="mtrk"><i class="mfill fuel" id="fuf${i}"></i></div><span class="mval" id="fuv${i}"></span></div>`;
+    return `<div class="svc" id="sv${i}" onclick="pickAlly(${i})">
+      <div class="svc-top"><span class="svc-em">${m.emoji}</span><span class="svc-nm">${m.name.split(' ')[0]}</span>
+        <span class="svc-badges" id="bg${i}"></span><span class="svc-lv" id="lv${i}">L${m.lv}</span></div>
+      <div class="meter" id="hp${i}"><span class="mlbl">HP</span>
+        <div class="mtrk"><i class="mfill" id="hpf${i}"></i></div><span class="mval" id="hpv${i}"></span></div>
+      ${fuelRow}
+      <div class="meter" id="sp${i}"><span class="mlbl">SPC</span>
+        <div class="mtrk"><i class="mfill special" id="spf${i}"></i></div><span class="mval" id="spv${i}"></span></div>
+    </div>`;
+  }).join('');
+  svBuilt = party.length;
+}
+function memBadges(m){
+  let b='';
+  if(stHas(m,'guard')) b+='<span class="badge">🛡</span>';
+  if(stHas(m,'burn'))  b+='<span class="badge">🔥</span>';
+  if(stHas(m,'stun'))  b+='<span class="badge">💫</span>';
+  if(m.drone)          b+='<span class="badge">🪰</span>';
+  if(m.key==='platinum') b+=`<span class="badge">🩹${m.patchCharges}</span>`;
+  return b;
+}
+function setMeter(fillId, valId, cur, max, txt){
+  const f=document.getElementById(fillId); if(f) f.style.width=Math.max(0,Math.min(100,max>0?cur/max*100:0))+'%';
+  const v=document.getElementById(valId); if(v) v.textContent = txt!=null?txt:(cur+'/'+max);
+}
+function updateStatus(){
+  const sw=document.getElementById('status-window'); if(!sw) return;
+  if(svBuilt!==party.length) buildStatusWindow();
+  party.forEach((m,i)=>{
+    const card=document.getElementById('sv'+i); if(!card) return;
+    const active=(!busy && i===battle.activeIdx && !battle.over);
+    const ko=m.hp<=0;
+    const pick=(battle.await&&battle.await.tgt==='ally'&&m.alive);
+    card.classList.toggle('active', active && !ko);
+    card.classList.toggle('ko', ko);
+    card.classList.toggle('targetable', !!pick);
+    // HP — color by percentage (class swap; width transitions)
+    const hpf=document.getElementById('hpf'+i);
+    if(hpf){ const pct=m.maxHp>0?m.hp/m.maxHp*100:0;
+      hpf.classList.remove('hp-hi','hp-mid','hp-lo');
+      hpf.classList.add(pct>50?'hp-hi':pct>25?'hp-mid':'hp-lo'); }
+    setMeter('hpf'+i,'hpv'+i, m.hp, m.maxHp);
+    if(m.maxFuel>0) setMeter('fuf'+i,'fuv'+i, m.fuel, m.maxFuel);
+    else setMeter('fuf'+i,'fuv'+i, 0, 0, '—');
+    setMeter('spf'+i,'spv'+i, m.special, m.maxSpecial, Math.round(m.special)+'%');
+    const bg=document.getElementById('bg'+i); if(bg) bg.innerHTML=memBadges(m);
+    const lv=document.getElementById('lv'+i); if(lv) lv.textContent='L'+m.lv;
+  });
+}
+/* sort each ability into one of the four FF commands from its ABIL shape:
+   Item = consumable (charge) · Fuel = costs fuel · Fight = free basic strike ·
+   Skill = everything else (cooldowns, buffs, debuffs, AoE). */
+function abilBucket(id){
+  const ab=ABIL[id]; if(!ab) return 'skill';
+  if(ab.charge) return 'item';
+  if(ab.cost && ab.cost.fuel) return 'fuel';
+  if(!ab.cd && !ab.cost && !ab.charge && (ab.tgt==='enemy'||ab.tgt==='allenemies')) return 'fight';
+  return 'skill';
+}
+function bucketAbils(m, bucket){ return m.abils.filter(id=>abilBucket(id)===bucket); }
+const CMD_DEFS=[ ['fight','⚔','Fight'], ['skill','✨','Skill'], ['fuel','⛽','Fuel'], ['item','🧰','Item'] ];
 function renderActions(){
   const box=document.getElementById('actions'); if(!box) return;
   if(busy || battle.over){ box.innerHTML=''; return; }
@@ -1839,30 +1967,36 @@ function renderActions(){
     return;
   }
   const m=party[battle.activeIdx]; if(!m){ box.innerHTML=''; return; }
-  let ids;
-  if(m.key==='silver' && battle.payload){ ids=['kinetic','net','magnetic','flak','incendiary']; }
-  else if(m.key==='silver'){ ids=['__payload','dagger']; }
-  else ids=m.abils;
-  let html = ids.map(id=>{
-    if(id==='__payload') return `<button class="btn abil" onclick="openPayload()">🎯 Payload ▾<small>select ammo</small></button>`;
-    const ab=ABIL[id]; const ok=abilUsable(m,id);
-    return `<button class="btn abil" ${ok?'':'disabled'} onclick="chooseAbility('${id}')">${ab.icon} ${ab.name}<small>${cdLabel(m,id)||ab.desc}</small></button>`;
+  if(battle.menu){                      // a command is open → list its abilities
+    const ids=bucketAbils(m, battle.menu);
+    let html = ids.map(id=>{ const ab=ABIL[id]; const ok=abilUsable(m,id);
+      return `<button class="btn abil" ${ok?'':'disabled'} onclick="chooseAbility('${id}')">${ab.icon} ${ab.name}<small>${cdLabel(m,id)||ab.desc}</small></button>`;
+    }).join('');
+    if(!ids.length) html = `<div class="act-hint">No ${battle.menu} options.</div>`;
+    box.innerHTML = `<button class="btn" onclick="closeCmd()">↩ Back</button>`+html;
+    return;
+  }
+  // top level: the four FF commands (disabled if the member has nothing in that bucket)
+  box.innerHTML = CMD_DEFS.map(([k,icon,label])=>{
+    const has=bucketAbils(m,k).length>0;
+    return `<button class="btn cmd" ${has?'':'disabled'} onclick="openCmd('${k}')">${icon} ${label}<span class="cmd-sub">${has?'':'—'}</span></button>`;
   }).join('');
-  if(m.key==='silver' && battle.payload) html = `<button class="btn" onclick="closePayload()">↩ Back</button>`+html;
-  box.innerHTML = html;
 }
+function openCmd(k){ if(busy||battle.over||battle.await) return; const m=party[battle.activeIdx]; if(!m) return;
+  const ids=bucketAbils(m,k);
+  if(ids.length===1){ chooseAbility(ids[0]); return; }   // single option → go straight to targeting
+  battle.menu=k; renderBattle(); }
+function closeCmd(){ battle.menu=null; renderBattle(); }
 function renderBattle(){
   if(!battle) return;
   const am = party[battle.activeIdx];
   if(am && !busy && !battle.over) setStageSprite(am);
-  renderEnemies(); renderPartyHud(); renderActions();
+  renderEnemies(); renderCrew(); updateStatus(); renderActions();
   document.getElementById('battle').classList.toggle('danger', am && am.alive && am.hp>0 && am.hp < am.maxHp*0.25);
 }
 
 /* ----- input: ability selection + targeting ----- */
-function openPayload(){ if(busy)return; battle.payload=true; renderBattle(); }
-function closePayload(){ battle.payload=false; renderBattle(); }
-function cancelTarget(){ battle.await=null; renderBattle(); }
+function cancelTarget(){ battle.await=null; renderBattle(); }   // keeps the open command submenu
 function chooseAbility(id){
   if(busy||battle.over||menuOpen) return;
   const m=party[battle.activeIdx]; if(!m||!abilUsable(m,id)) return;
@@ -1876,8 +2010,10 @@ function pickAlly(i){ if(!battle.await||battle.await.tgt!=='ally')return; const 
 
 function commitAbility(id, targetIdx){
   const m=party[battle.activeIdx]; const ab=ABIL[id]; if(!ab) return;
-  battle.await=null; battle.payload=false;
+  battle.await=null; battle.menu=null;
   if(ab.cd) m.cd[id]=ab.cd;
+  // cosmetic special-gauge gain (no ultimate logic yet — Phase 5c)
+  m.special=Math.min(m.maxSpecial, (m.special||0) + (ab.tgt==='enemy'||ab.tgt==='allenemies'?14:8));
   const target = ab.tgt==='enemy' ? battle.enemies[targetIdx]
                : ab.tgt==='ally'  ? party[targetIdx]
                : (ab.tgt==='allenemies' ? null : m);

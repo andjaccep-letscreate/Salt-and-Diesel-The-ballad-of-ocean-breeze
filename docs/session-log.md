@@ -42,3 +42,33 @@ Beginner-friendly on purpose — see `CLAUDE.md` for the format and rules.
            ~14-point drift, still in band, so the locked 560 HP stands.
 - Next:    Andres previews ?v=5; on his OK, open a PR / merge to main. Only then
            start the queued claude/repo-setup docs task. Do NOT start 5b/5c/Phase 6.
+
+## [2026-06-23] — JRPG combat UI (data model + FF-style HUD)
+- Goal:    Layer a Final-Fantasy-style combat UI on the verified Phase 5 engine:
+           crew data metadata, left crew formation, right enemy zone, lower
+           command menu + 4-crew status window, smooth meters. No balance change.
+- Did:     New branch claude/jrpg-combat-ui off claude/phase-5-party. In index.html:
+           (1) enriched MEMBER_DEFS with weapon{name,type}+combatRole and added
+           special/maxSpecial to makeMember (cosmetic gauge, reset each fight);
+           (2) added #stage-crew (4 neon silhouette chips) + pre-allocated enemy
+           slots; (3) wrapped the lower HUD into #combat-hud = Action Menu
+           (Fight/Skill/Fuel/Item, derived from each ability's shape) + Status
+           Window; (4) rebuilt the status window to BUILD ONCE then mutate
+           style.width/classes so HP(green/amber/red)/Fuel(amber)/Special(cyan)
+           bars slide via CSS transitions instead of innerHTML rebuilds;
+           (5) neon status badges by each name. Removed the old payload menu +
+           pcard CSS. Re-ran the 300-run sim.
+- Learned: "Build-once-then-mutate" — rebuilding innerHTML every frame restarts
+           CSS transitions, so meters wouldn't animate; instead build the DOM one
+           time and only change widths/classes, which lets the browser tween them.
+           "Bucket from shape" — the Fight/Skill/Fuel/Item menu is derived from
+           each ability's existing fields (cost=Fuel, charge=Item, free basic=
+           Fight, else Skill), so the verified engine/abilities are untouched.
+- Gotchas: Special gauge must stay cosmetic — it's never read by combat, so
+           win-rates are identical (confirmed). Moved the crew roster to top-left
+           so it doesn't overlap the floor-standing active sprite.
+- Numbers: Same harness, 300 runs: Districts 100/100/100, Boss 73% smart / 0%
+           careless, full loop 73% / 0%, ZERO exceptions — unchanged from the
+           pre-UI Phase 5 baseline (cosmetic-only, as required).
+- Next:    Andres previews ?v=6. No PR/merge. Phase 5c (real ultimate moves on
+           the gauge) still deferred; repo-setup docs still gated on Phase 5 merge.
