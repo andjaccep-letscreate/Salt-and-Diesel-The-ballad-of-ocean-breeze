@@ -1,21 +1,20 @@
-# Salt & Diesel — The Ballad of Ocean Breeze
+# Salt & Diesel: The Ballad of Ocean Breeze
 
-A complete, single-file, browser-playable **turn-based RPG** set in a dieselpunk
-alternate-history West Palm Beach, 1947. You play **Sparkplug** (real name Larry), a
-freelance troubleshooter with a hydraulic wrench out to dismantle Baron Castellane's
-syndicate.
+A dieselpunk episodic RPG set in 1947 West Palm Beach. About 90 minutes of core
+story, with optional content to explore. Free to play — donations welcome.
 
-## Play
+**▶ Play it here:** https://raw.githack.com/andjaccep-letscreate/Salt-and-Diesel-The-ballad-of-ocean-breeze/main/index.html?v=5
 
-Just open **`index.html`** in any browser — no build step, no dependencies, no assets.
-Works on desktop and phone.
+## How to play
 
-- **Move:** on-screen D-pad (mobile) or arrow keys / WASD (desktop). One tile per press.
-- **Explore** the camera-following overworld freely: talk to NPCs, grab pickups, fight
-  optional patrols for XP.
-- **Story fights** unlock in order — Alley 🥊 → Rail Yard 🛤️ → Docks ⚓ — each opening the
-  next gate 🚧. Clear all three to unlock the boss atop the Comeau Tower 🗼.
-- **Battle actions:** Strike, Overdrive (fuel), Brace (guard + fuel), Repair (heal, uses a kit).
+- **Move:** arrow keys or WASD
+- **Select / confirm:** spacebar
+- **On a phone or tablet:** just tap
 
-HP and Fuel persist across the overworld and battles; they're only restored by leveling
-up, the Fuel Cache pickup, or the Repair action.
+Step into the streets, take on the city's troubles turn by turn, and see the
+ballad through to its end.
+
+## A note on how this was made
+
+Built with Claude as a coding efficiency tool. All art, audio, and design are
+original.
