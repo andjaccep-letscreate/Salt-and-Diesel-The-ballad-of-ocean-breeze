@@ -2,16 +2,16 @@
 
 **Salt & Diesel: The Ballad of Ocean Breeze**
 
-- **Frankie Pete** — design, code, and narrative
+- **Andres Cepeda** — design, code, and narrative
 
 ## Character inspiration
 
 The crew was inspired by good friends:
 
-- **Larry** — inspiration for Larry "Sparkplug"
-- **Mike** — inspiration for Silver
-- **Markus** — inspiration for Titanium
-- **Louis** — inspiration for Platinum
+- **[FRIEND_1_NAME]** — inspiration for Larry "Sparkplug"
+- **[FRIEND_2_NAME]** — inspiration for Silver
+- **[FRIEND_3_NAME]** — inspiration for Titanium
+- **[FRIEND_4_NAME]** — inspiration for Platinum
 
 ## Art & music
 
