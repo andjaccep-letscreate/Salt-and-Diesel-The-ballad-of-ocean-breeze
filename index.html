@@ -874,17 +874,17 @@ const ORIGINAL_MAP = [
   ".......FFFFbFFWWWW......",
   "FFFF..........WWWW...B..",
   ",,,F..........WWWW..4...",
-  ",,,F.....BB...WWWW......",
+  ",C,F.....BB...WWWW......",
   ",L,F..........WWWW......",
   ",,,F..........WWWW......",
-  ",,,F.....R.BB.WWWW...B..",
+  ",,VF.....R.BB.WWWW...B..",
   ",,,F....K.....WWWW......",
   ",2,a..........WWWW......",
   ",,,F......N...===c......",
   ",,,F....1.....WWWW..T...",
   ",,,F.BB.......WWWW......",
   ",u,F....GBB...WWWW......",
-  ",,,F..S.......WWWW......",
+  ",X,F..S.......WWWW......",
   ",,,F..PP......WWWW...H..",
   "FFFF..........WWWW......",
   "..............WWWW.B....",
@@ -906,7 +906,7 @@ const SOLID = new Set(['B','W','T','F','a','b','c']);
 /* base terrain under each special marker (for color + what it reverts to) */
 const GROUND = {
   '1':'.','2':'.','3':'=','4':'.','a':'.','b':'.','c':'.',
-  'N':'.','D':',','R':',','k':',','u':',','o':',','L':'.','H':',','S':'.','K':'.','G':'.'
+  'N':'.','D':',','R':',','k':',','u':',','o':',','L':'.','H':',','S':'.','K':'.','G':'.','C':',','V':',','X':','
 };
 /* emoji marker per tile (floors have none) */
 const EMOJI = {
@@ -915,7 +915,7 @@ const EMOJI = {
   'a':'🚧','b':'🚧','c':'🚧',
   'N':'📰','D':'👷','R':'🔮',
   'k':'🧰','u':'🛢️','o':'🔩',
-  'L':'🦩','H':'🦀','S':'🔧','K':'⏳','G':'🎣'
+  'L':'🦩','H':'🦀','S':'🔧','K':'⏳','G':'🎣','C':'🛞','V':'🔥','X':'👊'
 };
 /* terrain CSS class per base char */
 const TCLASS = {'.':'t-road',',':'t-grass','=':'t-plank','P':'t-plaza','W':'t-water','B':'t-bldg','T':'t-grass','F':'t-bldg'};
@@ -1234,11 +1234,18 @@ const ENEMIES = {
        intro:"A gaunt clockwork picker ticks closer, gears weeping orange rust."},
   'G':{name:"The Angry Fisherman", face:"🎣", hp:150, atk:13, def:4, xp:55, kind:'minib', kit:'fisherman', salvage:'corruptedPole',
        intro:"A barrel-chested dock-hand cracks his knuckles — net in one fist, gaff in the other. \"You're trespassin' on my pier, runt.\""},
+  // ---- Act-2 dieselpunk roster (regular enemies + Cursed Boxer mini-boss) ----
+  'C':{name:"Clockwork Rail-Drone", face:"🛞", hp:34, atk:9,  def:2, xp:20, kind:'patrol',
+       intro:"A one-wheeled rail-drone clatters down the track, governor screaming."},
+  'V':{name:"Steam-Spit Welder", face:"🔥", hp:30, atk:10, def:1, xp:21, kind:'patrol',
+       intro:"A hunched welder-rig hisses, torch flaring through a cracked visor."},
+  'X':{name:"The Cursed Boxer", face:"👊", hp:210, atk:16, def:5, xp:80, kind:'minib', kit:'boxer', evade:0.22, salvage:'cursedGloves',
+       intro:"A wiry palooka rolls his shoulders, gloves crackling with hexed charge. \"Float like rust, sting like a rivet gun.\""},
   '1':{name:"“Salt-Knuckle” Inez Vega", face:"🕷️", hp:38, atk:9,  def:2, xp:28, kind:'story', opens:'a',
        adds:['S'],
        intro:"Inez Vega fans out four grafted brass arms, green visor glinting. \"Wrong web, hermano.\""},
   '2':{name:"“Ironback” Odell Reese", face:"🐢", hp:58, atk:12, def:5, xp:44, kind:'story', opens:'b',
-       adds:['L'],
+       adds:['C'],
        intro:"Odell Reese hunches under a riveted sea-turtle carapace. \"Hit the shell all day.\""},
   '3':{name:"Capt. Marisol “Riptide” Delacroix", face:"🦈", hp:74, atk:15, def:6, xp:60, kind:'story', opens:'c',
        adds:['H','L'],
@@ -1269,6 +1276,17 @@ const SALVAGES = {
       platinum: { stat:'def',   amount:5, label:'Hull Plate',   show:'+5 Defense' },
       titanium: { stat:'maxHp', amount:5, label:'Deep Reserve', show:'+5 Max HP'  },
     }
+  },
+  cursedGloves: {
+    name: 'Cursed Boxing Gloves', icon: '🥊',
+    blurb: 'Stripped off the Cursed Boxer, the gloves still throw phantom punches. Lace them onto one of the crew.',
+    // atk/def/maxHp only (same approach as the pole) — every pick bites
+    picks: {
+      gold:     { stat:'atk',   amount:5, label:'Heavy Hands',  show:'+5 Attack'  },
+      silver:   { stat:'atk',   amount:5, label:'Quick Jab',    show:'+5 Attack'  },
+      platinum: { stat:'def',   amount:5, label:'Guard Up',     show:'+5 Defense' },
+      titanium: { stat:'maxHp', amount:5, label:'Iron Chin',    show:'+5 Max HP'  },
+    }
   }
 };
 let claimedSalvages = {};   // { <salvageId>: {member, stat, amount} } — one-time record, saved
@@ -1280,6 +1298,7 @@ const ADD_DEFS = {
   'H':{name:"Barnacle Cur", face:"🦀", hp:26, atk:7, def:1, xp:8, svg:'H'},
   'L':{name:"Spoonbill-Rig", face:"🦩", hp:30, atk:8, def:2, xp:9, svg:'L'},
   'S':{name:"Barnacle Scrapper", face:"🔧", hp:24, atk:7, def:1, xp:8, svg:'S'},  // Act-1 dieselpunk add
+  'C':{name:"Clockwork Rail-Drone", face:"🛞", hp:28, atk:9, def:2, xp:10, svg:'C'}, // Act-2 dieselpunk add
 };
 const NPC_LINES = {
   'N':{face:"📰", say:"EXTRA! EXTRA! Castellane's dirigibles choke the skyline — and the mayor calls it 'progress'! Read all about it, mister!"},
@@ -1441,6 +1460,8 @@ function critRoll(base, critCh, critMul){
 /* deterministic order: base → −DEF(/2 if pierce) → ±18% → ×crit → ×mark → floor, min 1 */
 function dealTo(tgt, base, critCh, critMul, opts){
   opts=opts||{};
+  lastDodge=false;
+  if(tgt.evade && Math.random()<tgt.evade){ lastCrit=false; lastDodge=true; return 0; }   // scoped evasion (Cursed Boxer only)
   let def=(tgt.def||0)-((tgt.st&&tgt.st.defDown)||0);
   let b=base-Math.floor(Math.max(0,def)*(opts.pierce?0.5:1));
   let dmg=critRoll(b, critCh, critMul);
@@ -1515,7 +1536,7 @@ function makeMember(key, lv){
 
 /* ----------------------- GAME STATE ------------------------------- */
 let map;          // mutable 2D array of chars
-let party, recruited, hero, player, mode, busy, battle, lastCrit;
+let party, recruited, hero, player, mode, busy, battle, lastCrit, lastDodge;
 
 function resetState(){
   map = ORIGINAL_MAP.map(row => row.split(''));   // deep copy
@@ -1860,7 +1881,7 @@ function closeDialogue(){
 let logLines = [];
 
 /* which backdrop each fight uses */
-const SCENE_OF = { '1':'alley', '2':'rail', '3':'docks', '4':'tower', 'L':'harbor', 'H':'harbor', 'S':'alley', 'K':'alley', 'G':'docks' };
+const SCENE_OF = { '1':'alley', '2':'rail', '3':'docks', '4':'tower', 'L':'harbor', 'H':'harbor', 'S':'alley', 'K':'alley', 'G':'docks', 'C':'rail', 'V':'rail', 'X':'rail' };
 function pushLog(text, cls){
   logLines.push({text, cls:cls||''});
   if(logLines.length > 6) logLines = logLines.slice(-6);
@@ -2089,13 +2110,18 @@ function commitAbility(id, targetIdx){
                : ab.tgt==='ally'  ? party[targetIdx]
                : (ab.tgt==='allenemies' ? null : m);
   const r = ab.run(m, target) || {};
+  if(lastDodge && r.kind==='hit' && target && !r.aoe){   // target wove away (Cursed Boxer evasion)
+    r.log = `${target.name.split(' ')[0]} bobs and weaves — ${m.name.split(' ')[0]}'s blow MISSES!`; r.val=0; r.crit=false; r._dodged=true;
+  }
   // hero swing animation
   pulse('stage-hero','swing',360);
   if(m.key==='gold') attackAnim((id==='overdrive'||id==='breachingBlow')?'overdrive':'strike');
   if(r.sfx && SFX[r.sfx]) SFX[r.sfx]();
   if(r.kind==='hit'){
     if(r.aoe){ aliveFoes().forEach(f=>{ const i=battle.enemies.indexOf(f); pulse('foe'+i,'struck',220); }); shakeScreen(); }
-    else if(target){ const i=battle.enemies.indexOf(target); pulse('foe'+i,'knock',300); pulse('foe'+i,'struck',220); floatDamage('foe'+i, r.val||0, r.crit?'crit':'dmg'); burst('foe'+i, r.crit?12:6, r.crit?'crit':'hit'); if(r.crit){ shakeScreen(); flashScreen(); } }
+    else if(target){ const i=battle.enemies.indexOf(target);
+      if(r._dodged){ floatDamage('foe'+i,'MISS','heal'); pulse('foe'+i,'foe-atk',280); }
+      else { pulse('foe'+i,'knock',300); pulse('foe'+i,'struck',220); floatDamage('foe'+i, r.val||0, r.crit?'crit':'dmg'); burst('foe'+i, r.crit?12:6, r.crit?'crit':'hit'); if(r.crit){ shakeScreen(); flashScreen(); } } }
   } else if(r.kind==='heal'){ floatDamage('stage-hero','+'+(r.val||0),'heal'); burst('stage-hero',8,'heal'); }
   pushLog(r.log, r.crit?'crit':'');
   renderBattle();
@@ -2139,6 +2165,18 @@ function enemyAIact(e){
     const d=enemyHit(e,tgt,Math.floor(atk*1.3),0.12,1.6);   // Gaff Hook: heavy
     pushLog(`${e.name} swings the gaff at ${tgt.name.split(' ')[0]} — ${d}.`,'hurt');
     pulse('foe'+i,'foe-atk',400); pulse('stage-hero','flinch',300); SFX.hurt(); shakeScreen(); enemyBark(e); return;
+  }
+  // ---- Cursed Boxer mini-boss: fast One-Two (double jab) or a heavy Haymaker (evasion is passive, see dealTo) ----
+  if(e.kit==='boxer'){
+    if(Math.random()<0.45){                           // One-Two: two quick jabs
+      let tot=0; for(let j=0;j<2;j++){ const t=aliveMembers()[(Math.random()*aliveMembers().length)|0]; if(t) tot+=enemyHit(e,t,Math.floor(atk*0.6),0.12,1.5); }
+      pushLog(`${e.name} rattles off a fast ONE-TWO — ${tot} total. 🥊`,'hurt');
+      pulse('foe'+i,'foe-atk',340); pulse('stage-hero','flinch',300); SFX.hurt(); enemyBark(e); return;
+    }
+    const tgt=allies[(Math.random()*allies.length)|0];   // Haymaker: heavy single
+    const d=enemyHit(e,tgt,Math.floor(atk*1.5),0.15,1.7);
+    pushLog(`${e.name} loads up a HAYMAKER on ${tgt.name.split(' ')[0]} — ${d}!`,'hurt');
+    pulse('foe'+i,'foe-atk',440); pulse('stage-hero','flinch',300); SFX.hurt(); shakeScreen(); enemyBark(e); return;
   }
   const sweepEvery = e.phase===2?1:2;
   if(e.boss && e.t % sweepEvery===0){
