@@ -878,13 +878,13 @@ const ORIGINAL_MAP = [
   ",L,F..........WWWW......",
   ",,,F..........WWWW......",
   ",,,F.....R.BB.WWWW...B..",
-  ",,,F..........WWWW......",
+  ",,,F....K.....WWWW......",
   ",2,a..........WWWW......",
   ",,,F......N...===c......",
   ",,,F....1.....WWWW..T...",
   ",,,F.BB.......WWWW......",
-  ",u,F.....BB...WWWW......",
-  ",,,F..........WWWW......",
+  ",u,F....GBB...WWWW......",
+  ",,,F..S.......WWWW......",
   ",,,F..PP......WWWW...H..",
   "FFFF..........WWWW......",
   "..............WWWW.B....",
@@ -906,7 +906,7 @@ const SOLID = new Set(['B','W','T','F','a','b','c']);
 /* base terrain under each special marker (for color + what it reverts to) */
 const GROUND = {
   '1':'.','2':'.','3':'=','4':'.','a':'.','b':'.','c':'.',
-  'N':'.','D':',','R':',','k':',','u':',','o':',','L':'.','H':','
+  'N':'.','D':',','R':',','k':',','u':',','o':',','L':'.','H':',','S':'.','K':'.','G':'.'
 };
 /* emoji marker per tile (floors have none) */
 const EMOJI = {
@@ -915,7 +915,7 @@ const EMOJI = {
   'a':'🚧','b':'🚧','c':'🚧',
   'N':'📰','D':'👷','R':'🔮',
   'k':'🧰','u':'🛢️','o':'🔩',
-  'L':'🦩','H':'🦀'
+  'L':'🦩','H':'🦀','S':'🔧','K':'⏳','G':'🎣'
 };
 /* terrain CSS class per base char */
 const TCLASS = {'.':'t-road',',':'t-grass','=':'t-plank','P':'t-plaza','W':'t-water','B':'t-bldg','T':'t-grass','F':'t-bldg'};
@@ -1227,8 +1227,15 @@ const ENEMIES = {
        intro:"A spindly searchlight wader-mech swivels on the catwalk, lamp-beak glaring. \"I see you.\""},
   'H':{name:"Barnacle Cur",      face:"🦀", hp:26, atk:7,  def:1, xp:16, kind:'patrol',
        intro:"A scrap-welded crab-mech scuttles from the weeds, pincers snapping."},
+  // ---- Act-1 dieselpunk roster (regular enemies + Angry Fisherman mini-boss) ----
+  'S':{name:"Barnacle Scrapper", face:"🔧", hp:28, atk:7,  def:2, xp:17, kind:'patrol',
+       intro:"A barnacle-crusted scrap-bot wrenches itself upright, sparking at the joints."},
+  'K':{name:"Time-Rust Scavenger", face:"⏳", hp:32, atk:8,  def:1, xp:19, kind:'patrol',
+       intro:"A gaunt clockwork picker ticks closer, gears weeping orange rust."},
+  'G':{name:"The Angry Fisherman", face:"🎣", hp:120, atk:13, def:4, xp:55, kind:'minib', kit:'fisherman', salvage:'corruptedPole',
+       intro:"A barrel-chested dock-hand cracks his knuckles — net in one fist, gaff in the other. \"You're trespassin' on my pier, runt.\""},
   '1':{name:"“Salt-Knuckle” Inez Vega", face:"🕷️", hp:38, atk:9,  def:2, xp:28, kind:'story', opens:'a',
-       adds:['H'],
+       adds:['S'],
        intro:"Inez Vega fans out four grafted brass arms, green visor glinting. \"Wrong web, hermano.\""},
   '2':{name:"“Ironback” Odell Reese", face:"🐢", hp:58, atk:12, def:5, xp:44, kind:'story', opens:'b',
        adds:['L'],
@@ -1237,7 +1244,7 @@ const ENEMIES = {
        adds:['H','L'],
        intro:"Capt. Delacroix lowers a brass shark-jaw helm, calm as deep water. \"My harbor. My teeth.\""},
   // Phase 5 rescale: 4-party-tuned boss — 560 HP, AoE Tail Sweep, Phase 2 < 50% HP
-  '4':{name:"Baron Castellane",  face:"🐊", hp:560,atk:30, def:9, xp:160,kind:'boss', salvage:'corruptedPole',
+  '4':{name:"Baron Castellane",  face:"🐊", hp:560,atk:30, def:9, xp:160,kind:'boss',
        intro:"Anchor-chains scream as the Baron's riveted crocodile-walker rises, dripping bay water. \"Behold my leviathan!\""}
 };
 /* =========================== PHASE 5b: SALVAGE-CHOICE REWARD ===========================
@@ -1254,22 +1261,25 @@ const ENEMIES = {
 const SALVAGES = {
   corruptedPole: {
     name: 'Corrupted Fishing Pole', icon: '🎣',
-    blurb: 'Wrenched from the Leviathan’s gut, still twitching with stolen Aethel-Diesel charge. Bolt it to one of the crew.',
+    blurb: 'Pried from the Angry Fisherman’s grip, the rod still hums with stolen Aethel-Diesel charge. Bolt it to one of the crew.',
+    // mapped to atk/def/maxHp only — every pick bites for every character (no inert crit)
     picks: {
-      gold:     { stat:'crit',  amount:0.05, label:'Agility',  show:'+5% Crit'  },
-      silver:   { stat:'atk',   amount:5,    label:'Attack',   show:'+5 Attack'  },
-      platinum: { stat:'crit',  amount:0.05, label:'Accuracy', show:'+5% Crit'  },
-      titanium: { stat:'def',   amount:5,    label:'Defense',  show:'+5 Defense' },
+      gold:     { stat:'atk',   amount:5, label:'Power Haul',   show:'+5 Attack'  },
+      silver:   { stat:'atk',   amount:5, label:'Sharp Cast',   show:'+5 Attack'  },
+      platinum: { stat:'def',   amount:5, label:'Hull Plate',   show:'+5 Defense' },
+      titanium: { stat:'maxHp', amount:5, label:'Deep Reserve', show:'+5 Max HP'  },
     }
   }
 };
 let claimedSalvages = {};   // { <salvageId>: {member, stat, amount} } — one-time record, saved
 let pendingSalvage  = null; // salvage id awaiting the player's pick on the salvage screen
+let salvageReturn   = null; // where applySalvage returns: 'overworld' (mini-boss) | 'victory' (final boss)
 
 /* small add enemies for district fights (so targeting/rows matter) */
 const ADD_DEFS = {
   'H':{name:"Barnacle Cur", face:"🦀", hp:26, atk:7, def:1, xp:8, svg:'H'},
   'L':{name:"Spoonbill-Rig", face:"🦩", hp:30, atk:8, def:2, xp:9, svg:'L'},
+  'S':{name:"Barnacle Scrapper", face:"🔧", hp:24, atk:7, def:1, xp:8, svg:'S'},  // Act-1 dieselpunk add
 };
 const NPC_LINES = {
   'N':{face:"📰", say:"EXTRA! EXTRA! Castellane's dirigibles choke the skyline — and the mayor calls it 'progress'! Read all about it, mister!"},
@@ -1515,7 +1525,7 @@ function resetState(){
   player = { y:START.y, x:START.x };
   mode = 'title'; busy = false; battle = null;
   facing = 'down'; seenDistricts = new Set();
-  claimedSalvages = {}; pendingSalvage = null;
+  claimedSalvages = {}; pendingSalvage = null; salvageReturn = null;
 }
 /* recruit a friend at the leader's current level (level-band: no inflated stats) */
 function recruitMember(key){
@@ -1850,7 +1860,7 @@ function closeDialogue(){
 let logLines = [];
 
 /* which backdrop each fight uses */
-const SCENE_OF = { '1':'alley', '2':'rail', '3':'docks', '4':'tower', 'L':'harbor', 'H':'harbor' };
+const SCENE_OF = { '1':'alley', '2':'rail', '3':'docks', '4':'tower', 'L':'harbor', 'H':'harbor', 'S':'alley', 'K':'alley', 'G':'docks' };
 function pushLog(text, cls){
   logLines.push({text, cls:cls||''});
   if(logLines.length > 6) logLines = logLines.slice(-6);
@@ -1884,7 +1894,7 @@ function cdLabel(m,id){ return m.cd[id]>0 ? ('CD '+m.cd[id]) : ''; }
 
 function buildEnemies(ch){
   const d=ENEMIES[ch]; const out=[];
-  out.push({key:ch,name:d.name,face:d.face,svg:ENEMY_SVG[ch],maxHp:d.hp,hp:d.hp,atk:d.atk,def:d.def,boss:d.kind==='boss',xp:d.xp,alive:true,st:{},t:0,phase:1});
+  out.push({key:ch,name:d.name,face:d.face,svg:ENEMY_SVG[ch],maxHp:d.hp,hp:d.hp,atk:d.atk,def:d.def,boss:d.kind==='boss',minib:d.kind==='minib',kit:d.kit,xp:d.xp,alive:true,st:{},t:0,phase:1});
   (d.adds||[]).forEach(ak=>{ const a=ADD_DEFS[ak]; out.push({key:ak,name:a.name,face:a.face,svg:ENEMY_SVG[a.svg],maxHp:a.hp,hp:a.hp,atk:a.atk,def:a.def,add:true,xp:a.xp,alive:true,st:{},t:0,phase:1}); });
   return out;
 }
@@ -2113,6 +2123,23 @@ function enemyAIact(e){
   const atk = e.atk * (e.phase===2?1.6:1) * (stHas(e,'atkDown')?0.75:1);
   const allies=aliveMembers(); if(!allies.length) return;
   const i=battle.enemies.indexOf(e);
+  // ---- Angry Fisherman mini-boss: simple 3-beat kit (Reel-In heal / Net Cast stun / Gaff Hook heavy) ----
+  if(e.kit==='fisherman'){
+    const tgt=allies[(Math.random()*allies.length)|0];
+    if(e.hp < e.maxHp*0.4 && !e._reeled){           // once, when wounded: patch up
+      e._reeled=true; const h=Math.floor(e.maxHp*0.18); e.hp=Math.min(e.maxHp,e.hp+h);
+      pushLog(`${e.name} REELS IN — patches his rig +${h} HP. "Not done yet, runt."`,'sys');
+      pulse('foe'+i,'foe-atk',360); SFX.hurt(); enemyBark(e); return;
+    }
+    if(Math.random()<0.33){                          // Net Cast: entangle (stun)
+      const d=enemyHit(e,tgt,Math.floor(atk*0.8),0.10,1.5); stAdd(tgt,'stun',1);
+      pushLog(`${e.name} CASTS A NET on ${tgt.name.split(' ')[0]} — ${d}, tangled! 🕸️`,'hurt');
+      pulse('foe'+i,'foe-atk',420); pulse('stage-hero','flinch',300); SFX.hurt(); enemyBark(e); return;
+    }
+    const d=enemyHit(e,tgt,Math.floor(atk*1.3),0.12,1.6);   // Gaff Hook: heavy
+    pushLog(`${e.name} swings the gaff at ${tgt.name.split(' ')[0]} — ${d}.`,'hurt');
+    pulse('foe'+i,'foe-atk',400); pulse('stage-hero','flinch',300); SFX.hurt(); shakeScreen(); enemyBark(e); return;
+  }
   const sweepEvery = e.phase===2?1:2;
   if(e.boss && e.t % sweepEvery===0){
     pushLog(`${e.name} — TAIL SWEEP! 🌀 (hits the whole crew)`,'hurt');
@@ -2163,15 +2190,18 @@ function winBattle(){
   const xp = ENEMIES[ch].xp + (ENEMIES[ch].adds||[]).reduce((s,a)=>s+ADD_DEFS[a].xp,0);
   const lvUps=[];
   party.forEach(m=>{ if(m.hp<=0){ m.hp=1; m.alive=true; } if(grantXP(m,xp)>0) lvUps.push(m.name.split(' ')[0]+'→L'+m.lv); });
+  const sid = ENEMIES[ch].salvage;
+  const hasSalvage = sid && SALVAGES[sid] && !claimedSalvages[sid];   // any enemy may grant a one-time salvage
   if(battle.kind==='boss'){
     SFX.win();
-    const sid = ENEMIES[ch].salvage;
-    if(sid && SALVAGES[sid] && !claimedSalvages[sid]){           // boss grants a one-time salvage choice
-      pendingSalvage = sid; saveGame(); mode='salvage'; showScreen('salvage'); renderSalvage(sid); return;
-    }
+    if(hasSalvage){ pendingSalvage=sid; salvageReturn='victory'; saveGame(); mode='salvage'; showScreen('salvage'); renderSalvage(sid); return; }
     clearSave(); mode='victory'; showScreen('victory'); return;
   }
   if(lvUps.length) SFX.level();
+  if(hasSalvage){            // mini-boss (e.g. the Angry Fisherman): choose a salvage, then back to the streets
+    pendingSalvage=sid; salvageReturn='overworld'; saveGame();
+    mode='salvage'; showScreen('salvage'); renderSalvage(sid); return;
+  }
   let s = `XP +${xp} (shared)\n` + (lvUps.length ? ('LEVEL UP: '+lvUps.join(', ')+'\n(HP & Fuel restored on level)') : 'No level this time.');
   if(battle.opens) s += `\n\nA gate 🚧 grinds open ahead...`;
   document.getElementById('r-face').textContent='⚓';
@@ -2202,13 +2232,15 @@ function applySalvage(memberKey){
   const pick = sv.picks[memberKey];
   const m = party.find(p => p.key === memberKey);
   if(!m || !pick) return;
-  if(pick.stat === 'crit')      m.crit = Math.min(0.95, (m.crit||0) + pick.amount);   // crit is a 0-1 prob
-  else if(pick.stat === 'maxHp'){ m.maxHp += pick.amount; m.hp = Math.min(m.maxHp, m.hp + pick.amount); }
-  else                          m[pick.stat] = (m[pick.stat]||0) + pick.amount;        // atk / def (flat)
+  // simplified mapping = atk/def/maxHp only; skip any non-mapping pick and re-present the choice
+  if(!['atk','def','maxHp'].includes(pick.stat)){ renderSalvage(pendingSalvage); return; }
+  if(pick.stat === 'maxHp'){ m.maxHp += pick.amount; m.hp = Math.min(m.maxHp, m.hp + pick.amount); }
+  else                      m[pick.stat] = (m[pick.stat]||0) + pick.amount;            // atk / def (flat +5)
   claimedSalvages[pendingSalvage] = { member:memberKey, stat:pick.stat, amount:pick.amount };
   pendingSalvage = null;
   saveGame();                                        // persist the boosted crew + the one-time claim
-  mode='victory'; showScreen('victory');             // boost kept in save (not cleared)
+  if(salvageReturn === 'overworld'){ salvageReturn=null; mode='overworld'; showScreen('overworld'); renderOverworld(true); saveGame(); }
+  else { salvageReturn=null; mode='victory'; showScreen('victory'); }   // final boss → episode ending
 }
 function openGate(gateChar){
   for(let y=0;y<MAP_H;y++) for(let x=0;x<MAP_W;x++){
