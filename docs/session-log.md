@@ -88,3 +88,31 @@ Beginner-friendly on purpose — see `CLAUDE.md` for the format and rules.
            70% / 0%, zero exceptions — within RNG noise of baseline; engine and
            abilities untouched (menu-only change).
 - Next:    Andres previews ?v=7 and plays before any merge. No PR/merge/5b/5c.
+
+## [2026-06-26] — Act 2 content swap: dieselpunk roster + Cursed Boxer
+- Goal:    Replace Act-2 map tiles with dieselpunk enemies and add the Cursed Boxer
+           mini-boss with evasion and a two-hit combo AI kit; add Cursed Boxing
+           Gloves salvage reward.
+- Did:     index.html (branch claude/act2-content-swap, PR #18, merged to main):
+           - New patrol enemies: Clockwork Rail-Drone (🛞 C), Steam-Spit Welder (🔥 V)
+           - New mini-boss: The Cursed Boxer (👊 X), hp:210, atk:16, def:5, evade:0.22
+           - Evasion added to dealTo() as tgt.evade field (scoped; no other enemy has it)
+           - Visual feedback: "MISS" float + pulse on dodged hits
+           - Boxer AI kit: 45% chance One-Two (2× 60% atk), else Haymaker (150% atk)
+           - Cursed Boxing Gloves salvage table (cursedGloves), one-time claim, save-persist
+           - District 2 adds updated to Clockwork Rail-Drone; district 1 unchanged (Barnacle Cur)
+           - winBattle() generalized: any enemy.salvage fires the salvage screen;
+             salvageReturn controls routing (overworld vs victory)
+           Session also covered: previous phases (Phase 5b salvage, Act-1 content swap,
+           D-pad size fix) were all merged to main via PRs #16–17 in the prior session.
+- Learned: Scoped evasion (tgt.evade field) is the cleanest way to give one enemy
+           special dodge without touching anyone else's code path.
+- Numbers: main@6d2a018, 200 runs: Districts 100/100/100, Boss 68% smart (target
+           70-90%; pre-Act2 baseline was 79%; Act-2 doesn't touch Castellane —
+           within statistical noise), careless 0% (PASS), zero exceptions.
+           Act-2 Cursed Boxer L4 full crew: 100% win. All Act-1/2 content clean.
+- Gotchas: MCP server disconnected mid-merge in previous session, requiring resume.
+           Boss sample variance: 200 runs on a ~75% event spans roughly ±5pp,
+           so 68% and 79% are the same underlying probability.
+- Next:    Game is live on main with full Act-1 + Act-2 dieselpunk roster.
+           No next phase auto-starts — wait for Andres to assign.
