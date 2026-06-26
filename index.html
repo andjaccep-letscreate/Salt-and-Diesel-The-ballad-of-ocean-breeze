@@ -793,6 +793,20 @@
   </div>
 </div>
 
+<!-- ============================ BRIEFING ============================ -->
+<div id="briefing" class="screen">
+  <div class="card">
+    <h2 class="deco accent">Briefing Room — HQ</h2>
+    <div class="big">📡</div>
+    <p class="blurb" style="text-align:left">The Golfer is down. West Palm Beach takes a breath.
+    But a transmission crackles from HQ — <span class="accent">the Prime Artifact Ball was a signal
+    beacon.</span> Someone in the deep city has already responded. The Shadow Artifact stirs
+    beneath the bay. The crew can stand down now… or follow the signal into darker waters.</p>
+    <button class="btn" style="width:100%;margin-bottom:8px" onclick="sealEpisode()">Seal the Episode — End of Volume 1</button>
+    <button class="btn" style="width:100%;background:var(--rust)" onclick="chaseShadow()">Chase the Shadow Artifact — Hard Mode</button>
+  </div>
+</div>
+
 <!-- ============================ VICTORY ============================ -->
 <div id="victory" class="screen">
   <div class="card">
@@ -865,15 +879,15 @@
    Patrols:  L lookout(🔦)  H scrap hound(⚙️)
 -------------------------------------------------------------------- */
 const ORIGINAL_MAP = [
-  ".......F......WWWW......",
-  ".......F======WWWW......",
+  ".......F......WWWW..Q...",
+  ".......F======WWWW..A...",
   ".T.....F=D==T=WWWWT....T",
-  ".......F====3=WWWW......",
+  ".......F====3=WWWW..J...",
   ".......F=k====WWWW.BB...",
-  ".......F======WWWW......",
+  ".......F======WWWW..E...",
   ".......FFFFbFFWWWW......",
   "FFFF..........WWWW...B..",
-  ",,,F..........WWWW..4...",
+  ",,,F..........WWWW......",
   ",C,F.....BB...WWWW......",
   ",L,F..........WWWW......",
   ",,,F..........WWWW......",
@@ -906,7 +920,8 @@ const SOLID = new Set(['B','W','T','F','a','b','c']);
 /* base terrain under each special marker (for color + what it reverts to) */
 const GROUND = {
   '1':'.','2':'.','3':'=','4':'.','a':'.','b':'.','c':'.',
-  'N':'.','D':',','R':',','k':',','u':',','o':',','L':'.','H':',','S':'.','K':'.','G':'.','C':',','V':',','X':','
+  'N':'.','D':',','R':',','k':',','u':',','o':',','L':'.','H':',','S':'.','K':'.','G':'.','C':',','V':',','X':',',
+  'E':'.','J':'.','A':'.','Q':'.','M':'.'
 };
 /* emoji marker per tile (floors have none) */
 const EMOJI = {
@@ -915,12 +930,13 @@ const EMOJI = {
   'a':'🚧','b':'🚧','c':'🚧',
   'N':'📰','D':'👷','R':'🔮',
   'k':'🧰','u':'🛢️','o':'🔩',
-  'L':'🦩','H':'🦀','S':'🔧','K':'⏳','G':'🎣','C':'🛞','V':'🔥','X':'👊'
+  'L':'🦩','H':'🦀','S':'🔧','K':'⏳','G':'🎣','C':'🛞','V':'🔥','X':'👊',
+  'E':'💨','J':'⌚','A':'🎩','Q':'⛳','M':'🦈'
 };
 /* terrain CSS class per base char */
 const TCLASS = {'.':'t-road',',':'t-grass','=':'t-plank','P':'t-plaza','W':'t-water','B':'t-bldg','T':'t-grass','F':'t-bldg'};
 /* tiles whose emoji marker should gently pulse to invite interaction */
-const INTERACTIVE = new Set(['1','2','3','4','N','D','R','k','u','o','L','H']);
+const INTERACTIVE = new Set(['1','2','3','4','N','D','R','k','u','o','L','H','E','J','A','Q','M']);
 
 /* briefly (re)play a one-shot CSS animation class on an element */
 function flash(id, cls, ms){
@@ -1247,12 +1263,30 @@ const ENEMIES = {
   '2':{name:"“Ironback” Odell Reese", face:"🐢", hp:58, atk:12, def:5, xp:44, kind:'story', opens:'b',
        adds:['C'],
        intro:"Odell Reese hunches under a riveted sea-turtle carapace. \"Hit the shell all day.\""},
-  '3':{name:"Capt. Marisol “Riptide” Delacroix", face:"🦈", hp:74, atk:15, def:6, xp:60, kind:'story', opens:'c',
-       adds:['H','L'],
+  '3':{name:"Capt. Marisol \"Riptide\" Delacroix", face:"🦈", hp:74, atk:15, def:6, xp:60, kind:'story', opens:'c',
+       adds:['E','J'],
        intro:"Capt. Delacroix lowers a brass shark-jaw helm, calm as deep water. \"My harbor. My teeth.\""},
-  // Phase 5 rescale: 4-party-tuned boss — 560 HP, AoE Tail Sweep, Phase 2 < 50% HP
+  // Phase 5 rescale: 4-party-tuned boss — dead code (tile retired); kept for reference
   '4':{name:"Baron Castellane",  face:"🐊", hp:560,atk:30, def:9, xp:160,kind:'boss',
-       intro:"Anchor-chains scream as the Baron's riveted crocodile-walker rises, dripping bay water. \"Behold my leviathan!\""}
+       intro:"Anchor-chains scream as the Baron's riveted crocodile-walker rises, dripping bay water. \"Behold my leviathan!\""},
+  // ---- Act-3 dieselpunk roster ----
+  'E':{name:"Steam-Vent Turret", face:"💨", hp:36, atk:10, def:3, xp:22, kind:'patrol',
+       intro:"A squat armored turret swivels on its gimbals, pressure-gauge screaming. 💨"},
+  'J':{name:"Chrono-Diver Brute", face:"⌚", hp:40, atk:11, def:2, xp:24, kind:'patrol',
+       intro:"A heavy-set diver in a clockwork rebreather lumbers forward, fists ticking."},
+  // ---- Act-3 mini-boss: The Baron (droid-puzzle encounter) ----
+  'A':{name:"The Baron", face:"🎩", hp:1, atk:12, def:8, xp:110, kind:'minib', kit:'baron', droidPuzzle:true,
+       adds:['I','I','I'],
+       salvage:'baronWatch',
+       intro:"Baron Castellane straightens his lapels behind a wall of chrome. \"Gentlemen — intercept mode.\""},
+  // ---- Act-3 final boss: The Corrupted Retiree Golfer ----
+  'Q':{name:"The Corrupted Retiree Golfer", face:"⛳", hp:720, atk:28, def:8, xp:200, kind:'boss', kit:'golfer',
+       salvage:'primeArtifact',
+       riseLog:"FINAL HOLE — THE CORRUPTED RETIREE GOLFER",
+       intro:"A pristine golf cart rolls from the shadows, engine idling like a purr. \"You made it this far, son? Impressive. But I've got the Prime Artifact Ball, and it's tee time.\""},
+  // ---- Shadow World bonus boss ----
+  'M':{name:"The Mako Shark", face:"🦈", hp:480, atk:28, def:10, xp:200, kind:'minib', kit:'mako',
+       intro:"A chromed shark-exo breaches the shadow-water, jaws gaping. \"The deep always wins.\""}
 };
 /* =========================== PHASE 5b: SALVAGE-CHOICE REWARD ===========================
    When a boss is defeated it grants a one-time "salvage": the player picks ONE crew
@@ -1280,25 +1314,50 @@ const SALVAGES = {
   cursedGloves: {
     name: 'Cursed Boxing Gloves', icon: '🥊',
     blurb: 'Stripped off the Cursed Boxer, the gloves still throw phantom punches. Lace them onto one of the crew.',
-    // atk/def/maxHp only (same approach as the pole) — every pick bites
     picks: {
       gold:     { stat:'atk',   amount:5, label:'Heavy Hands',  show:'+5 Attack'  },
       silver:   { stat:'atk',   amount:5, label:'Quick Jab',    show:'+5 Attack'  },
       platinum: { stat:'def',   amount:5, label:'Guard Up',     show:'+5 Defense' },
       titanium: { stat:'maxHp', amount:5, label:'Iron Chin',    show:'+5 Max HP'  },
     }
+  },
+  // ---- Act-3 salvages ----
+  baronWatch: {
+    name: "Baron's Pocket Watch", icon: '🎩',
+    blurb: "Pried from the Baron's waistcoat, the watch ticks to a different rhythm — Aethel-Diesel time. Calibrate it to one of the crew.",
+    picks: {
+      gold:     { stat:'atk',   amount:5, label:'Overclocked',       show:'+5 Attack'  },
+      silver:   { stat:'atk',   amount:5, label:'Hair-Trigger',      show:'+5 Attack'  },
+      platinum: { stat:'def',   amount:5, label:'Titanium Casing',   show:'+5 Defense' },
+      titanium: { stat:'maxHp', amount:5, label:'Resilient Core',    show:'+5 Max HP'  },
+    }
+  },
+  primeArtifact: {
+    name: 'Prime Artifact Ball', icon: '⛳',
+    blurb: "The Corrupted Retiree's weapon and obsession — a golf ball that bends the laws of physics. Bind its energy to one of the crew.",
+    picks: {
+      gold:     { stat:'atk',   amount:8, label:'True Swing',       show:'+8 Attack'  },
+      silver:   { stat:'atk',   amount:8, label:'Dead Eye',         show:'+8 Attack'  },
+      platinum: { stat:'def',   amount:8, label:'Iron Stance',      show:'+8 Defense' },
+      titanium: { stat:'maxHp', amount:8, label:'Second Wind',      show:'+8 Max HP'  },
+    }
   }
 };
 let claimedSalvages = {};   // { <salvageId>: {member, stat, amount} } — one-time record, saved
 let pendingSalvage  = null; // salvage id awaiting the player's pick on the salvage screen
-let salvageReturn   = null; // where applySalvage returns: 'overworld' (mini-boss) | 'victory' (final boss)
+let salvageReturn   = null; // where applySalvage returns: 'overworld' | 'briefing'
+let worldState      = null; // null | 'SHADOW_WORLD' — persists across save/load
 
 /* small add enemies for district fights (so targeting/rows matter) */
 const ADD_DEFS = {
   'H':{name:"Barnacle Cur", face:"🦀", hp:26, atk:7, def:1, xp:8, svg:'H'},
   'L':{name:"Spoonbill-Rig", face:"🦩", hp:30, atk:8, def:2, xp:9, svg:'L'},
-  'S':{name:"Barnacle Scrapper", face:"🔧", hp:24, atk:7, def:1, xp:8, svg:'S'},  // Act-1 dieselpunk add
-  'C':{name:"Clockwork Rail-Drone", face:"🛞", hp:28, atk:9, def:2, xp:10, svg:'C'}, // Act-2 dieselpunk add
+  'S':{name:"Barnacle Scrapper", face:"🔧", hp:24, atk:7, def:1, xp:8, svg:'S'},
+  'C':{name:"Clockwork Rail-Drone", face:"🛞", hp:28, atk:9, def:2, xp:10, svg:'C'},
+  // Act-3 adds
+  'E':{name:"Steam-Vent Turret", face:"💨", hp:36, atk:10, def:3, xp:12, svg:'E'},
+  'J':{name:"Chrono-Diver Brute", face:"⌚", hp:40, atk:11, def:2, xp:13, svg:'J'},
+  'I':{name:"Interceptor Droid", face:"🤖", hp:50, atk:9,  def:2, xp:10, svg:'I'},
 };
 const NPC_LINES = {
   'N':{face:"📰", say:"EXTRA! EXTRA! Castellane's dirigibles choke the skyline — and the mayor calls it 'progress'! Read all about it, mister!"},
@@ -1313,7 +1372,10 @@ const TAUNTS = {
   '1':["\"Six arms, three of 'em just for you.\"", "\"You swing like the tide's against you, hermano.\"", "\"Stay down — this web's mine.\""],
   '2':["\"Hit the shell all day. I've got all day.\"", "(a deep hydraulic groan)", "\"Nothing gets through. Nothing.\""],
   '3':["\"My harbor. My teeth. My tide pulls you under.\"", "\"Blood in the water, and it's yours.\"", "\"Every ship answers to me. So will you.\""],
-  '4':["\"I raised this leviathan from the harbor floor.\"", "\"West Palm Beach is mine, down to the last rivet.\"", "\"You are a wrench. I am the apex.\""]
+  '4':["\"I raised this leviathan from the harbor floor.\"", "\"West Palm Beach is mine, down to the last rivet.\"", "\"You are a wrench. I am the apex.\""],
+  'A':["\"You cannot touch me — my machines are impregnable.\"", "(the Baron adjusts his cufflinks smugly)", "\"Get through the droids? Inconceivable.\""],
+  'Q':["\"A gentleman never rushes his backswing.\"", "(studies the artifact ball with one eye closed)", "\"Wrong sport, son. This is my par.\""],
+  'M':["(a low metallic hiss)", "(the shark-exo circles slowly)", "(hydraulics groan in the deep)"]
 };
 
 /* Inline SVG sprites for each enemy (dieselpunk × nautical Florida-animal machines).
@@ -1378,7 +1440,83 @@ const ENEMY_SVG = {
     <circle cx="20" cy="18" r="1.6" fill="#d94f3a"/><circle cx="28" cy="18" r="1.6" fill="#d94f3a"/>
     <path d="M10 28 q-6 -2 -7 2 q3 1 4 0 q-2 2 1 3 q3 -1 4 -3 Z" fill="#8b6a44"/>
     <path d="M38 28 q6 -2 7 2 q-3 1 -4 0 q2 2 -1 3 q-3 -1 -4 -3 Z" fill="#8b6a44"/>
-    <circle cx="20" cy="30" r="1.8" fill="#b9c6b0"/><circle cx="29" cy="32" r="1.8" fill="#b9c6b0"/></svg>`
+    <circle cx="20" cy="30" r="1.8" fill="#b9c6b0"/><circle cx="29" cy="32" r="1.8" fill="#b9c6b0"/></svg>`,
+  /* Steam-Vent Turret — armored gun barrel on a pivot base, steam vents on flanks */
+  'E':`<svg viewBox="0 0 48 48" aria-label="Steam-Vent Turret">
+    <rect x="10" y="38" width="28" height="6" rx="3" fill="#6b7682"/>
+    <rect x="18" y="28" width="12" height="12" rx="2" fill="#8b95a0"/>
+    <rect x="20" y="12" width="8" height="20" rx="3" fill="#9ba5b0"/>
+    <rect x="21.5" y="8" width="5" height="8" rx="1.5" fill="#b0bac6"/>
+    <ellipse cx="14" cy="34" rx="3.5" ry="2" fill="#aabbcc"/>
+    <ellipse cx="34" cy="34" rx="3.5" ry="2" fill="#aabbcc"/>
+    <circle cx="24" cy="22" r="3.5" fill="#ff7700" opacity="0.9"/>
+    <circle cx="24" cy="22" r="1.6" fill="#ffcc44"/></svg>`,
+  /* Chrono-Diver Brute — heavy diver suit, clockwork rebreather helmet with clock face */
+  'J':`<svg viewBox="0 0 48 48" aria-label="Chrono-Diver Brute">
+    <rect x="6" y="26" width="8" height="14" rx="3" fill="#5a4a2a"/>
+    <rect x="34" y="26" width="8" height="14" rx="3" fill="#5a4a2a"/>
+    <rect x="12" y="24" width="24" height="20" rx="5" fill="#7a6a4a"/>
+    <circle cx="24" cy="18" r="11" fill="#5a5a5a"/>
+    <circle cx="24" cy="18" r="8"  fill="#3a3a5a"/>
+    <circle cx="24" cy="18" r="6"  fill="#c8a820"/>
+    <line x1="24" y1="18" x2="24" y2="13" stroke="#1a1a1a" stroke-width="1.5"/>
+    <line x1="24" y1="18" x2="28" y2="18" stroke="#1a1a1a" stroke-width="1.5"/>
+    <circle cx="24" cy="18" r="1.2" fill="#1a1a1a"/>
+    <rect x="16" y="40" width="6" height="6" rx="2" fill="#5a4a2a"/>
+    <rect x="26" y="40" width="6" height="6" rx="2" fill="#5a4a2a"/></svg>`,
+  /* The Baron — top-hatted schemer, mechanical monocle, cane, pinstripe suit */
+  'A':`<svg viewBox="0 0 48 48" aria-label="The Baron">
+    <rect x="17" y="4"  width="14" height="11" rx="2"   fill="#1a1a2a"/>
+    <rect x="14" y="14" width="20" height="3"  rx="1"   fill="#1a1a2a"/>
+    <circle cx="24" cy="23" r="7" fill="#c8a870"/>
+    <rect x="20" y="20" width="9" height="4" rx="1.5"   fill="#2a2a3a"/>
+    <circle cx="22.5" cy="22" r="1.2" fill="#d9a441"/>
+    <circle cx="27"   cy="22" r="1.5" fill="#c8a820" opacity="0.9"/>
+    <line x1="27" y1="21" x2="30" y2="18" stroke="#8b8b8b" stroke-width="1"/>
+    <rect x="17" y="30" width="14" height="14" rx="3"   fill="#2a2a3a"/>
+    <rect x="19" y="32" width="10" height="2"  rx="1"   fill="#3a3a5a"/>
+    <rect x="19" y="36" width="10" height="2"  rx="1"   fill="#3a3a5a"/>
+    <line x1="34" y1="30" x2="38" y2="46" stroke="#8b7a4a" stroke-width="2.2"/>
+    <circle cx="34" cy="29" r="2.2" fill="#d9a441"/></svg>`,
+  /* Corrupted Retiree Golfer — portly figure, golf visor, glowing artifact ball in hand */
+  'Q':`<svg viewBox="0 0 48 48" aria-label="Corrupted Retiree Golfer">
+    <ellipse cx="24" cy="36" rx="13" ry="10" fill="#dfc090"/>
+    <path d="M11 32 Q5 36 9 43" fill="none" stroke="#c09860" stroke-width="4.5" stroke-linecap="round"/>
+    <path d="M37 32 Q43 28 41 36" fill="none" stroke="#c09860" stroke-width="4.5" stroke-linecap="round"/>
+    <circle cx="24" cy="19" r="9" fill="#d8b880"/>
+    <ellipse cx="24" cy="12" rx="10" ry="3.5" fill="#2a6a2a"/>
+    <rect x="14" y="11" width="20" height="5" rx="2.5" fill="#2a6a2a"/>
+    <ellipse cx="21" cy="18" rx="2.2" ry="1.6" fill="#3a3a3a"/>
+    <ellipse cx="27" cy="18" rx="2.2" ry="1.6" fill="#3a3a3a"/>
+    <circle cx="39" cy="42" r="5.5" fill="#00cc88" opacity="0.8"/>
+    <circle cx="39" cy="42" r="3.5" fill="#00ffaa"/>
+    <circle cx="38" cy="41" r="1.2" fill="white"/>
+    <line x1="32" y1="36" x2="37" y2="40" stroke="#c09860" stroke-width="2.5"/></svg>`,
+  /* Mako Shark — chrome exo-suit, streamlined body, glowing red eye, exposed teeth */
+  'M':`<svg viewBox="0 0 48 48" aria-label="Mako Shark">
+    <ellipse cx="25" cy="30" rx="15" ry="9" fill="#7a8a9a"/>
+    <path d="M40 30 L47 23 L47 37 Z" fill="#6a7a8a"/>
+    <path d="M22 21 L18 7  L29 21 Z" fill="#6a7a8a"/>
+    <ellipse cx="11" cy="30" rx="9" ry="7" fill="#8a9aaa"/>
+    <path d="M2 30 Q6 37 11 32" fill="#d0d0d0" stroke="#aaa" stroke-width="0.7"/>
+    <path d="M3 31 L4 34 L6 31 L8 34 L10 31" fill="none" stroke="white" stroke-width="1.2"/>
+    <circle cx="9" cy="26" r="3" fill="#0a0a1a"/>
+    <circle cx="9" cy="26" r="1.4" fill="#ff3300"/>
+    <ellipse cx="27" cy="25" rx="7" ry="2.5" fill="white" opacity="0.15"/></svg>`,
+  /* Interceptor Droid — bipedal combat drone, red visor, glowing chest indicators */
+  'I':`<svg viewBox="0 0 48 48" aria-label="Interceptor Droid">
+    <rect x="15" y="36" width="6" height="9" rx="2" fill="#5a5a7a"/>
+    <rect x="27" y="36" width="6" height="9" rx="2" fill="#5a5a7a"/>
+    <rect x="8"  y="26" width="8" height="12" rx="3" fill="#6a6a8a"/>
+    <rect x="32" y="26" width="8" height="12" rx="3" fill="#6a6a8a"/>
+    <rect x="12" y="20" width="24" height="18" rx="4" fill="#6a6a8a"/>
+    <rect x="16" y="24" width="16" height="10" rx="2" fill="#4a4a6a"/>
+    <circle cx="22" cy="29" r="2.2" fill="#00aaff"/>
+    <circle cx="26" cy="29" r="2.2" fill="#00aaff"/>
+    <rect x="16" y="10" width="16" height="12" rx="3" fill="#7a7a9a"/>
+    <rect x="18" y="13" width="12" height="5"  rx="2" fill="#dd2200"/>
+    <line x1="24" y1="10" x2="24" y2="4"  stroke="#8a8a9a" stroke-width="2.2"/>
+    <circle cx="24" cy="3.5" r="2.2" fill="#ffaa00"/></svg>`
 };
 
 /* =================================================================
@@ -1547,6 +1685,7 @@ function resetState(){
   mode = 'title'; busy = false; battle = null;
   facing = 'down'; seenDistricts = new Set();
   claimedSalvages = {}; pendingSalvage = null; salvageReturn = null;
+  worldState = null;
 }
 /* recruit a friend at the leader's current level (level-band: no inflated stats) */
 function recruitMember(key){
@@ -1561,6 +1700,31 @@ function newGame(){
   resetState();
   showScreen('title');
   refreshContinueBtn();
+}
+/* ---- Briefing Room endings ---- */
+function sealEpisode(){
+  clearSave();
+  resetState();
+  showScreen('victory');
+  refreshContinueBtn();
+}
+function chaseShadow(){
+  worldState = 'SHADOW_WORLD';
+  respawnShadowWorld();
+  saveGame();
+  mode = 'overworld';
+  showScreen('overworld');
+  renderOverworld(true);
+}
+function respawnShadowWorld(){
+  // Place 6 shadow-patrol encounters back on the map (rows 3-8, col 20 area)
+  const spawns = [
+    {y:3,x:20,ch:'E'},{y:4,x:20,ch:'J'},{y:5,x:20,ch:'E'},
+    {y:6,x:20,ch:'J'},{y:7,x:20,ch:'E'},{y:8,x:20,ch:'J'}
+  ];
+  spawns.forEach(({y,x,ch})=>{ if(map[y] && map[y][x]==='.') map[y][x]=ch; });
+  // Place the Mako Shark bonus boss in the harbor area (District 1 south, open water)
+  if(map[9] && map[9][2]==='.') map[9][2]='M';
 }
 
 /* Title → "Start the Job": begin a brand-new run, abandoning any old save. */
@@ -1583,7 +1747,7 @@ function enterWorld(welcome){
 function startGame(){ enterWorld(true); }
 
 /* ----------------------- SCREEN ROUTING --------------------------- */
-const SCREENS = ['title','cutscene','overworld','battle','reward','salvage','victory','gameover'];
+const SCREENS = ['title','cutscene','overworld','battle','reward','salvage','victory','gameover','briefing'];
 function showScreen(id){
   SCREENS.forEach(s => document.getElementById(s).classList.toggle('active', s===id));
 }
@@ -1624,7 +1788,7 @@ function saveGame(){
   try{
     if(!map) return;
     const data = { v:2, party, recruited, player, facing,
-      map: map.map(r => r.join('')), seen: [...seenDistricts], salvaged: claimedSalvages };
+      map: map.map(r => r.join('')), seen: [...seenDistricts], salvaged: claimedSalvages, worldState };
     localStorage.setItem(SAVE_KEY, JSON.stringify(data));
   }catch(e){ /* storage unavailable — skip silently */ }
 }
@@ -1644,6 +1808,7 @@ function continueGame(){
       player = data.player; facing = data.facing || 'down';
       map = data.map.map(r => r.split('')); seenDistricts = new Set(data.seen || []);
       claimedSalvages = data.salvaged || {};
+      worldState = data.worldState || null;
       busy = false; battle = null;
       enterWorld(false); return;
     }
@@ -1881,7 +2046,7 @@ function closeDialogue(){
 let logLines = [];
 
 /* which backdrop each fight uses */
-const SCENE_OF = { '1':'alley', '2':'rail', '3':'docks', '4':'tower', 'L':'harbor', 'H':'harbor', 'S':'alley', 'K':'alley', 'G':'docks', 'C':'rail', 'V':'rail', 'X':'rail' };
+const SCENE_OF = { '1':'alley', '2':'rail', '3':'docks', '4':'tower', 'L':'harbor', 'H':'harbor', 'S':'alley', 'K':'alley', 'G':'docks', 'C':'rail', 'V':'rail', 'X':'rail', 'E':'tower', 'J':'tower', 'A':'tower', 'Q':'tower', 'M':'harbor' };
 function pushLog(text, cls){
   logLines.push({text, cls:cls||''});
   if(logLines.length > 6) logLines = logLines.slice(-6);
@@ -1915,8 +2080,18 @@ function cdLabel(m,id){ return m.cd[id]>0 ? ('CD '+m.cd[id]) : ''; }
 
 function buildEnemies(ch){
   const d=ENEMIES[ch]; const out=[];
-  out.push({key:ch,name:d.name,face:d.face,svg:ENEMY_SVG[ch],maxHp:d.hp,hp:d.hp,atk:d.atk,def:d.def,boss:d.kind==='boss',minib:d.kind==='minib',kit:d.kit,xp:d.xp,alive:true,st:{},t:0,phase:1});
-  (d.adds||[]).forEach(ak=>{ const a=ADD_DEFS[ak]; out.push({key:ak,name:a.name,face:a.face,svg:ENEMY_SVG[a.svg],maxHp:a.hp,hp:a.hp,atk:a.atk,def:a.def,add:true,xp:a.xp,alive:true,st:{},t:0,phase:1}); });
+  const sw=worldState==='SHADOW_WORLD';
+  const sc=(sw&&(d.kind==='patrol'||d.kind==='minib'))?1.5:1.0;
+  const eHp=Math.round(d.hp*sc),eAtk=Math.round(d.atk*sc),eDef=Math.round(d.def*sc);
+  out.push({key:ch,name:d.name,face:d.face,svg:ENEMY_SVG[ch],maxHp:eHp,hp:eHp,atk:eAtk,def:eDef,
+            boss:d.kind==='boss',minib:d.kind==='minib',kit:d.kit,xp:d.xp,alive:true,st:{},t:0,phase:1,
+            droidPuzzle:d.droidPuzzle||false,evade:d.evade||0});
+  (d.adds||[]).forEach(ak=>{
+    const a=ADD_DEFS[ak];
+    const aHp=Math.round(a.hp*sc),aAtk=Math.round(a.atk*sc),aDef=Math.round(a.def*sc);
+    out.push({key:ak,name:a.name,face:a.face,svg:ENEMY_SVG[a.svg||ak],maxHp:aHp,hp:aHp,atk:aAtk,def:aDef,
+              add:true,droid:!!(d.droidPuzzle),xp:a.xp,alive:true,st:{},t:0,phase:1});
+  });
   return out;
 }
 
@@ -1932,7 +2107,7 @@ function startBattle(ch, y, x){
   battle.activeIdx = firstLivingAlly(0);
   showScreen('battle');
   renderBattle();
-  if(battle.kind==='boss'){ flashScreen(); shakeScreen(); pushLog('⚠ THE LEVIATHAN AWAKENS ⚠','crit'); }
+  if(battle.kind==='boss'||battle.kind==='minib'){ flashScreen(); shakeScreen(); const rl=ENEMIES[ch].riseLog||'⚠ THE LEVIATHAN AWAKENS ⚠'; pushLog('⚠ '+rl+' ⚠','crit'); }
 }
 
 /* ----- rendering ----- */
@@ -2109,6 +2284,12 @@ function commitAbility(id, targetIdx){
   const target = ab.tgt==='enemy' ? battle.enemies[targetIdx]
                : ab.tgt==='ally'  ? party[targetIdx]
                : (ab.tgt==='allenemies' ? null : m);
+  // Droid-puzzle shield: Baron (droidPuzzle:true) can't be targeted while any droid lives
+  if(target && target.droidPuzzle && battle.enemies.some(f=>f.droid&&f.alive)){
+    pushLog(`The Interceptor Droids BLOCK the attack on ${target.name}! Destroy the droids first.`,'sys');
+    renderBattle(); advanceAlly(); return;
+  }
+  const droids_before = battle.enemies.filter(f=>f.droid&&f.alive).length;
   const r = ab.run(m, target) || {};
   if(lastDodge && r.kind==='hit' && target && !r.aoe){   // target wove away (Cursed Boxer evasion)
     r.log = `${target.name.split(' ')[0]} bobs and weaves — ${m.name.split(' ')[0]}'s blow MISSES!`; r.val=0; r.crit=false; r._dodged=true;
@@ -2124,6 +2305,13 @@ function commitAbility(id, targetIdx){
       else { pulse('foe'+i,'knock',300); pulse('foe'+i,'struck',220); floatDamage('foe'+i, r.val||0, r.crit?'crit':'dmg'); burst('foe'+i, r.crit?12:6, r.crit?'crit':'hit'); if(r.crit){ shakeScreen(); flashScreen(); } } }
   } else if(r.kind==='heal'){ floatDamage('stage-hero','+'+(r.val||0),'heal'); burst('stage-hero',8,'heal'); }
   pushLog(r.log, r.crit?'crit':'');
+  // Droid-death notification
+  const droids_after = battle.enemies.filter(f=>f.droid&&f.alive).length;
+  if(droids_after < droids_before){
+    const fell = droids_before - droids_after;
+    pushLog(`Interceptor Droid destroyed! (${droids_after} remain)`,'crit');
+    if(droids_after===0) pushLog('All Interceptor Droids are down — THE BARON IS EXPOSED!','crit');
+  }
   renderBattle();
   if(enemiesCleared()){ winBattle(); return; }
   advanceAlly();
@@ -2145,7 +2333,7 @@ function enemyAIact(e){
   if(stHas(e,'stun')){ e.st.stun--; pushLog(`${e.name} is stunned!`,'sys'); return; }
   e.t++;
   e.phase = (e.boss && e.hp < e.maxHp*0.5) ? 2 : 1;
-  if(e.boss && e.phase===2 && !e._p2){ e._p2=true; pushLog('The Leviathan SURGES — Phase 2!','crit'); flashScreen(); shakeScreen(); }
+  if(e.boss && e.phase===2 && !e._p2 && !e.kit){ e._p2=true; pushLog('The Leviathan SURGES — Phase 2!','crit'); flashScreen(); shakeScreen(); }
   const atk = e.atk * (e.phase===2?1.6:1) * (stHas(e,'atkDown')?0.75:1);
   const allies=aliveMembers(); if(!allies.length) return;
   const i=battle.enemies.indexOf(e);
@@ -2178,8 +2366,62 @@ function enemyAIact(e){
     pushLog(`${e.name} loads up a HAYMAKER on ${tgt.name.split(' ')[0]} — ${d}!`,'hurt');
     pulse('foe'+i,'foe-atk',440); pulse('stage-hero','flinch',300); SFX.hurt(); shakeScreen(); enemyBark(e); return;
   }
+  // ---- The Baron mini-boss: taunts while droids shield him; fires when exposed ----
+  if(e.kit==='baron'){
+    const droids=battle.enemies.filter(f=>f.droid&&f.alive);
+    if(droids.length){
+      const t=TAUNTS['A']; pushLog(`${e.name}: ${t[(Math.random()*t.length)|0]}`,'sys');
+      enemyBark(e); return;
+    }
+    const tgt=allies[(Math.random()*allies.length)|0];
+    const d=enemyHit(e,tgt,Math.floor(atk*1.2),0.08,1.4);
+    pushLog(`The Baron fires a desperate ENERGY PULSE at ${tgt.name.split(' ')[0]} — ${d}!`,'hurt');
+    pulse('foe'+i,'foe-atk',400); pulse('stage-hero','flinch',300); SFX.hurt(); shakeScreen(); enemyBark(e); return;
+  }
+  // ---- Corrupted Retiree Golfer boss: Power Drive/Chip Shot p1; Prime Artifact Burn + Hole-in-One p2 ----
+  if(e.kit==='golfer'){
+    if(e.phase===2 && !e._p2){
+      e._p2=true;
+      pushLog('The Golfer ACTIVATES the Prime Artifact Ball — the green glows with ancient power!','crit');
+      flashScreen(); shakeScreen();
+    }
+    if(e.phase===2){
+      allies.forEach(m=>{ m.st.burn=Math.max(m.st.burn||0,3); });
+      pushLog(`${e.name} radiates corrupted energy — the crew is BURNING! 🔥`,'hurt');
+      if(e.t%3===0){
+        allies.forEach(a=>{ enemyHit(e,a,Math.floor(atk*1.4),0.12,1.6); });
+        pushLog(`${e.name} — HOLE-IN-ONE! ⛳ A crushing swing hits everyone!`,'hurt');
+        pulse('foe'+i,'foe-atk',500); pulse('stage-hero','flinch',400); shakeScreen(); SFX.hurt(); enemyBark(e); return;
+      }
+      const tgt2=allies[(Math.random()*allies.length)|0];
+      const d2=enemyHit(e,tgt2,Math.floor(atk*1.1),0.10,1.5);
+      pushLog(`${e.name} — CHIP SHOT at ${tgt2.name.split(' ')[0]} — ${d2}. 🏌️`,'hurt');
+      pulse('foe'+i,'foe-atk',400); pulse('stage-hero','flinch',300); SFX.hurt(); enemyBark(e); return;
+    }
+    if(e.t%2===0){
+      allies.forEach(a=>{ enemyHit(e,a,Math.floor(atk*0.85),0.10,1.5); });
+      pushLog(`${e.name} — POWER DRIVE! 🏌️ A sweeping swing clips the crew!`,'hurt');
+      pulse('foe'+i,'foe-atk',440); pulse('stage-hero','flinch',300); shakeScreen(); SFX.hurt(); enemyBark(e); return;
+    }
+    const tgt3=allies[(Math.random()*allies.length)|0];
+    const d3=enemyHit(e,tgt3,Math.floor(atk*1.2),0.10,1.5);
+    pushLog(`${e.name} — CHIP SHOT at ${tgt3.name.split(' ')[0]} — ${d3}. 🏌️`,'hurt');
+    pulse('foe'+i,'foe-atk',400); pulse('stage-hero','flinch',300); SFX.hurt(); enemyBark(e); return;
+  }
+  // ---- Mako Shark bonus boss: Breach AoE / Deep Bite heavy single ----
+  if(e.kit==='mako'){
+    if(e.t%3===0){
+      allies.forEach(a=>{ enemyHit(e,a,Math.floor(atk*0.9),0.10,1.5); });
+      pushLog(`${e.name} — BREACH! 🦈 Bursts from the deep, crashing into everyone!`,'hurt');
+      pulse('foe'+i,'foe-atk',480); pulse('stage-hero','flinch',400); shakeScreen(); SFX.hurt(); enemyBark(e); return;
+    }
+    const tgt4=allies[(Math.random()*allies.length)|0];
+    const d4=enemyHit(e,tgt4,Math.floor(atk*1.4),0.12,1.6);
+    pushLog(`${e.name} — DEEP BITE on ${tgt4.name.split(' ')[0]} — ${d4}! 🦷`,'hurt');
+    pulse('foe'+i,'foe-atk',440); pulse('stage-hero','flinch',300); SFX.hurt(); shakeScreen(); enemyBark(e); return;
+  }
   const sweepEvery = e.phase===2?1:2;
-  if(e.boss && e.t % sweepEvery===0){
+  if(e.boss && !e.kit && e.t % sweepEvery===0){
     pushLog(`${e.name} — TAIL SWEEP! 🌀 (hits the whole crew)`,'hurt');
     allies.forEach(a=>{ enemyHit(e,a,Math.floor(atk*0.9),0.10,1.5); });
     pulse('foe'+i,'foe-atk',420); pulse('stage-hero','flinch',300); shakeScreen(); SFX.hurt(); enemyBark(e); return;
@@ -2203,9 +2445,12 @@ function enemyPhase(){
 }
 function endOfRound(){
   if(battle.over) return;
-  // burn ticks
+  // burn ticks — enemies
   battle.enemies.forEach(e=>{ if(e.alive && stHas(e,'burn')){ const b=Math.max(2,Math.floor(e.maxHp*0.03)); e.hp=Math.max(0,e.hp-b); if(e.hp<=0)e.alive=false; e.st.burn--; pushLog(`${e.name} burns for ${b}.`,'sys'); } });
   if(enemiesCleared()){ winBattle(); return; }
+  // burn ticks — party (applied by Golfer phase 2)
+  aliveMembers().forEach(m=>{ if((m.st.burn||0)>0){ const b=Math.max(1,Math.floor(m.maxHp*0.04)); m.hp=Math.max(0,m.hp-b); m.st.burn--; if(m.hp<=0){m.hp=0;m.alive=false;} pushLog(`${m.name} takes ${b} burn damage! 🔥`,'hurt'); } });
+  if(partyWiped()){ gameOver(); return; }
   party.forEach(m=>{ for(const k in m.cd) if(m.cd[k]>0) m.cd[k]--; m.st.guard=0; });
   battle.enemies.forEach(e=>{ ['defDown','atkDown','mark'].forEach(k=>{ if(e.st[k]>0) e.st[k]--; }); });
   battle.round++; battle.activeIdx=firstLivingAlly(0); busy=false; renderBattle();
@@ -2232,8 +2477,8 @@ function winBattle(){
   const hasSalvage = sid && SALVAGES[sid] && !claimedSalvages[sid];   // any enemy may grant a one-time salvage
   if(battle.kind==='boss'){
     SFX.win();
-    if(hasSalvage){ pendingSalvage=sid; salvageReturn='victory'; saveGame(); mode='salvage'; showScreen('salvage'); renderSalvage(sid); return; }
-    clearSave(); mode='victory'; showScreen('victory'); return;
+    if(hasSalvage){ pendingSalvage=sid; salvageReturn='briefing'; saveGame(); mode='salvage'; showScreen('salvage'); renderSalvage(sid); return; }
+    mode='briefing'; showScreen('briefing'); return;
   }
   if(lvUps.length) SFX.level();
   if(hasSalvage){            // mini-boss (e.g. the Angry Fisherman): choose a salvage, then back to the streets
@@ -2278,7 +2523,8 @@ function applySalvage(memberKey){
   pendingSalvage = null;
   saveGame();                                        // persist the boosted crew + the one-time claim
   if(salvageReturn === 'overworld'){ salvageReturn=null; mode='overworld'; showScreen('overworld'); renderOverworld(true); saveGame(); }
-  else { salvageReturn=null; mode='victory'; showScreen('victory'); }   // final boss → episode ending
+  else if(salvageReturn === 'briefing'){ salvageReturn=null; mode='briefing'; showScreen('briefing'); }
+  else { salvageReturn=null; mode='victory'; showScreen('victory'); }
 }
 function openGate(gateChar){
   for(let y=0;y<MAP_H;y++) for(let x=0;x<MAP_W;x++){

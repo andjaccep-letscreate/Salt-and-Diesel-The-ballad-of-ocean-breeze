@@ -88,3 +88,62 @@ Beginner-friendly on purpose — see `CLAUDE.md` for the format and rules.
            70% / 0%, zero exceptions — within RNG noise of baseline; engine and
            abilities untouched (menu-only change).
 - Next:    Andres previews ?v=7 and plays before any merge. No PR/merge/5b/5c.
+
+## [2026-06-26] — Act-3 Content: Baron droid-puzzle, Golfer finale, Shadow World gate
+
+- Goal:    Build the final content phase of Episode 1: Act-3 patrol enemies
+           (Steam-Vent Turret E, Chrono-Diver Brute J), The Baron mini-boss
+           (droid-puzzle mechanic), The Corrupted Retiree Golfer final boss
+           (two-phase + burn DoT), the Briefing Room ending screen with
+           Seal/Chase choice, and the Shadow World (1.5× scaling + Mako Shark
+           bonus boss). Retire Castellane as final boss; Baron→Golfer is the
+           only route.
+- Did:     All edits to `index.html` on branch `claude/act3-content`:
+           Map rows updated (E/J/A/Q placed in east corridor col 20, Castellane
+           tile removed). ENEMIES table: E, J, A, Q, M added; '3' adds changed
+           to ['E','J']; '4' kept as dead code. SALVAGES: baronWatch,
+           primeArtifact added. ADD_DEFS: E, J, I (Interceptor Droid). SVG
+           sprites for all new enemies. buildEnemies(): evade, droidPuzzle,
+           droid fields + Shadow World 1.5× scaling. startBattle(): riseLog
+           field for boss announcements (also fires on minib now).
+           enemyAIact(): baron/golfer/mako kit handlers; !e.kit guard on
+           generic p2 + tail-sweep. commitAbility(): droid shield check (blocks
+           targeting Baron while droids live) + droid-death notifications.
+           endOfRound(): party burn DoT tick (Golfer phase 2). winBattle():
+           boss routes to 'briefing' not 'victory'. applySalvage(): 'briefing'
+           routing branch. resetState()/saveGame()/continueGame(): worldState
+           persisted. SCREENS: 'briefing' added. HTML: #briefing screen with
+           Seal/Chase buttons. New functions: sealEpisode(), chaseShadow(),
+           respawnShadowWorld(). Also fixed a pre-existing bug: ENEMIES table
+           entries '3','4','E','J','A','Q','M' used Unicode curly quotes
+           (U+201C/U+201D) as JS string delimiters — valid in browsers but
+           rejected by Node.js. Fixed via Python byte-level replacement to use
+           ASCII double quotes throughout.
+- Learned: "Curly quotes as JS string delimiters" — browsers may accept Unicode
+           curly quotes (U+201C/U+201D) in script tags even though the
+           ECMAScript spec requires ASCII quote chars. Node.js rejects them,
+           which only surfaces when running headless tests. Always use ASCII
+           double-quotes in JS string literals.
+           "Binary search for JS syntax errors" — when node --check gives no
+           line number, write the script to a .js file and use
+           `node --check file.js` for precise error location.
+           "Droid-puzzle shield" — implemented at two levels: commitAbility()
+           blocks player targeting the Baron while droids live; endOfRound()
+           checks partyWiped() after party burn tick so a DoT kill ends combat
+           immediately.
+- Gotchas: Curly-quote bug was widespread in ENEMIES entries added this
+           session. Fixing it required Python byte-level surgery because Edit
+           tool XML encoding re-introduced escaped backtick/quote issues.
+           The closing curly-quote in intro strings that followed \\\"...\\\",
+           was NOT converted by the heuristic (prev byte was ASCII \"), causing
+           unclosed strings — needed a second pass to fix the trailing U+201D
+           before \\},.
+           Golfer at atk:22 gave 100% smart win (target 70-90%). Tuned to
+           atk:28; confirmed 82% smart / 0% careless across 300 runs.
+- Numbers: 300 runs: Districts 100%/100%/100%, Baron 100%/100%, Golfer 82%
+           smart / 0% careless, Full loop (5 fights) 84%/0%, Shadow patrols
+           100%/100%, zero exceptions. All verdict checks PASS.
+- Next:    Andres previews via raw.githack ?v=N link and plays through Act 3.
+           If sign-off given, merge to main. Do NOT start Phase 5 party system
+           until explicitly asked and the party-system-prompt file is handed
+           over.
