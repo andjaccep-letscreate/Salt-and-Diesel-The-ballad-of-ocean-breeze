@@ -505,6 +505,13 @@
   .dpad .up{ order:2; } .dpad .left{ order:1; }
   .dpad .right{ order:4; } .dpad .down{ order:3; }
   .hint{ font-size:.72rem; opacity:.6; letter-spacing:.05em; text-align:center; }
+  #party-strip{ width:min(88vw,440px); display:flex; gap:6px; margin-top:4px; }
+  .ps-slot{ flex:1; min-width:0; display:flex; flex-direction:column; align-items:center;
+    background:var(--panel); border:2px solid var(--rivet); border-radius:7px; padding:2px 2px; }
+  .ps-slot.ps-away{ opacity:.28; }
+  .ps-slot.ps-dead{ border-color:var(--rust); }
+  .ps-em{ font-size:1.1rem; line-height:1; }
+  .ps-name{ font-size:.48rem; letter-spacing:.06em; text-transform:uppercase; opacity:.7; white-space:nowrap; overflow:hidden; }
 
   /* ============================ GAUGE ============================ */
   .gauge{ position:relative; height:20px; background:#0a0c10; border:2px solid var(--rivet);
@@ -747,6 +754,7 @@
       <button class="btn down"  onmousedown="move(1,0)"  ontouchstart="event.preventDefault();move(1,0)">▼</button>
     </div>
     <div class="hint" id="ow-hint">Arrow keys / D-pad to roam &middot; walk into markers to act</div>
+    <div id="party-strip"></div>
   </div>
 </div>
 
@@ -1937,6 +1945,17 @@ function updateHUD(){
   document.getElementById('hud-kits').textContent = hero.kits;
   setGauge('hud-hp', hero.hp, hero.maxHp, 'HP '+hero.hp+'/'+hero.maxHp);
   setGauge('hud-fuel', hero.fuel, hero.maxFuel, 'FUEL '+hero.fuel+'/'+hero.maxFuel);
+  renderPartyStrip();
+}
+function renderPartyStrip(){
+  const el = document.getElementById('party-strip');
+  if(!el) return;
+  el.innerHTML = ['gold','silver','titanium','platinum'].map(key => {
+    const m = party.find(p => p.key===key);
+    const d = MEMBER_DEFS[key];
+    const cls = !m ? 'ps-away' : m.hp<=0 ? 'ps-dead' : '';
+    return '<div class="ps-slot'+(cls?' '+cls:'')+'"><span class="ps-em">'+d.emoji+'</span><span class="ps-name">'+d.codename+'</span></div>';
+  }).join('');
 }
 
 /* grid-based movement: one tile per input, clamped to bounds, blocked by solids */
