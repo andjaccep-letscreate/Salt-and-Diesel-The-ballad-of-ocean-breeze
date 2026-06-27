@@ -498,6 +498,7 @@
     #airship, #stage .stage-far, #noir .grain{ animation:none; }
   }
 
+  #ctrl-zone{ touch-action:manipulation; user-select:none; display:flex; flex-direction:column; align-items:center; }
   .dpad{ display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr);
     gap:8px; width:min(88vw,440px); margin-top:4px; touch-action:manipulation; }
   .dpad .btn{ font-size:2.6rem; padding:0; height:124px; touch-action:manipulation; }
@@ -738,14 +739,16 @@
     </div>
     <div id="banner"></div>
   </div>
-  <div class="dpad">
-    <button class="btn up"    onmousedown="move(-1,0)" ontouchstart="event.preventDefault();move(-1,0)">▲</button>
-    <button class="btn left"  onmousedown="move(0,-1)" ontouchstart="event.preventDefault();move(0,-1)">◀</button>
-    <div class="mid">🕶️</div>
-    <button class="btn right" onmousedown="move(0,1)"  ontouchstart="event.preventDefault();move(0,1)">▶</button>
-    <button class="btn down"  onmousedown="move(1,0)"  ontouchstart="event.preventDefault();move(1,0)">▼</button>
+  <div id="ctrl-zone">
+    <div class="dpad" ontouchstart="event.preventDefault()">
+      <button class="btn up"    onmousedown="move(-1,0)" ontouchstart="event.preventDefault();move(-1,0)">▲</button>
+      <button class="btn left"  onmousedown="move(0,-1)" ontouchstart="event.preventDefault();move(0,-1)">◀</button>
+      <div class="mid">🕶️</div>
+      <button class="btn right" onmousedown="move(0,1)"  ontouchstart="event.preventDefault();move(0,1)">▶</button>
+      <button class="btn down"  onmousedown="move(1,0)"  ontouchstart="event.preventDefault();move(1,0)">▼</button>
+    </div>
+    <div class="hint" id="ow-hint">Arrow keys / D-pad to roam &middot; walk into markers to act</div>
   </div>
-  <div class="hint" id="ow-hint">Arrow keys / D-pad to roam &middot; walk into markers to act</div>
 </div>
 
 <!-- ============================ BATTLE ============================ -->
