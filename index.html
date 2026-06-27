@@ -499,12 +499,12 @@
   }
 
   .dpad{ display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr);
-    gap:8px; width:min(70vw,240px); margin-top:4px; }
-  .dpad .btn{ font-size:1.4rem; padding:0; height:62px; }
+    gap:8px; width:min(88vw,440px); margin-top:4px; }
+  .dpad .btn{ font-size:2.6rem; padding:0; height:124px; }
   .dpad .up{ grid-area:1/2; } .dpad .left{ grid-area:2/1; }
   .dpad .right{ grid-area:2/3; } .dpad .down{ grid-area:3/2; }
   .dpad .mid{ grid-area:2/2; display:flex; align-items:center; justify-content:center;
-    font-size:1.6rem; opacity:.5;}
+    font-size:2.4rem; opacity:.5;}
   .hint{ font-size:.72rem; opacity:.6; letter-spacing:.05em; text-align:center; }
 
   /* ============================ GAUGE ============================ */
@@ -1303,44 +1303,23 @@ const SALVAGES = {
   corruptedPole: {
     name: 'Corrupted Fishing Pole', icon: '🎣',
     blurb: 'Pried from the Angry Fisherman’s grip, the rod still hums with stolen Aethel-Diesel charge. Bolt it to one of the crew.',
-    // mapped to atk/def/maxHp only — every pick bites for every character (no inert crit)
-    picks: {
-      gold:     { stat:'atk',   amount:5, label:'Power Haul',   show:'+5 Attack'  },
-      silver:   { stat:'atk',   amount:5, label:'Sharp Cast',   show:'+5 Attack'  },
-      platinum: { stat:'def',   amount:5, label:'Hull Plate',   show:'+5 Defense' },
-      titanium: { stat:'maxHp', amount:5, label:'Deep Reserve', show:'+5 Max HP'  },
-    }
+    stat:'atk', amount:5, label:'Power Haul'
   },
   cursedGloves: {
     name: 'Cursed Boxing Gloves', icon: '🥊',
     blurb: 'Stripped off the Cursed Boxer, the gloves still throw phantom punches. Lace them onto one of the crew.',
-    picks: {
-      gold:     { stat:'atk',   amount:5, label:'Heavy Hands',  show:'+5 Attack'  },
-      silver:   { stat:'atk',   amount:5, label:'Quick Jab',    show:'+5 Attack'  },
-      platinum: { stat:'def',   amount:5, label:'Guard Up',     show:'+5 Defense' },
-      titanium: { stat:'maxHp', amount:5, label:'Iron Chin',    show:'+5 Max HP'  },
-    }
+    stat:'atk', amount:5, label:'Heavy Hands'
   },
   // ---- Act-3 salvages ----
   baronWatch: {
     name: "Baron's Pocket Watch", icon: '🎩',
     blurb: "Pried from the Baron's waistcoat, the watch ticks to a different rhythm — Aethel-Diesel time. Calibrate it to one of the crew.",
-    picks: {
-      gold:     { stat:'atk',   amount:5, label:'Overclocked',       show:'+5 Attack'  },
-      silver:   { stat:'atk',   amount:5, label:'Hair-Trigger',      show:'+5 Attack'  },
-      platinum: { stat:'def',   amount:5, label:'Titanium Casing',   show:'+5 Defense' },
-      titanium: { stat:'maxHp', amount:5, label:'Resilient Core',    show:'+5 Max HP'  },
-    }
+    stat:'def', amount:5, label:'Aethel Guard'
   },
   primeArtifact: {
     name: 'Prime Artifact Ball', icon: '⛳',
     blurb: "The Corrupted Retiree's weapon and obsession — a golf ball that bends the laws of physics. Bind its energy to one of the crew.",
-    picks: {
-      gold:     { stat:'atk',   amount:8, label:'True Swing',       show:'+8 Attack'  },
-      silver:   { stat:'atk',   amount:8, label:'Dead Eye',         show:'+8 Attack'  },
-      platinum: { stat:'def',   amount:8, label:'Iron Stance',      show:'+8 Defense' },
-      titanium: { stat:'maxHp', amount:8, label:'Second Wind',      show:'+8 Max HP'  },
-    }
+    stat:'maxHp', amount:8, label:'Second Wind'
   }
 };
 let claimedSalvages = {};   // { <salvageId>: {member, stat, amount} } — one-time record, saved
@@ -2499,29 +2478,26 @@ function renderSalvage(sid){
   document.getElementById('sv-name').textContent = sv.name;
   document.getElementById('sv-blurb').textContent = sv.blurb || '';
   const wrap = document.getElementById('sv-picks');
-  wrap.innerHTML = party.map(m => {                 // only crew actually in the party
-    const p = sv.picks[m.key]; if(!p) return '';
-    const show = p.show || ('+' + p.amount + ' ' + p.stat);
+  const statLabel = sv.stat === 'maxHp' ? 'Max HP' : sv.stat === 'atk' ? 'Atk' : 'Def';
+  wrap.innerHTML = party.map(m => {
+    const cur = m[sv.stat] || 0;
     return `<button class="sv-pick" onclick="applySalvage('${m.key}')">
       <span class="sv-em">${m.emoji}</span>
       <span class="sv-who">${m.name.split(' ')[0]}<small>${m.codename} · L${m.lv}</small></span>
-      <span class="sv-boost">${p.label}: ${show}</span></button>`;
+      <span class="sv-boost">${statLabel}: ${cur} → ${cur + sv.amount}</span></button>`;
   }).join('');
 }
 function applySalvage(memberKey){
   if(!pendingSalvage) return;
   const sv = SALVAGES[pendingSalvage]; if(!sv) return;
-  if(claimedSalvages[pendingSalvage]) return;        // one-time guard
-  const pick = sv.picks[memberKey];
+  if(claimedSalvages[pendingSalvage]) return;
   const m = party.find(p => p.key === memberKey);
-  if(!m || !pick) return;
-  // simplified mapping = atk/def/maxHp only; skip any non-mapping pick and re-present the choice
-  if(!['atk','def','maxHp'].includes(pick.stat)){ renderSalvage(pendingSalvage); return; }
-  if(pick.stat === 'maxHp'){ m.maxHp += pick.amount; m.hp = Math.min(m.maxHp, m.hp + pick.amount); }
-  else                      m[pick.stat] = (m[pick.stat]||0) + pick.amount;            // atk / def (flat +5)
-  claimedSalvages[pendingSalvage] = { member:memberKey, stat:pick.stat, amount:pick.amount };
+  if(!m) return;
+  if(sv.stat === 'maxHp'){ m.maxHp += sv.amount; m.hp = Math.min(m.maxHp, m.hp + sv.amount); }
+  else m[sv.stat] = (m[sv.stat]||0) + sv.amount;
+  claimedSalvages[pendingSalvage] = { member:memberKey, stat:sv.stat, amount:sv.amount };
   pendingSalvage = null;
-  saveGame();                                        // persist the boosted crew + the one-time claim
+  saveGame();
   if(salvageReturn === 'overworld'){ salvageReturn=null; mode='overworld'; showScreen('overworld'); renderOverworld(true); saveGame(); }
   else if(salvageReturn === 'briefing'){ salvageReturn=null; mode='briefing'; showScreen('briefing'); }
   else { salvageReturn=null; mode='victory'; showScreen('victory'); }
