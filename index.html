@@ -7,7 +7,7 @@
 <style>
   /* ============================ THEME ============================ */
   :root{
-    --board: min(96vw, 480px);   /* overworld board width; tiles scale to fit */
+    --board: min(96vw, calc(100svh - 200px), 480px);   /* overworld board width; tiles scale to fit */
     --bg:#0c0e12;                 /* near-black slate */
     --panel:#14181f;             /* dark slate panels */
     --panel2:#1b212b;
@@ -152,7 +152,7 @@
   .cell .mk.marker{ animation: markerPulse 1.8s ease-in-out infinite; }
 
   /* ---- BATTLE STAGE: side-view face-off (hero left faces right, enemy right faces left) ---- */
-  #stage{ position:relative; width:100%; max-width:480px; height:min(46vw,186px);
+  #stage{ position:relative; width:100%; max-width:480px; height:min(40vw,160px);
     border:2px solid var(--brass-d); border-radius:10px; overflow:hidden; background:#0e1116; }
   #stage::before{ content:""; position:absolute; inset:0; z-index:0; }       /* per-scene backdrop */
   #stage::after{ content:""; position:absolute; inset:0; z-index:3; pointer-events:none;
@@ -244,7 +244,7 @@
   .mfill.special{ background:linear-gradient(180deg,#5fe0ff,#1b6ef3); box-shadow:0 0 6px rgba(63,169,255,.5); } /* neon cyan */
   .meter.dim{ opacity:.32; }
 
-  .bbar{ width:100%; max-width:480px; display:flex; justify-content:flex-end; gap:8px; margin-top:6px; }
+  .bbar{ width:100%; max-width:480px; display:flex; justify-content:flex-end; gap:8px; }
   /* Phase 5b salvage picks */
   #sv-picks{ display:flex; flex-direction:column; gap:8px; margin-top:8px; }
   .sv-pick{ display:flex; align-items:center; gap:10px; width:100%; text-align:left; cursor:pointer;
@@ -499,13 +499,11 @@
   }
 
   #ctrl-zone{ user-select:none; display:flex; flex-direction:column; align-items:center; }
-  .dpad{ display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr);
-    gap:8px; width:min(88vw,440px); margin-top:4px; }
-  .dpad .btn{ font-size:2.6rem; padding:0; height:124px; }
-  .dpad .up{ grid-area:1/2; } .dpad .left{ grid-area:2/1; }
-  .dpad .right{ grid-area:2/3; } .dpad .down{ grid-area:3/2; }
-  .dpad .mid{ grid-area:2/2; display:flex; align-items:center; justify-content:center;
-    font-size:2.4rem; opacity:.5;}
+  .dpad{ display:flex; gap:8px; width:min(88vw,440px); margin-top:4px; }
+  .dpad .btn{ font-size:2.2rem; padding:0; height:68px; flex:1; }
+  .dpad .mid{ display:none; }
+  .dpad .up{ order:2; } .dpad .left{ order:1; }
+  .dpad .right{ order:4; } .dpad .down{ order:3; }
   .hint{ font-size:.72rem; opacity:.6; letter-spacing:.05em; text-align:center; }
 
   /* ============================ GAUGE ============================ */
@@ -523,7 +521,7 @@
   .gauge::before{ left:3px; } .gauge::after{ right:3px; }
 
   /* ============================ BATTLE ============================ */
-  #battle{ gap:12px; }
+  #battle{ gap:8px; }
   #ally-zone{ display:none; width:100%; max-width:480px; } /* reserved: future formation panel */
   .epanel,.hpanel,.estatus{ width:100%; max-width:480px; background:var(--panel);
     border:2px solid var(--brass-d); border-radius:10px; padding:12px; }
@@ -534,7 +532,7 @@
   .ename{ font-size:1.05rem; color:var(--brass); }
   #stage, .log, .hpanel, .estatus, .actions{ margin-bottom:0; }
   .log{
-    width:100%; max-width:480px; height:104px; background:#05070a;
+    width:100%; max-width:480px; height:88px; background:#05070a;
     border:2px solid var(--rivet); border-radius:8px; padding:8px 10px;
     font-family:"Courier New",monospace; font-size:.8rem; line-height:1.45; color:#9fe6c4;
     overflow:hidden; display:flex; flex-direction:column; justify-content:flex-end;
