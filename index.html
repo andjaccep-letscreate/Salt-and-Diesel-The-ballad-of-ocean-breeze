@@ -513,6 +513,18 @@
   .ps-em{ font-size:1.1rem; line-height:1; }
   .ps-name{ font-size:.48rem; letter-spacing:.06em; text-transform:uppercase; opacity:.7; white-space:nowrap; overflow:hidden; }
 
+  /* =================== LOCATION PALETTES (data-loc on body) =================== */
+  body[data-loc="coastal"]{ --bg:#08101a; --panel:#0f1e2e; --panel2:#162840; --brass:#3fc8f0; --brass-d:#1a8ec4; --rivet:#1a3a5a; }
+  body[data-loc="cane"]{ --bg:#090e06; --panel:#111a0e; --panel2:#182215; --brass:#8bc34a; --brass-d:#5a8a20; --rivet:#243a18; }
+  body[data-loc="luxury"]{ --bg:#120c06; --panel:#1e1208; --panel2:#281a0a; --brass:#ffb830; --brass-d:#cc8800; --rivet:#3a2a0a; }
+  /* "urban" keeps the default brass palette — no override needed */
+
+  /* =================== FLOOD BAR =================== */
+  #flood-bar-wrap{ width:min(96vw,480px); display:flex; align-items:center; gap:8px; margin-bottom:2px; }
+  #flood-bar{ flex:1; height:6px; background:#05070a; border:1px solid var(--rivet); border-radius:3px; overflow:hidden; }
+  #flood-bar-fill{ height:100%; background:linear-gradient(90deg,var(--cobalt-l),var(--cobalt)); transition:width .5s; width:70%; }
+  #flood-label{ font-size:.58rem; letter-spacing:.08em; color:var(--cobalt-l); white-space:nowrap; min-width:72px; text-align:right; }
+
   /* ============================ GAUGE ============================ */
   .gauge{ position:relative; height:20px; background:#0a0c10; border:2px solid var(--rivet);
     border-radius:5px; overflow:hidden;
@@ -622,6 +634,10 @@
     <div class="stat">🧰 <b id="hud-kits" class="accent">3</b></div>
     <button class="muteBtn" onclick="toggleMute()">🔊</button>
     <button class="gearBtn" onclick="openSettings()">⚙</button>
+  </div>
+  <div id="flood-bar-wrap">
+    <div id="flood-bar"><div id="flood-bar-fill"></div></div>
+    <div id="flood-label">FLOOD 70%</div>
   </div>
   <div class="board" id="board">
     <div id="fog"></div>
@@ -843,6 +859,16 @@
   </div>
 </div>
 
+<!-- ============================ TRAVEL ============================ -->
+<div id="travel" class="screen">
+  <div class="frame">
+    <div class="cs-emoji" id="travel-emoji">🚢</div>
+    <div class="deco accent" id="travel-dest" style="font-size:1rem;margin:8px 0"></div>
+    <div class="blurb" id="travel-desc" style="font-size:.88rem;margin:12px 0 20px"></div>
+    <button class="btn" style="width:100%" onclick="closeTravelScreen()">Head Out</button>
+  </div>
+</div>
+
 <!-- dialogue overlay -->
 <div id="dialogue">
   <div class="box">
@@ -881,59 +907,144 @@
    SALT & DIESEL — single-file dieselpunk turn-based RPG
    ================================================================= */
 
-/* ----------------------- THE CITY MAP -----------------------------
-   24 wide x 30 tall grid of single-char tile codes (BFS-validated).
-   Terrain:  . road   , grass   = dock plank   P plaza   W water   B building   T palm
-   Story:    1 alley(🥊)  2 rail yard(🛤️)  3 docks(⚓)  4 Comeau Tower(🗼)
-   Gates:    a → rail yard,  b → docks,  c → tower   (rendered 🚧 until opened)
-   NPCs:     N newsboy(📰)  D dock worker(👷)  R fortune-teller(🔮)
-   Pickups:  k repair kit(🧰)  u fuel cache(🛢️)  o lucky cog(🔩)
-   Patrols:  L lookout(🔦)  H scrap hound(⚙️)
+/* ----------------------- LOCATION MAPS -----------------------------
+   4 sequential locations; each 24 wide. Terrain same tile-code scheme.
+   Exit tile 'e' (🌉): walking into it calls tryTravel().
+   Boss tile gates travel: defeatedBosses[locId] must be true.
 -------------------------------------------------------------------- */
-const ORIGINAL_MAP = [
-  ".......F......WWWW..Q...",
-  ".......F======WWWW..A...",
-  ".T.....F=D==T=WWWWT....T",
-  ".......F====3=WWWW..J...",
-  ".......F=k====WWWW.BB...",
-  ".......F======WWWW..E...",
-  ".......FFFFbFFWWWW......",
-  "FFFF..........WWWW...B..",
-  ",,,F..........WWWW......",
-  ",C,F.....BB...WWWW......",
-  ",L,F..........WWWW......",
-  ",,,F..........WWWW......",
-  ",,VF.....R.BB.WWWW...B..",
-  ",,,F....K.....WWWW......",
-  ",2,a..........WWWW......",
-  ",,,F......N...===c......",
-  ",,,F....1.....WWWW..T...",
-  ",,,F.BB.......WWWW......",
-  ",u,F....GBB...WWWW......",
-  ",X,F..S.......WWWW......",
-  ",,,F..PP......WWWW...H..",
-  "FFFF..........WWWW......",
-  "..............WWWW.B....",
-  "..............WWWW......",
-  "..............WWWW..o...",
-  "..............WWWW......",
-  "..............WWWW......",
-  "..............WWWW......",
-  ".T..........T.WWWW......",
-  "..............WWWW......",
+
+/* LOCATION 1 — Lake Worth Beach (coastal, 70% flooded) */
+const LAKE_WORTH_MAP = [
+  "BBBBBBBBBBBBBBBBBBBBBBBB",
+  "B...........e..........B",
+  "BWWWWWWWWWWW=WWWWWWWWWWB",
+  "BWWWWWWWWWWW=WWWWWWWWWWB",
+  "BWWWWWWWWWWWGWWWWWWWWWWB",
+  "B......................B",
+  "B.T..................T.B",
+  "B.......S..............B",
+  "B...N..................B",
+  "B......................B",
+  "B.........k............B",
+  "B......................B",
+  "B.......K..............B",
+  "B.T....................B",
+  "B......................B",
+  "B......................B",
+  "B..u...................B",
+  "BBBBBBBBBBBBBBBBBBBBBBBB",
 ];
-const MAP_H = ORIGINAL_MAP.length;       // 30
-const MAP_W = ORIGINAL_MAP[0].length;    // 24
-const VIEW_W = 11, VIEW_H = 13;          // camera viewport
-const START = {y:14, x:11};
+
+/* LOCATION 2 — Wellington Sugarcane Refinery (rural, 40% flooded) */
+const WELLINGTON_MAP = [
+  "BBBBBBBBBBBBBBBBBBBBBBBB",
+  "B...........e..........B",
+  "BFFFFFFFFFFF.FFFFFFFFFFB",
+  "BFFFFFFFFFFF.FFFFFFFFFFB",
+  "B...........X..........B",
+  "B,,,,,,,,,,,,,,,,,,,,,,B",
+  "B,,,,,,,,,,,,,,,,,,,,,,B",
+  "B,,,,,,L,,,,,,,,,,,,,,,B",
+  "B,,,R,,,,,,,,,,,,,,,,,,B",
+  "B,,,,,,,,,,,,,,,,,,,,,,B",
+  "B,,,,,,,,,,,,,k,,,,,,,,B",
+  "B,,,,,,,,,,,,,,,,,,,,,,B",
+  "B,,,,,,,H,,,,,,,,,,,,,,B",
+  "B,,T,,,,,,,,,,,,,,,,T,,B",
+  "B,,,,,,,,,,,,,,,,,,,,,,B",
+  "B,,,,,,,,,,,,,,,,,,,,,,B",
+  "B,,,o,,,,,,,,,,,,,,,,,,B",
+  "BBBBBBBBBBBBBBBBBBBBBBBB",
+];
+
+/* LOCATION 3 — Downtown West Palm Beach (urban, 30% flooded) */
+const DOWNTOWN_MAP = [
+  "BBBBBBBBBBBBBBBBBBBBBBBB",
+  "B...........e..........B",
+  "BWWWWWWWWWWW=WWWWWWWWWWB",
+  "BWWWWWWWWWWW=WWWWWWWWWWB",
+  "BWWWWWWWWWWWAWWWWWWWWWWB",
+  "B......................B",
+  "B.BBB..............BBB.B",
+  "B....D.....J...........B",
+  "B....E.................B",
+  "B......................B",
+  "B......................B",
+  "B...k..................B",
+  "B.BBB..................B",
+  "B......................B",
+  "B......................B",
+  "B......................B",
+  "B..u...................B",
+  "BBBBBBBBBBBBBBBBBBBBBBBB",
+];
+
+/* LOCATION 4 — Palm Island (luxury grind zone, 5% flooded; exit triggers Golfer) */
+const PALM_ISLAND_MAP = [
+  "BBBBBBBBBBBBBBBBBBBBBBBB",
+  "B...........e..........B",
+  "BWWWWWWWWWWW=WWWWWWWWWWB",
+  "B....T.............T...B",
+  "B......................B",
+  "B......E...............B",
+  "B......................B",
+  "B....J.................B",
+  "B......................B",
+  "B.........E............B",
+  "B......................B",
+  "B..E...................B",
+  "B.............J........B",
+  "B....T.............T...B",
+  "B......................B",
+  "BBBBBBBBBBBBBBBBBBBBBBBB",
+];
+
+/* Location metadata: name, boss, travel destination, flood level, CSS palette, player start */
+const LOCATION_DEFS = {
+  'lake-worth':{
+    name:'Lake Worth Beach', subtitle:'70% FLOODED', bossKey:'G', nextLoc:'wellington',
+    flood:70, palette:'coastal', startY:15, startX:12,
+    travelEmoji:'🚢',
+    travelDesc:'Diesel smoke over the Intracoastal. The sugarcane refinery at Wellington lies north — and something hexed waits between the stalks.',
+    banner:"LAKE WORTH BEACH — salt spray, pier-planks, and a fisherman who won't move.",
+  },
+  'wellington':{
+    name:'Wellington Sugarcane Refinery', subtitle:'40% FLOODED', bossKey:'X', nextLoc:'downtown',
+    flood:40, palette:'cane', startY:15, startX:12,
+    travelEmoji:'🚂',
+    travelDesc:'The cane fields fall away. Downtown WPB rises — art-deco towers and a dock-worker in a cage of patrol droids.',
+    banner:'WELLINGTON REFINERY — mud, molasses, and hexed knuckles in the stalks.',
+  },
+  'downtown':{
+    name:'Downtown West Palm Beach', subtitle:'30% FLOODED', bossKey:'A', nextLoc:'palm-island',
+    flood:30, palette:'urban', startY:15, startX:12,
+    travelEmoji:'⛵',
+    travelDesc:"Baron Castellane goes down. But the Prime Artifact Ball's signal crackles from Palm Island — and the Corrupted Retiree Golfer waits.",
+    banner:'DOWNTOWN WPB — art-deco copper and syndicate steel. The Baron is in the machine.',
+  },
+  'palm-island':{
+    name:'Palm Island', subtitle:'5% FLOODED', bossKey:null, nextLoc:null,
+    flood:5, palette:'luxury', startY:14, startX:12,
+    travelEmoji:'⛳',
+    travelDesc:'',
+    banner:'PALM ISLAND — manicured lawns, silk cigars, and a very corrupted golf cart.',
+  },
+};
+
+let MAP_H = 18;          // updated by loadLocation()
+let MAP_W = 24;
+const VIEW_W = 11, VIEW_H = 13;
+let currentLocation = 'lake-worth';
+let defeatedBosses  = {};
+let pendingTravelDest = null;
 
 /* solid tiles block movement; gates are solid until "opened" (mutated to '.') */
 const SOLID = new Set(['B','W','T','F','a','b','c']);
 /* base terrain under each special marker (for color + what it reverts to) */
 const GROUND = {
   '1':'.','2':'.','3':'=','4':'.','a':'.','b':'.','c':'.',
-  'N':'.','D':',','R':',','k':',','u':',','o':',','L':'.','H':',','S':'.','K':'.','G':'.','C':',','V':',','X':',',
-  'E':'.','J':'.','A':'.','Q':'.','M':'.'
+  'N':'.','D':'.','R':',','k':',','u':',','o':',','L':'.','H':',','S':'.','K':'.','G':'=','C':',','V':',','X':',',
+  'E':'.','J':'.','A':'=','Q':'.','M':'.','e':'.',
 };
 /* emoji marker per tile (floors have none) */
 const EMOJI = {
@@ -943,12 +1054,12 @@ const EMOJI = {
   'N':'📰','D':'👷','R':'🔮',
   'k':'🧰','u':'🛢️','o':'🔩',
   'L':'🦩','H':'🦀','S':'🔧','K':'⏳','G':'🎣','C':'🛞','V':'🔥','X':'👊',
-  'E':'💨','J':'⌚','A':'🎩','Q':'⛳','M':'🦈'
+  'E':'💨','J':'⌚','A':'🎩','Q':'⛳','M':'🦈','e':'🌉',
 };
 /* terrain CSS class per base char */
 const TCLASS = {'.':'t-road',',':'t-grass','=':'t-plank','P':'t-plaza','W':'t-water','B':'t-bldg','T':'t-grass','F':'t-bldg'};
 /* tiles whose emoji marker should gently pulse to invite interaction */
-const INTERACTIVE = new Set(['1','2','3','4','N','D','R','k','u','o','L','H','E','J','A','Q','M']);
+const INTERACTIVE = new Set(['1','2','3','4','N','D','R','k','u','o','L','H','E','J','A','Q','M','e']);
 
 /* briefly (re)play a one-shot CSS animation class on an element */
 function flash(id, cls, ms){
@@ -1225,12 +1336,7 @@ function floatDamage(parentId, text, kind){
 function shakeScreen(){ flash('battle','shaking', 360); }
 
 /* district arrival banners — announced once each, the first time you enter */
-const DISTRICTS = [
-  // trigger rectangles for the WPB geography (rail yards far-west, docks/marina north, island east)
-  { name:'rail',   x0:0,  x1:2,  y0:8,  y1:20, banner:"THE RAIL YARDS — rust, steam, and the groan of FEC dredge-loaders." },
-  { name:'docks',  x0:7,  x1:13, y0:0,  y1:5,  banner:"THE DOCKS — Currie Park marina; dirigibles overhead, the Intracoastal slapping the planks." },
-  { name:'island', x0:18, x1:23, y0:0,  y1:29, banner:"THE ISLAND SPIRE — across the Royal Park drawbridge, the Baron's tower, and something vast stirring in the water below." }
-];
+const DISTRICTS = [];   // Phase 1A: location banners fire from enterWorld() / loadLocation(); overworld sub-district triggers removed
 let seenDistricts = new Set();
 function showBanner(text){
   const b = document.getElementById('banner');
@@ -1669,15 +1775,15 @@ let map;          // mutable 2D array of chars
 let party, recruited, hero, player, mode, busy, battle, lastCrit, lastDodge;
 
 function resetState(){
-  map = ORIGINAL_MAP.map(row => row.split(''));   // deep copy
-  party = [ makeMember('gold', 1) ];              // Larry leads; recruits join via NPCs
+  party = [ makeMember('gold', 1) ];
   recruited = { silver:false, titanium:false, platinum:false };
-  hero = party[0];                               // overworld HUD/persistence use the leader
-  player = { y:START.y, x:START.x };
+  hero = party[0];
   mode = 'title'; busy = false; battle = null;
   facing = 'down'; seenDistricts = new Set();
   claimedSalvages = {}; pendingSalvage = null; pendingSalvageStat = null; salvageReturn = null;
   worldState = null;
+  defeatedBosses = {}; pendingTravelDest = null;
+  loadLocation('lake-worth');   // sets map, MAP_H, MAP_W, player, currentLocation, palette
 }
 /* recruit a friend at the leader's current level (level-band: no inflated stats) */
 function recruitMember(key){
@@ -1731,15 +1837,72 @@ function enterWorld(welcome){
   initAudio(); startMusic();
   mode = 'overworld';
   showScreen('overworld');
-  renderOverworld(true);   // snap sprite into place (no glide-in)
-  if(welcome) showBanner('CLEMATIS STREET — brass storefronts, idling roadsters, salt and exhaust on the breeze.');
+  renderOverworld(true);
+  if(welcome){
+    const loc = LOCATION_DEFS[currentLocation];
+    showBanner(loc ? loc.banner : 'WEST PALM BEACH — salt, diesel, and trouble.');
+  }
+  setFloodBar();
   saveGame();
 }
 /* kept for test harnesses / programmatic entry */
 function startGame(){ enterWorld(true); }
 
+/* ---- Phase 1A: location loader ---- */
+function loadLocation(locId){
+  const loc = LOCATION_DEFS[locId]; if(!loc) return;
+  currentLocation = locId;
+  const MAPS = {
+    'lake-worth':  LAKE_WORTH_MAP,
+    'wellington':  WELLINGTON_MAP,
+    'downtown':    DOWNTOWN_MAP,
+    'palm-island': PALM_ISLAND_MAP,
+  };
+  map = (MAPS[locId] || LAKE_WORTH_MAP).map(row => row.split(''));
+  MAP_H = map.length; MAP_W = map[0].length;
+  player = { y: loc.startY, x: loc.startX };
+  document.body.dataset.loc = loc.palette;
+}
+
+function setFloodBar(){
+  const loc = LOCATION_DEFS[currentLocation]; if(!loc) return;
+  const fill = document.getElementById('flood-bar-fill');
+  const lbl  = document.getElementById('flood-label');
+  if(fill) fill.style.width = loc.flood + '%';
+  if(lbl)  lbl.textContent  = 'FLOOD ' + loc.flood + '%';
+}
+
+/* Called when the player steps on the 'e' exit tile */
+function tryTravel(){
+  const loc = LOCATION_DEFS[currentLocation]; if(!loc) return;
+  if(currentLocation === 'palm-island'){ triggerGolfer(); return; }
+  if(!defeatedBosses[currentLocation]){
+    showBanner('The road is blocked — defeat the area boss first.');
+    return;
+  }
+  pendingTravelDest = loc.nextLoc;
+  const nextLoc = LOCATION_DEFS[pendingTravelDest];
+  if(!nextLoc) return;
+  document.getElementById('travel-emoji').textContent = loc.travelEmoji;
+  document.getElementById('travel-dest').textContent  = nextLoc.name;
+  document.getElementById('travel-desc').textContent  = loc.travelDesc;
+  mode = 'travel';
+  showScreen('travel');
+}
+
+function closeTravelScreen(){
+  if(!pendingTravelDest) return;
+  loadLocation(pendingTravelDest);
+  pendingTravelDest = null;
+  enterWorld(true);
+}
+
+function triggerGolfer(){
+  startBattle('Q', 0, 0);
+}
+
 /* ----------------------- SCREEN ROUTING --------------------------- */
-const SCREENS = ['title','cutscene','overworld','battle','reward','salvage','victory','gameover','briefing'];
+const SCREENS = ['title','cutscene','overworld','battle','reward','salvage','victory','gameover','briefing','travel'];
 function showScreen(id){
   SCREENS.forEach(s => document.getElementById(s).classList.toggle('active', s===id));
 }
@@ -1774,18 +1937,20 @@ function cutsceneSkip(){ enterWorld(true); }
    We snapshot everything the run needs: stats, position, facing, the mutated
    map (cleared landmarks / opened gates / taken pickups) and seen districts.
    All wrapped in try/catch so private-mode browsers degrade gracefully. */
-const SAVE_KEY = 'salt_diesel_save_v2';
+const SAVE_KEY    = 'salt_diesel_save_v3';
+const SAVE_KEY_V2 = 'salt_diesel_save_v2';
 const SAVE_KEY_V1 = 'salt_diesel_save_v1';
 function saveGame(){
   try{
     if(!map) return;
-    const data = { v:2, party, recruited, player, facing,
-      map: map.map(r => r.join('')), seen: [...seenDistricts], salvaged: claimedSalvages, worldState };
+    const data = { v:3, party, recruited, player, facing,
+      map: map.map(r => r.join('')), seen: [...seenDistricts], salvaged: claimedSalvages, worldState,
+      loc: currentLocation, bosses: defeatedBosses };
     localStorage.setItem(SAVE_KEY, JSON.stringify(data));
   }catch(e){ /* storage unavailable — skip silently */ }
 }
-function hasSave(){ try{ return !!(localStorage.getItem(SAVE_KEY)||localStorage.getItem(SAVE_KEY_V1)); }catch(e){ return false; } }
-function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); localStorage.removeItem(SAVE_KEY_V1); }catch(e){} }
+function hasSave(){ try{ return !!(localStorage.getItem(SAVE_KEY)||localStorage.getItem(SAVE_KEY_V2)||localStorage.getItem(SAVE_KEY_V1)); }catch(e){ return false; } }
+function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); localStorage.removeItem(SAVE_KEY_V2); localStorage.removeItem(SAVE_KEY_V1); }catch(e){} }
 function refreshContinueBtn(){
   const b = document.getElementById('continueBtn');
   if(b) b.style.display = hasSave() ? 'block' : 'none';
@@ -1801,9 +1966,17 @@ function continueGame(){
       map = data.map.map(r => r.split('')); seenDistricts = new Set(data.seen || []);
       claimedSalvages = data.salvaged || {};
       worldState = data.worldState || null;
+      currentLocation = data.loc || 'lake-worth';
+      defeatedBosses  = data.bosses || {};
+      MAP_H = map.length; MAP_W = map[0].length;
+      const locDef = LOCATION_DEFS[currentLocation];
+      if(locDef) document.body.dataset.loc = locDef.palette;
       busy = false; battle = null;
       enterWorld(false); return;
     }
+    // ---- discard old v2 save (world structure changed in Phase 1A) ----
+    raw = localStorage.getItem(SAVE_KEY_V2);
+    if(raw){ clearSave(); enterWorld(true); return; }
     // ---- migrate a v1 (single-hero) save: rebuild party from Larry's stats ----
     raw = localStorage.getItem(SAVE_KEY_V1);
     if(raw){
@@ -1975,6 +2148,7 @@ function move(dy, dx){
 
   // Decide what walking onto this tile does, BEFORE committing the step.
   if(ch==='N' || ch==='D' || ch==='R'){ openDialogue(ch); return; }      // talk; stay put
+  if(ch==='e'){ tryTravel(); return; }                                    // exit tile → travel
   if(ch in ENEMIES){ startBattle(ch, ny, nx); return; }                  // fight; stay put
   if(ch==='k' || ch==='u' || ch==='o'){ takePickup(ch, ny, nx); }        // grab, then step on
 
@@ -2471,6 +2645,9 @@ function winBattle(){
   battle.over=true;
   const ch=battle.ch;
   pushLog('Target down — the crew stands tall!','sys');
+  // Track location gate-boss defeat
+  const locDef = LOCATION_DEFS[currentLocation];
+  if(locDef && locDef.bossKey === ch) defeatedBosses[currentLocation] = true;
   if(battle.kind!=='boss') map[battle.y][battle.x]=GROUND[ch];
   if(battle.opens) openGate(battle.opens);
   const xp = ENEMIES[ch].xp + (ENEMIES[ch].adds||[]).reduce((s,a)=>s+ADD_DEFS[a].xp,0);
