@@ -25,13 +25,13 @@
     --indigo:#1a1f3a;     --indigo-l:#2b2f5c;
     --warm:#ff9d3c;       --warm-d:#e0792a;
   }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; touch-action:manipulation;}
   html,body{margin:0; padding:0; background:var(--bg); color:var(--ink);
     font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif; overflow-x:hidden;}
   body{display:flex; flex-direction:column; align-items:center; min-height:100vh;}
   h1,h2,h3,.deco{ text-transform:uppercase; letter-spacing:.22em; font-weight:800; }
   .accent{color:var(--brass);}
-  .screen{ width:100%; max-width:560px; padding:14px; display:none; }
+  .screen{ width:100%; max-width:560px; padding:8px; display:none; }
   .screen.active{ display:flex; flex-direction:column; align-items:center; }
   button{ font-family:inherit; cursor:pointer; }
   .btn{
@@ -152,7 +152,7 @@
   .cell .mk.marker{ animation: markerPulse 1.8s ease-in-out infinite; }
 
   /* ---- BATTLE STAGE: side-view face-off (hero left faces right, enemy right faces left) ---- */
-  #stage{ position:relative; width:100%; max-width:480px; height:min(42vw,168px);
+  #stage{ position:relative; width:100%; max-width:480px; height:min(46vw,186px);
     border:2px solid var(--brass-d); border-radius:10px; overflow:hidden; background:#0e1116; }
   #stage::before{ content:""; position:absolute; inset:0; z-index:0; }       /* per-scene backdrop */
   #stage::after{ content:""; position:absolute; inset:0; z-index:3; pointer-events:none;
@@ -208,7 +208,7 @@
   #stage-enemies .foe-slot{ width:62px; opacity:.0; }   /* reserved empty slot keeps spacing stable */
 
   /* ---- LOWER combat HUD: Action Menu (left) + Status Window (right) ---- */
-  #combat-hud{ width:100%; max-width:480px; display:flex; gap:8px; margin:6px 0 4px; align-items:stretch; }
+  #combat-hud{ width:100%; max-width:480px; display:flex; gap:8px; align-items:stretch; }
   #actions.actions{ flex:1 1 44%; min-width:0; display:grid; grid-template-columns:1fr 1fr; gap:6px;
     align-content:start; }
   #actions .abil small{ display:block; font-size:.58rem; letter-spacing:.03em; opacity:.8; margin-top:2px; }
@@ -498,10 +498,10 @@
     #airship, #stage .stage-far, #noir .grain{ animation:none; }
   }
 
-  #ctrl-zone{ touch-action:manipulation; user-select:none; display:flex; flex-direction:column; align-items:center; }
+  #ctrl-zone{ user-select:none; display:flex; flex-direction:column; align-items:center; }
   .dpad{ display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr);
-    gap:8px; width:min(88vw,440px); margin-top:4px; touch-action:manipulation; }
-  .dpad .btn{ font-size:2.6rem; padding:0; height:124px; touch-action:manipulation; }
+    gap:8px; width:min(88vw,440px); margin-top:4px; }
+  .dpad .btn{ font-size:2.6rem; padding:0; height:124px; }
   .dpad .up{ grid-area:1/2; } .dpad .left{ grid-area:2/1; }
   .dpad .right{ grid-area:2/3; } .dpad .down{ grid-area:3/2; }
   .dpad .mid{ grid-area:2/2; display:flex; align-items:center; justify-content:center;
@@ -523,7 +523,8 @@
   .gauge::before{ left:3px; } .gauge::after{ right:3px; }
 
   /* ============================ BATTLE ============================ */
-  #battle{ gap:10px; }
+  #battle{ gap:12px; }
+  #ally-zone{ display:none; width:100%; max-width:480px; } /* reserved: future formation panel */
   .epanel,.hpanel,.estatus{ width:100%; max-width:480px; background:var(--panel);
     border:2px solid var(--brass-d); border-radius:10px; padding:12px; }
   .epanel{ display:flex; gap:12px; align-items:center; }
@@ -762,6 +763,8 @@
     <div id="stage-hero" class="larry combatant" data-dir="right" aria-hidden="true"></div>
     <div id="stage-enemies"></div>
   </div>
+  <!-- ally-zone: reserved slot for future party formation UI -->
+  <div id="ally-zone" aria-hidden="true"></div>
   <div class="log" id="log"></div>
   <!-- FF-style combat HUD: command menu (left) + 4-crew status window (right) -->
   <div id="combat-hud">
@@ -791,7 +794,7 @@
     <div class="big" id="sv-icon">🎣</div>
     <div class="summary" id="sv-name"></div>
     <p class="blurb" id="sv-blurb" style="text-align:left"></p>
-    <p class="summary" style="margin:6px 0 2px">Pick ONE crew member for a permanent boost:</p>
+    <p class="summary" id="sv-prompt" style="margin:6px 0 2px">Pick ONE crew member for a permanent boost:</p>
     <div id="sv-picks"></div>
   </div>
 </div>
@@ -1306,28 +1309,29 @@ const SALVAGES = {
   corruptedPole: {
     name: 'Corrupted Fishing Pole', icon: '🎣',
     blurb: 'Pried from the Angry Fisherman’s grip, the rod still hums with stolen Aethel-Diesel charge. Bolt it to one of the crew.',
-    stat:'atk', amount:5, label:'Power Haul'
+    stats:['atk','def','maxHp'], amount:5
   },
   cursedGloves: {
     name: 'Cursed Boxing Gloves', icon: '🥊',
     blurb: 'Stripped off the Cursed Boxer, the gloves still throw phantom punches. Lace them onto one of the crew.',
-    stat:'atk', amount:5, label:'Heavy Hands'
+    stats:['atk','def','maxHp'], amount:5
   },
   // ---- Act-3 salvages ----
   baronWatch: {
     name: "Baron's Pocket Watch", icon: '🎩',
     blurb: "Pried from the Baron's waistcoat, the watch ticks to a different rhythm — Aethel-Diesel time. Calibrate it to one of the crew.",
-    stat:'def', amount:5, label:'Aethel Guard'
+    stats:['atk','def','maxHp'], amount:5
   },
   primeArtifact: {
     name: 'Prime Artifact Ball', icon: '⛳',
     blurb: "The Corrupted Retiree's weapon and obsession — a golf ball that bends the laws of physics. Bind its energy to one of the crew.",
-    stat:'maxHp', amount:8, label:'Second Wind'
+    stats:['atk','def','maxHp'], amount:8
   }
 };
 let claimedSalvages = {};   // { <salvageId>: {member, stat, amount} } — one-time record, saved
-let pendingSalvage  = null; // salvage id awaiting the player's pick on the salvage screen
-let salvageReturn   = null; // where applySalvage returns: 'overworld' | 'briefing'
+let pendingSalvage     = null; // salvage id awaiting the player's pick on the salvage screen
+let pendingSalvageStat = null; // which stat this encounter rolled (picked randomly from sv.stats)
+let salvageReturn      = null; // where applySalvage returns: 'overworld' | 'briefing'
 let worldState      = null; // null | 'SHADOW_WORLD' — persists across save/load
 
 /* small add enemies for district fights (so targeting/rows matter) */
@@ -1666,7 +1670,7 @@ function resetState(){
   player = { y:START.y, x:START.x };
   mode = 'title'; busy = false; battle = null;
   facing = 'down'; seenDistricts = new Set();
-  claimedSalvages = {}; pendingSalvage = null; salvageReturn = null;
+  claimedSalvages = {}; pendingSalvage = null; pendingSalvageStat = null; salvageReturn = null;
   worldState = null;
 }
 /* recruit a friend at the leader's current level (level-band: no inflated stats) */
@@ -2459,12 +2463,12 @@ function winBattle(){
   const hasSalvage = sid && SALVAGES[sid] && !claimedSalvages[sid];   // any enemy may grant a one-time salvage
   if(battle.kind==='boss'){
     SFX.win();
-    if(hasSalvage){ pendingSalvage=sid; salvageReturn='briefing'; saveGame(); mode='salvage'; showScreen('salvage'); renderSalvage(sid); return; }
+    if(hasSalvage){ pendingSalvage=sid; pendingSalvageStat=SALVAGES[sid].stats[Math.floor(Math.random()*SALVAGES[sid].stats.length)]; salvageReturn='briefing'; saveGame(); mode='salvage'; showScreen('salvage'); renderSalvage(sid); return; }
     mode='briefing'; showScreen('briefing'); return;
   }
   if(lvUps.length) SFX.level();
   if(hasSalvage){            // mini-boss (e.g. the Angry Fisherman): choose a salvage, then back to the streets
-    pendingSalvage=sid; salvageReturn='overworld'; saveGame();
+    pendingSalvage=sid; pendingSalvageStat=SALVAGES[sid].stats[Math.floor(Math.random()*SALVAGES[sid].stats.length)]; salvageReturn='overworld'; saveGame();
     mode='salvage'; showScreen('salvage'); renderSalvage(sid); return;
   }
   let s = `XP +${xp} (shared)\n` + (lvUps.length ? ('LEVEL UP: '+lvUps.join(', ')+'\n(HP & Fuel restored on level)') : 'No level this time.');
@@ -2477,17 +2481,21 @@ function winBattle(){
 /* ---- Phase 5b: salvage choice screen ---- */
 function renderSalvage(sid){
   const sv = SALVAGES[sid]; if(!sv) return;
+  const stat = pendingSalvageStat || sv.stats[0];
   document.getElementById('sv-icon').textContent = sv.icon || '🛠️';
   document.getElementById('sv-name').textContent = sv.name;
   document.getElementById('sv-blurb').textContent = sv.blurb || '';
+  const statLabel = stat === 'maxHp' ? 'Max HP' : stat === 'atk' ? 'Attack' : 'Defense';
+  const prompt = document.getElementById('sv-prompt');
+  if(prompt) prompt.textContent = 'Offers +'+sv.amount+' '+statLabel+' — pick who gets it:';
   const wrap = document.getElementById('sv-picks');
-  const statLabel = sv.stat === 'maxHp' ? 'Max HP' : sv.stat === 'atk' ? 'Atk' : 'Def';
+  const dispLabel = stat === 'maxHp' ? 'Max HP' : stat === 'atk' ? 'Atk' : 'Def';
   wrap.innerHTML = party.map(m => {
-    const cur = m[sv.stat] || 0;
+    const cur = m[stat] || 0;
     return `<button class="sv-pick" onclick="applySalvage('${m.key}')">
       <span class="sv-em">${m.emoji}</span>
       <span class="sv-who">${m.name.split(' ')[0]}<small>${m.codename} · L${m.lv}</small></span>
-      <span class="sv-boost">${statLabel}: ${cur} → ${cur + sv.amount}</span></button>`;
+      <span class="sv-boost">${dispLabel}: ${cur} → ${cur + sv.amount}</span></button>`;
   }).join('');
 }
 function applySalvage(memberKey){
@@ -2496,10 +2504,11 @@ function applySalvage(memberKey){
   if(claimedSalvages[pendingSalvage]) return;
   const m = party.find(p => p.key === memberKey);
   if(!m) return;
-  if(sv.stat === 'maxHp'){ m.maxHp += sv.amount; m.hp = Math.min(m.maxHp, m.hp + sv.amount); }
-  else m[sv.stat] = (m[sv.stat]||0) + sv.amount;
-  claimedSalvages[pendingSalvage] = { member:memberKey, stat:sv.stat, amount:sv.amount };
-  pendingSalvage = null;
+  const stat = pendingSalvageStat || sv.stats[0];
+  if(stat === 'maxHp'){ m.maxHp += sv.amount; m.hp = Math.min(m.maxHp, m.hp + sv.amount); }
+  else m[stat] = (m[stat]||0) + sv.amount;
+  claimedSalvages[pendingSalvage] = { member:memberKey, stat, amount:sv.amount };
+  pendingSalvage = null; pendingSalvageStat = null;
   saveGame();
   if(salvageReturn === 'overworld'){ salvageReturn=null; mode='overworld'; showScreen('overworld'); renderOverworld(true); saveGame(); }
   else if(salvageReturn === 'briefing'){ salvageReturn=null; mode='briefing'; showScreen('briefing'); }
