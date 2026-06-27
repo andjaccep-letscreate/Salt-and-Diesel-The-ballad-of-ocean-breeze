@@ -464,6 +464,98 @@
   #cutscene .dot{ width:8px; height:8px; border-radius:50%; background:#444; display:inline-block; margin:0 3px; }
   #cutscene .dot.on{ background:var(--brass); }
 
+  /* ---- Phase 1B: Briefing Room Intro ---- */
+  #briefing-intro{ background:#06030a; }
+  #briefing-intro .room{
+    position:relative; width:100%; max-width:480px; height:100svh;
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+    padding-bottom:22px; overflow:hidden;
+  }
+  /* Amber lamp glow — upper right corner */
+  #briefing-intro .lamp-glow{
+    position:absolute; top:-40px; right:20px;
+    width:300px; height:300px;
+    background:radial-gradient(ellipse at 80% 0%, rgba(190,130,20,.32) 0%, transparent 68%);
+    pointer-events:none; z-index:1;
+  }
+  /* Wood desk strip at bottom */
+  #briefing-intro .desk{
+    position:absolute; bottom:0; left:0; right:0; height:76px;
+    background:linear-gradient(180deg,#2a1a0a 0%,#140c04 100%);
+    border-top:2px solid #5a3a18; z-index:2;
+  }
+  /* Door silhouette on right wall */
+  #briefing-intro .door{
+    position:absolute; right:32px; bottom:74px;
+    width:50px; height:90px;
+    background:linear-gradient(180deg,#120c06,#080504);
+    border:2px solid #3a2514; border-radius:4px 4px 0 0;
+    box-shadow:none; transition:box-shadow .5s ease;
+    z-index:2;
+  }
+  #briefing-intro .door.glow{
+    box-shadow:0 0 32px 10px rgba(60,200,240,.55), inset 0 0 20px rgba(60,200,240,.3);
+  }
+  /* Door handle dot */
+  #briefing-intro .door::after{
+    content:""; position:absolute; left:7px; top:50%; transform:translateY(-50%);
+    width:6px; height:6px; border-radius:50%; background:#4a2e10;
+  }
+  /* The report paper */
+  #briefing-intro .paper{
+    position:relative; z-index:10;
+    width:calc(100% - 36px); max-width:380px;
+    background:linear-gradient(170deg,#f5edd4 0%,#ede1bc 100%);
+    border-radius:3px; padding:18px 16px 14px;
+    color:#1a1005;
+    box-shadow:0 6px 28px rgba(0,0,0,.75), 0 1px 0 #b09a60 inset;
+    margin-bottom:10px;
+  }
+  #briefing-intro .paper-stamp{
+    position:absolute; top:9px; right:10px;
+    font-size:.55rem; letter-spacing:.14em; color:#8a1a1a;
+    border:1.5px solid #8a1a1a; border-radius:2px;
+    padding:2px 5px; transform:rotate(2deg); opacity:.8;
+  }
+  #briefing-intro .paper-head{
+    font-size:.62rem; letter-spacing:.15em; color:#5a3a18;
+    margin-bottom:4px; font-weight:700; text-transform:uppercase;
+  }
+  #briefing-intro .paper-icon{ font-size:2rem; margin:4px 0 6px; display:block; }
+  #briefing-intro .paper-title{
+    font-size:.92rem; font-weight:700; color:#100a02;
+    margin-bottom:3px; line-height:1.25;
+  }
+  #briefing-intro .paper-sub{
+    font-size:.64rem; letter-spacing:.1em; color:#6a4220;
+    margin-bottom:10px; line-height:1.4;
+  }
+  #briefing-intro .paper-body{
+    font-size:.8rem; line-height:1.58; color:#2a1a08; min-height:4em;
+  }
+  #briefing-intro .paper-body.blurred{ filter:blur(3.5px); user-select:none; }
+  /* Page dots */
+  #briefing-intro .br-dots{ display:flex; gap:8px; margin:8px 0 6px; z-index:10; }
+  #briefing-intro .br-dot{
+    width:7px; height:7px; border-radius:50%;
+    background:#2a1a08; transition:background .25s;
+  }
+  #briefing-intro .br-dot.on{ background:var(--brass); }
+  /* Nav button row */
+  #briefing-intro .br-btns{
+    display:flex; gap:10px;
+    width:calc(100% - 36px); max-width:380px; z-index:10;
+  }
+  #briefing-intro .br-btns .btn{ flex:1; }
+  /* Cyan door-flash overlay (covers everything) */
+  #br-flash{
+    position:fixed; inset:0;
+    background:var(--cobalt,#1cb8e8); opacity:0;
+    pointer-events:none; z-index:90;
+  }
+  #br-flash.go{ animation:brFlash 1.2s ease-out forwards; }
+  @keyframes brFlash{ 0%{opacity:0;} 18%{opacity:.9;} 100%{opacity:0;} }
+
   /* ---- settings overlay ---- */
   #settings{ position:fixed; inset:0; background:#000c; display:none; align-items:center; justify-content:center; padding:18px; z-index:55; }
   #settings.active{ display:flex; }
@@ -495,7 +587,8 @@
     .float, .eface.enter, .eface.hit, .eface.lunge, .hpanel.hurt, .spark,
     #battle.danger::before, #flash.go, #cutscene .cs-emoji, #title h1,
     .screen.active, .caret::after, .dust,
-    #airship, #stage .stage-far, #noir .grain{ animation:none; }
+    #airship, #stage .stage-far, #noir .grain,
+    #br-flash, #briefing-intro .door{ animation:none; transition:none; }
   }
 
   #ctrl-zone{ user-select:none; display:flex; flex-direction:column; align-items:center; }
@@ -611,6 +704,28 @@
     <button class="btn" id="continueBtn" style="width:100%;margin-top:10px;display:none" onclick="continueGame()">Continue</button>
   </div>
 </div>
+
+<!-- ====================== BRIEFING ROOM INTRO ====================== -->
+<div id="briefing-intro" class="screen">
+  <div class="room">
+    <div class="lamp-glow"></div>
+    <div class="door" id="br-door"></div>
+    <div class="paper" id="br-paper">
+      <div class="paper-stamp" id="br-stamp">RESTRICTED</div>
+      <div class="paper-head" id="br-head">PLANCK AGENCY DISPATCH</div>
+      <span class="paper-icon" id="br-icon">📋</span>
+      <div class="paper-title" id="br-title">MISSION BRIEFING</div>
+      <div class="paper-sub" id="br-sub">WEST PALM BEACH · FLORIDA · 1947</div>
+      <div class="paper-body" id="br-body"></div>
+    </div>
+    <div class="br-dots" id="br-dots"></div>
+    <div class="br-btns">
+      <button class="btn" id="br-btn" onclick="briefingNext()">Next</button>
+    </div>
+    <div class="desk"></div>
+  </div>
+</div>
+<div id="br-flash"></div>
 
 <!-- ============================ CUTSCENE ============================ -->
 <div id="cutscene" class="screen">
@@ -821,8 +936,8 @@
   </div>
 </div>
 
-<!-- ============================ BRIEFING ============================ -->
-<div id="briefing" class="screen">
+<!-- ============================ ENDING BRIEFING ============================ -->
+<div id="ending-briefing" class="screen">
   <div class="card">
     <h2 class="deco accent">Briefing Room — HQ</h2>
     <div class="big">📡</div>
@@ -1443,7 +1558,7 @@ const SALVAGES = {
 let claimedSalvages = {};   // { <salvageId>: {member, stat, amount} } — one-time record, saved
 let pendingSalvage     = null; // salvage id awaiting the player's pick on the salvage screen
 let pendingSalvageStat = null; // which stat this encounter rolled (picked randomly from sv.stats)
-let salvageReturn      = null; // where applySalvage returns: 'overworld' | 'briefing'
+let salvageReturn      = null; // where applySalvage returns: 'overworld' | 'ending-briefing'
 let worldState      = null; // null | 'SHADOW_WORLD' — persists across save/load
 
 /* small add enemies for district fights (so targeting/rows matter) */
@@ -1830,7 +1945,7 @@ function startFromTitle(){
   clearSave();
   resetState();
   initAudio(); startMusic();
-  startCutscene();
+  startBriefingRoom();
 }
 /* Drop the player into the overworld (used after the cutscene or on Continue). */
 function enterWorld(welcome){
@@ -1902,7 +2017,7 @@ function triggerGolfer(){
 }
 
 /* ----------------------- SCREEN ROUTING --------------------------- */
-const SCREENS = ['title','cutscene','overworld','battle','reward','salvage','victory','gameover','briefing','travel'];
+const SCREENS = ['title','briefing-intro','cutscene','overworld','battle','reward','salvage','victory','gameover','ending-briefing','travel'];
 function showScreen(id){
   SCREENS.forEach(s => document.getElementById(s).classList.toggle('active', s===id));
 }
@@ -1933,6 +2048,81 @@ function cutsceneNext(){
 }
 function cutsceneSkip(){ enterWorld(true); }
 
+/* ---- Phase 1B: Briefing Room Intro ---- */
+const BRIEFING_PAGES = [
+  {
+    icon:'📋', stamp:'RESTRICTED',
+    head:'PLANCK AGENCY DISPATCH',
+    title:'MISSION BRIEFING',
+    sub:'WEST PALM BEACH · FLORIDA · 1947',
+    body:"Sparkplug — Larry. West Palm Beach is 70% under and the city is fractured. A signal artifact of unknown origin surfaced on the coast. The docks are crooked, the law looks the other way, and three field contacts are standing by. Find them. Find the artifact. Don't get wet.",
+    blur:false,
+  },
+  {
+    icon:'🎯', stamp:'CLEARED',
+    head:'FIELD CONTACT — ALPHA',
+    title:'SILVER',
+    sub:'Lake Worth Beach · ACTIVE · STANDING BY',
+    body:"Precision mechanic. Expert on the coastal waterways — she's been running surveillance there for three weeks. First contact when you reach the beach. Read her well; she doesn't repeat herself.",
+    blur:false,
+  },
+  {
+    icon:'🦾', stamp:'CLEARED',
+    head:'FIELD CONTACT — BETA',
+    title:'PLATINUM',
+    sub:'Wellington Estates · ACTIVE · MANAGING LOCAL SITUATION',
+    body:"Street negotiator. Knows every back road between Palm Beach County and the Glades. Currently at the sugarcane refinery managing a situation. She won't wait forever.",
+    blur:false,
+  },
+  {
+    icon:'🪓', stamp:'URGENT',
+    head:'FIELD CONTACT — GAMMA',
+    title:'TITANIUM',
+    sub:'Downtown WPB — IN DISTRESS · AWAITING EXTRACTION',
+    body:"Heavy. Reliable. Runs a drone array that punches and takes punches equally. Currently pinned downtown by syndicate forces. Extract him when you reach the grid. He's been in worse spots.",
+    blur:false,
+  },
+  {
+    icon:'❓', stamp:'SEALED',
+    head:'CONTACT — DELTA',
+    title:'[CLASSIFIED]',
+    sub:'Location: UNKNOWN · Classification: ABOVE YOUR PAY GRADE',
+    body:"One more contact. The file is sealed. You'll know when you find them. Don't push it, Sparkplug. Not yet.",
+    blur:true,
+  },
+];
+let brIndex = 0;
+function startBriefingRoom(){
+  brIndex = 0; mode = 'briefing-intro'; showScreen('briefing-intro'); renderBriefingPage();
+}
+function renderBriefingPage(){
+  const p = BRIEFING_PAGES[brIndex];
+  document.getElementById('br-stamp').textContent = p.stamp;
+  document.getElementById('br-head').textContent  = p.head;
+  document.getElementById('br-icon').textContent  = p.icon;
+  document.getElementById('br-title').textContent = p.title;
+  document.getElementById('br-sub').textContent   = p.sub;
+  const bodyEl = document.getElementById('br-body');
+  bodyEl.classList.toggle('blurred', p.blur);
+  typeText(bodyEl, p.body);
+  const isLast = brIndex === BRIEFING_PAGES.length - 1;
+  document.getElementById('br-btn').textContent = isLast ? 'Head Out' : 'Next';
+  document.getElementById('br-dots').innerHTML =
+    BRIEFING_PAGES.map((_,i) => `<span class="br-dot${i===brIndex?' on':''}"></span>`).join('');
+}
+function briefingNext(){
+  if(!twDone){ typeFinish(); return; }
+  if(brIndex < BRIEFING_PAGES.length - 1){ brIndex++; renderBriefingPage(); }
+  else openBriefingDoor();
+}
+function openBriefingDoor(){
+  const door = document.getElementById('br-door');
+  if(door) door.classList.add('glow');
+  const fl = document.getElementById('br-flash');
+  if(fl){ fl.classList.remove('go'); void fl.offsetWidth; fl.classList.add('go'); }
+  setTimeout(() => enterWorld(true), 1200);
+}
+
 /* ----------------------- SAVE / CONTINUE (localStorage) -----------------------
    We snapshot everything the run needs: stats, position, facing, the mutated
    map (cleared landmarks / opened gates / taken pickups) and seen districts.
@@ -1953,7 +2143,18 @@ function hasSave(){ try{ return !!(localStorage.getItem(SAVE_KEY)||localStorage.
 function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); localStorage.removeItem(SAVE_KEY_V2); localStorage.removeItem(SAVE_KEY_V1); }catch(e){} }
 function refreshContinueBtn(){
   const b = document.getElementById('continueBtn');
-  if(b) b.style.display = hasSave() ? 'block' : 'none';
+  if(!b) return;
+  if(!hasSave()){ b.style.display='none'; return; }
+  b.style.display = 'block';
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(raw){
+      const data = JSON.parse(raw);
+      const loc = LOCATION_DEFS[data.loc];
+      if(loc){ b.textContent = 'Resume — ' + loc.name; return; }
+    }
+  }catch(e){}
+  b.textContent = 'Continue';
 }
 function continueGame(){
   try{
@@ -2657,8 +2858,8 @@ function winBattle(){
   const hasSalvage = sid && SALVAGES[sid] && !claimedSalvages[sid];   // any enemy may grant a one-time salvage
   if(battle.kind==='boss'){
     SFX.win();
-    if(hasSalvage){ pendingSalvage=sid; pendingSalvageStat=SALVAGES[sid].stats[Math.floor(Math.random()*SALVAGES[sid].stats.length)]; salvageReturn='briefing'; saveGame(); mode='salvage'; showScreen('salvage'); renderSalvage(sid); return; }
-    mode='briefing'; showScreen('briefing'); return;
+    if(hasSalvage){ pendingSalvage=sid; pendingSalvageStat=SALVAGES[sid].stats[Math.floor(Math.random()*SALVAGES[sid].stats.length)]; salvageReturn='ending-briefing'; saveGame(); mode='salvage'; showScreen('salvage'); renderSalvage(sid); return; }
+    mode='ending-briefing'; showScreen('ending-briefing'); return;
   }
   if(lvUps.length) SFX.level();
   if(hasSalvage){            // mini-boss (e.g. the Angry Fisherman): choose a salvage, then back to the streets
@@ -2705,7 +2906,7 @@ function applySalvage(memberKey){
   pendingSalvage = null; pendingSalvageStat = null;
   saveGame();
   if(salvageReturn === 'overworld'){ salvageReturn=null; mode='overworld'; showScreen('overworld'); renderOverworld(true); saveGame(); }
-  else if(salvageReturn === 'briefing'){ salvageReturn=null; mode='briefing'; showScreen('briefing'); }
+  else if(salvageReturn === 'ending-briefing'){ salvageReturn=null; mode='ending-briefing'; showScreen('ending-briefing'); }
   else { salvageReturn=null; mode='victory'; showScreen('victory'); }
 }
 function openGate(gateChar){
