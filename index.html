@@ -673,7 +673,7 @@
   #dialogue.active{ display:flex; }
   #dialogue .box{ background:var(--panel); border:2px solid var(--brass); border-radius:12px;
     padding:16px; max-width:460px; width:100%; }
-  #dialogue .who{ color:var(--brass); font-size:2rem; }
+  #dialogue .who{ color:var(--brass); font-size:2rem; display:flex; align-items:center; gap:6px; }
   #dialogue .say{ font-size:.95rem; line-height:1.5; margin:8px 0 14px; }
 </style>
 </head>
@@ -987,7 +987,7 @@
 <!-- dialogue overlay -->
 <div id="dialogue">
   <div class="box">
-    <div class="who" id="d-face">📰</div>
+    <div class="who"><span id="d-face">📰</span><b class="accent" id="d-name" style="font-size:.78rem;letter-spacing:.1em;margin-left:6px"></b></div>
     <div class="say" id="d-say"></div>
     <button class="btn" style="width:100%" onclick="closeDialogue()">Continue</button>
   </div>
@@ -1559,6 +1559,8 @@ let claimedSalvages = {};   // { <salvageId>: {member, stat, amount} } — one-t
 let pendingSalvage     = null; // salvage id awaiting the player's pick on the salvage screen
 let pendingSalvageStat = null; // which stat this encounter rolled (picked randomly from sv.stats)
 let salvageReturn      = null; // where applySalvage returns: 'overworld' | 'ending-briefing'
+let activeDialogue     = null; // {lines, idx, onEnd} for multi-line dialogue sequences
+let pendingTitaniumRescue = false;
 let worldState      = null; // null | 'SHADOW_WORLD' — persists across save/load
 
 /* small add enemies for district fights (so targeting/rows matter) */
@@ -1898,6 +1900,7 @@ function resetState(){
   claimedSalvages = {}; pendingSalvage = null; pendingSalvageStat = null; salvageReturn = null;
   worldState = null;
   defeatedBosses = {}; pendingTravelDest = null;
+  activeDialogue = null; pendingTitaniumRescue = false;
   loadLocation('lake-worth');   // sets map, MAP_H, MAP_W, player, currentLocation, palette
 }
 /* recruit a friend at the leader's current level (level-band: no inflated stats) */
@@ -2350,6 +2353,10 @@ function move(dy, dx){
   // Decide what walking onto this tile does, BEFORE committing the step.
   if(ch==='N' || ch==='D' || ch==='R'){ openDialogue(ch); return; }      // talk; stay put
   if(ch==='e'){ tryTravel(); return; }                                    // exit tile → travel
+  // Recruitment gates: must find ally before facing the area boss
+  if(ch==='G' && !recruited.silver)  { showBanner("Find Silver first — she knows this pier."); return; }
+  if(ch==='X' && !recruited.platinum){ showBanner("Find Platinum first — she has the crowd."); return; }
+  if(ch==='A' && !recruited.titanium){ showBanner("Rescue Titanium first — full crew for the Baron."); return; }
   if(ch in ENEMIES){ startBattle(ch, ny, nx); return; }                  // fight; stay put
   if(ch==='k' || ch==='u' || ch==='o'){ takePickup(ch, ny, nx); }        // grab, then step on
 
@@ -2394,26 +2401,95 @@ function toastHint(msg){
   toastHint._t = setTimeout(()=>{ el.innerHTML = "Arrow keys / D-pad to roam &middot; walk into markers to act"; }, 3200);
 }
 
-/* the three NPC tiles each recruit a friend (names are editable data fields) */
-const RECRUIT = {
-  'N':{key:'silver',  face:'🎯', join:"A sharp gunner times his shots off a brass chronometer. \"SILVER. Point me at trouble.\"  ★ Silver 🎯 joined the crew!", after:"Silver thumbs his chronometer. \"Say the word.\""},
-  'D':{key:'titanium',face:'🪓', join:"A broad dock-loader hefts a clockwork axe, a drone buzzing at his shoulder. \"Name's TITANIUM. I'll take the hits.\"  ★ Titanium 🪓 joined the crew!", after:"Titanium cracks his knuckles. \"Ready when you are.\""},
-  'R':{key:'platinum',face:'🦾', join:"A bespectacled artificer flexes claw-tipped gauntlets. \"They call me PLATINUM. Precision is everything.\"  ★ Platinum 🦾 joined the crew!", after:"Platinum recalibrates a gauntlet. \"I've patched worse.\""},
+/* ---- Phase 1C-1: multi-line recruitment dialogue ---- */
+const SPEAKER_FACE = { GOLD:'🕶️', SILVER:'🎯', PLATINUM:'🦾', TITANIUM:'🪓' };
+const RECRUITMENT_DIALOGUES = {
+  silver: [
+    { speaker:'GOLD',   text:"Silver! Good to see you're still drawing breath. This salt-marsh distortion is tearing the whole shoreline apart." },
+    { speaker:'SILVER', text:"It's completely bricking our engine blocks, Gold. That mad Fisherman at the end of the pier is anchoring the rift with a diesel harpoon rig. Nobody moves north until he's cleared." },
+    { speaker:'GOLD',   text:"Then lock your goggles down and grab your wrench. We clear this pier together." },
+  ],
+  platinum: [
+    { speaker:'GOLD',     text:"Platinum! Stand back from the gates! This whole crowd is ready to riot." },
+    { speaker:'PLATINUM', text:"They aren't rioting out of malice, Gold. The rift is bleeding the structural trauma of the 1928 hurricane into 1947. If I can't decouple their cultural panic and stabilize this social frequency, the community implodes before the anomaly even touches them." },
+    { speaker:'SILVER',   text:"Talk fast, Diplomat — the Cursed Boxer just smashed through the northern refinery line and he's heading straight for us!" },
+  ],
+  titanium_pre: [
+    { speaker:'TITANIUM', text:"Get back, you walking scrap heaps! My drones can't anchor these falling concrete walls forever!" },
+    { speaker:'GOLD',     text:"Titanium, hold your ground! Crew, fan out and smash those patrol lines before they break his barrier!" },
+  ],
+  titanium_post: [
+    { speaker:'TITANIUM', text:"Perfect timing, fellas. My drones were completely redlining, but this axe still has plenty of structural steel left to clear. Where are we driving?" },
+    { speaker:'PLATINUM', text:"The Baron mainframe is completely locking down the Stage 2 bridge crossing. The full squad crosses to Palm Island together, or the city remains a cage." },
+  ],
 };
-function openDialogue(ch){
-  mode = 'dialogue';                       // freezes overworld movement
-  let face, say;
-  if(RECRUIT[ch]){
-    const r=RECRUIT[ch]; face=r.face;
-    if(!recruited[r.key]){ recruitMember(r.key); SFX.level(); say=r.join; saveGame(); }
-    else say=r.after;
-  } else { const d=NPC_LINES[ch]||{face:'❓',say:'…'}; face=d.face; say=d.say; }
-  document.getElementById('d-face').textContent = face;
+/* after-lines shown to already-recruited crew members */
+const AFTER_LINES = {
+  silver:  [{ speaker:'SILVER',   text:"Silver adjusts her goggles. \"On your six, Gold.\"" }],
+  platinum:[{ speaker:'PLATINUM', text:"Platinum recalibrates a gauntlet. \"I've patched worse.\"" }],
+  titanium:[{ speaker:'TITANIUM', text:"Titanium cracks his knuckles. \"Ready when you are.\"" }],
+};
+function startDialogueSeq(lines, onEnd){
+  activeDialogue = { lines, idx:0, onEnd };
+  mode = 'dialogue';
   document.getElementById('dialogue').classList.add('active');
-  typeText(document.getElementById('d-say'), say);       // typewriter reveal
+  renderDlgLine();
+}
+function renderDlgLine(){
+  if(!activeDialogue) return;
+  const line = activeDialogue.lines[activeDialogue.idx];
+  document.getElementById('d-face').textContent = SPEAKER_FACE[line.speaker] || '❓';
+  document.getElementById('d-name').textContent = line.speaker;
+  typeText(document.getElementById('d-say'), line.text);
+}
+function openDialogue(ch){
+  const recruitMap = { N:'silver', R:'platinum', D:'titanium' };
+  const key = recruitMap[ch];
+  if(key){
+    if(!recruited[key]){
+      if(key === 'titanium'){
+        startDialogueSeq(RECRUITMENT_DIALOGUES.titanium_pre, () => {
+          pendingTitaniumRescue = true;
+          startBattle('E', 8, 5);   // rescue battle: downtown patrol at (8,5)
+        });
+      } else if(key === 'silver'){
+        startDialogueSeq(RECRUITMENT_DIALOGUES.silver, () => {
+          recruitMember('silver'); SFX.level();
+          showBanner('★ Silver 🎯 joined the crew!'); saveGame();
+          mode='overworld'; renderOverworld(true);
+        });
+      } else {
+        startDialogueSeq(RECRUITMENT_DIALOGUES.platinum, () => {
+          recruitMember('platinum'); SFX.level();
+          showBanner('★ Platinum 🦾 joined the crew!'); saveGame();
+          mode='overworld'; renderOverworld(true);
+        });
+      }
+      return;
+    }
+    startDialogueSeq(AFTER_LINES[key], () => { mode='overworld'; });
+    return;
+  }
+  // Non-recruit NPC (newspaper NPC_LINES etc.)
+  const d = NPC_LINES[ch] || { face:'❓', say:'…' };
+  document.getElementById('d-face').textContent = d.face;
+  document.getElementById('d-name').textContent = '';
+  document.getElementById('dialogue').classList.add('active');
+  mode = 'dialogue';
+  typeText(document.getElementById('d-say'), d.say);
 }
 function closeDialogue(){
-  if(!twDone){ typeFinish(); return; }    // first tap finishes the line
+  if(!twDone){ typeFinish(); return; }
+  if(activeDialogue){
+    const dlg = activeDialogue;
+    dlg.idx++;
+    if(dlg.idx < dlg.lines.length){ renderDlgLine(); return; }
+    activeDialogue = null;
+    document.getElementById('dialogue').classList.remove('active');
+    if(dlg.onEnd) dlg.onEnd();
+    else mode = 'overworld';
+    return;
+  }
   document.getElementById('dialogue').classList.remove('active');
   mode = 'overworld';
 }
@@ -2849,11 +2925,22 @@ function winBattle(){
   // Track location gate-boss defeat
   const locDef = LOCATION_DEFS[currentLocation];
   if(locDef && locDef.bossKey === ch) defeatedBosses[currentLocation] = true;
-  if(battle.kind!=='boss') map[battle.y][battle.x]=GROUND[ch];
+  if(battle.kind!=='boss' && battle.y >= 0) map[battle.y][battle.x]=GROUND[ch];
   if(battle.opens) openGate(battle.opens);
   const xp = ENEMIES[ch].xp + (ENEMIES[ch].adds||[]).reduce((s,a)=>s+ADD_DEFS[a].xp,0);
   const lvUps=[];
   party.forEach(m=>{ if(m.hp<=0){ m.hp=1; m.alive=true; } if(grantXP(m,xp)>0) lvUps.push(m.name.split(' ')[0]+'→L'+m.lv); });
+  // Titanium rescue: post-battle dialogue → recruit → back to overworld
+  if(pendingTitaniumRescue){
+    pendingTitaniumRescue = false;
+    if(lvUps.length) SFX.level();
+    startDialogueSeq(RECRUITMENT_DIALOGUES.titanium_post, () => {
+      recruitMember('titanium'); SFX.level();
+      showBanner('★ Titanium 🪓 joined the crew!'); saveGame();
+      mode='overworld'; showScreen('overworld'); renderOverworld(true); saveGame();
+    });
+    return;
+  }
   const sid = ENEMIES[ch].salvage;
   const hasSalvage = sid && SALVAGES[sid] && !claimedSalvages[sid];   // any enemy may grant a one-time salvage
   if(battle.kind==='boss'){
