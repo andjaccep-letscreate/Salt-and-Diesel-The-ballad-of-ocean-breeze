@@ -150,6 +150,8 @@
   .cell .mk{ display:inline-block; transform-origin:center; }
   @keyframes markerPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.14); } }
   .cell .mk.marker{ animation: markerPulse 1.8s ease-in-out infinite; }
+  @keyframes nearPulse{ 0%,100%{ filter:drop-shadow(0 0 0 transparent); } 50%{ filter:drop-shadow(0 0 6px #ff4444); } }
+  .cell .mk.near-warn{ animation: nearPulse .8s ease-in-out infinite; }
 
   /* ---- BATTLE STAGE: side-view face-off (hero left faces right, enemy right faces left) ---- */
   #stage{ position:relative; width:100%; max-width:480px; height:min(40vw,160px);
@@ -333,7 +335,7 @@
   @media (prefers-reduced-motion: reduce){
     #player{ transition:none; }
     #player.walking .leg-a, #player.walking .leg-b, #player.walking .body-bob,
-    .larry:not(.walking) .body-bob, .cell .mk.marker, .larry .bolt-arc,
+    .larry:not(.walking) .body-bob, .cell .mk.marker, .cell .mk.near-warn, .larry .bolt-arc,
     .larry.atk, .larry.atk .bolt-arm, .larry.atk-od, .larry.atk-od .bolt-arm,
     .larry.atk .bolt-arc, .larry.atk-od .bolt-arc,
     #stage .stage-haze, #stage-enemy.knock, #stage-hero.flinch,
@@ -1178,6 +1180,101 @@ const TCLASS = {'.':'t-road',',':'t-grass','=':'t-plank','P':'t-plaza','W':'t-wa
 /* tiles whose emoji marker should gently pulse to invite interaction */
 const INTERACTIVE = new Set(['1','2','3','4','N','D','R','k','u','o','L','H','E','J','A','Q','M','e']);
 
+/* ======================== PHASE 1D-1: ENEMY PATROL SYSTEM ========================
+   Regular (kind:'patrol') enemies walk predefined back-and-forth paths. Mini-bosses,
+   story encounters, and boss enemies stay static. Defeated patrols are tracked by
+   unique id (locId:startX:startY) and saved as an array for JSON safety. */
+
+const PATROL_DEFS = {
+  'lake-worth':[
+    {ch:'S', sx:8,  sy:7,  path:[[3,7],[4,7],[5,7],[6,7],[7,7],[8,7],[9,7],[10,7],[11,7],[12,7],[13,7],[14,7],[15,7],[16,7]]},
+    {ch:'K', sx:8,  sy:12, path:[[3,12],[4,12],[5,12],[6,12],[7,12],[8,12],[9,12],[10,12],[11,12],[12,12],[13,12],[14,12],[15,12],[16,12],[17,12],[18,12]]},
+  ],
+  'wellington':[
+    {ch:'L', sx:7,  sy:7,  path:[[3,7],[4,7],[5,7],[6,7],[7,7],[8,7],[9,7],[10,7],[11,7],[12,7]]},
+    {ch:'H', sx:8,  sy:12, path:[[8,9],[8,10],[8,11],[8,12],[8,13],[8,14],[8,15]]},
+  ],
+  'downtown':[
+    {ch:'J', sx:11, sy:7,  path:[[6,7],[7,7],[8,7],[9,7],[10,7],[11,7],[12,7],[13,7]]},
+    {ch:'E', sx:5,  sy:8,  path:[[2,8],[3,8],[4,8],[5,8],[6,8],[7,8],[8,8],[9,8],[10,8],[11,8],[12,8],[13,8]]},
+  ],
+  'palm-island':[
+    {ch:'E', sx:7,  sy:5,  path:[[4,5],[5,5],[6,5],[7,5],[8,5],[9,5],[10,5],[11,5],[12,5]], respawn:true},
+    {ch:'J', sx:5,  sy:7,  path:[[2,7],[3,7],[4,7],[5,7],[6,7],[7,7],[8,7]], respawn:true},
+    {ch:'E', sx:10, sy:9,  path:[[4,9],[5,9],[6,9],[7,9],[8,9],[9,9],[10,9],[11,9],[12,9],[13,9],[14,9],[15,9],[16,9]], respawn:true},
+    {ch:'E', sx:3,  sy:11, path:[[1,11],[2,11],[3,11],[4,11],[5,11],[6,11],[7,11],[8,11],[9,11],[10,11],[11,11],[12,11]], respawn:true},
+    {ch:'J', sx:14, sy:12, path:[[5,12],[6,12],[7,12],[8,12],[9,12],[10,12],[11,12],[12,12],[13,12],[14,12],[15,12],[16,12],[17,12],[18,12]], respawn:true},
+  ],
+};
+
+let patrols = [];
+let defeatedPatrols = new Set();
+let patrolTimer = null;
+
+function buildPatrols(locId){
+  patrols = [];
+  const defs = PATROL_DEFS[locId];
+  if(!defs || !map) return;
+  for(const d of defs){
+    const id = locId + ':' + d.sx + ':' + d.sy;
+    if(defeatedPatrols.has(id) && !d.respawn) continue;
+    if(map[d.sy][d.sx] !== d.ch) map[d.sy][d.sx] = d.ch;
+    const pathIdx = d.path.findIndex(p => p[0]===d.sx && p[1]===d.sy);
+    patrols.push({
+      id, ch:d.ch, sx:d.sx, sy:d.sy,
+      x:d.sx, y:d.sy,
+      path:d.path, idx: pathIdx >= 0 ? pathIdx : 0, fwd:true,
+      respawn:!!d.respawn
+    });
+  }
+}
+
+function startPatrolTimer(){
+  stopPatrolTimer();
+  patrolTimer = setInterval(patrolTick, 2000);
+}
+function stopPatrolTimer(){
+  if(patrolTimer){ clearInterval(patrolTimer); patrolTimer = null; }
+}
+
+function patrolTick(){
+  if(mode !== 'overworld' || busy || menuOpen) return;
+  let needRender = false;
+  for(const p of patrols){
+    const oldX = p.x, oldY = p.y;
+    if(p.fwd){
+      p.idx++;
+      if(p.idx >= p.path.length){ p.fwd = false; p.idx = p.path.length - 2; }
+    } else {
+      p.idx--;
+      if(p.idx < 0){ p.fwd = true; p.idx = 1; }
+    }
+    const [nx, ny] = p.path[p.idx];
+    if(SOLID.has(map[ny][nx]) || (nx === oldX && ny === oldY)){
+      p.fwd = !p.fwd;
+      continue;
+    }
+    if(map[oldY][oldX] === p.ch) map[oldY][oldX] = GROUND[p.ch] || '.';
+    if(nx === player.x && ny === player.y){
+      map[ny][nx] = p.ch;
+      p.x = nx; p.y = ny;
+      needRender = true;
+      stopPatrolTimer();
+      startBattle(p.ch, ny, nx);
+      return;
+    }
+    const occupant = map[ny][nx];
+    if(occupant in ENEMIES || occupant === 'N' || occupant === 'D' || occupant === 'R'){
+      p.fwd = !p.fwd;
+      continue;
+    }
+    map[ny][nx] = p.ch;
+    p.x = nx; p.y = ny;
+    needRender = true;
+  }
+  if(needRender) renderOverworld(false);
+}
+
 /* briefly (re)play a one-shot CSS animation class on an element */
 function flash(id, cls, ms){
   const el = document.getElementById(id);
@@ -1903,6 +2000,7 @@ function resetState(){
   worldState = null;
   defeatedBosses = {}; pendingTravelDest = null;
   activeDialogue = null; pendingTitaniumRescue = false;
+  defeatedPatrols = new Set();
   loadLocation('lake-worth');   // sets map, MAP_H, MAP_W, player, currentLocation, palette
 }
 /* recruit a friend at the leader's current level (level-band: no inflated stats) */
@@ -1963,6 +2061,7 @@ function enterWorld(welcome){
     showBanner(loc ? loc.banner : 'WEST PALM BEACH — salt, diesel, and trouble.');
   }
   setFloodBar();
+  startPatrolTimer();
   saveGame();
 }
 /* kept for test harnesses / programmatic entry */
@@ -1982,6 +2081,8 @@ function loadLocation(locId){
   MAP_H = map.length; MAP_W = map[0].length;
   player = { y: loc.startY, x: loc.startX };
   document.body.dataset.loc = loc.palette;
+  stopPatrolTimer();
+  buildPatrols(locId);
 }
 
 function setFloodBar(){
@@ -2140,7 +2241,8 @@ function saveGame(){
     if(!map) return;
     const data = { v:3, party, recruited, player, facing,
       map: map.map(r => r.join('')), seen: [...seenDistricts], salvaged: claimedSalvages, worldState,
-      loc: currentLocation, bosses: defeatedBosses };
+      loc: currentLocation, bosses: defeatedBosses,
+      defeatedPatrols: Array.from(defeatedPatrols) };
     localStorage.setItem(SAVE_KEY, JSON.stringify(data));
   }catch(e){ /* storage unavailable — skip silently */ }
 }
@@ -2174,9 +2276,11 @@ function continueGame(){
       worldState = data.worldState || null;
       currentLocation = data.loc || 'lake-worth';
       defeatedBosses  = data.bosses || {};
+      defeatedPatrols = new Set(data.defeatedPatrols || []);
       MAP_H = map.length; MAP_W = map[0].length;
       const locDef = LOCATION_DEFS[currentLocation];
       if(locDef) document.body.dataset.loc = locDef.palette;
+      buildPatrols(currentLocation);
       busy = false; battle = null;
       enterWorld(false); return;
     }
@@ -2256,8 +2360,9 @@ function renderOverworld(instant){
       if(glyph){
         t.cell.style.filter = '';
         if(t.span.textContent !== glyph) t.span.textContent = glyph;
-        // pulse interactive markers (landmarks, pickups, NPCs, patrols)
-        t.span.className = INTERACTIVE.has(ch) ? 'mk marker' : 'mk';
+        const near = (ch in ENEMIES && ENEMIES[ch].kind==='patrol') &&
+          Math.abs(mx-player.x)+Math.abs(my-player.y) <= 2;
+        t.span.className = near ? 'mk near-warn' : (INTERACTIVE.has(ch) ? 'mk marker' : 'mk');
       } else {
         // deterministic tiny brightness jitter so open areas aren't one flat slab
         const v = (mx*7 + my*13) % 6;
@@ -2452,19 +2557,20 @@ function openDialogue(ch){
       if(key === 'titanium'){
         startDialogueSeq(RECRUITMENT_DIALOGUES.titanium_pre, () => {
           pendingTitaniumRescue = true;
-          startBattle('E', 8, 5);   // rescue battle: downtown patrol at (8,5)
+          const ep = patrols.find(p => p.ch==='E' && p.sx===5 && p.sy===8);
+          startBattle('E', ep ? ep.y : 8, ep ? ep.x : 5);
         });
       } else if(key === 'silver'){
         startDialogueSeq(RECRUITMENT_DIALOGUES.silver, () => {
           recruitMember('silver'); SFX.level();
           showBanner('★ Silver 🎯 joined the crew!'); saveGame();
-          mode='overworld'; renderOverworld(true);
+          mode='overworld'; startPatrolTimer(); renderOverworld(true);
         });
       } else {
         startDialogueSeq(RECRUITMENT_DIALOGUES.platinum, () => {
           recruitMember('platinum'); SFX.level();
           showBanner('★ Platinum 🦾 joined the crew!'); saveGame();
-          mode='overworld'; renderOverworld(true);
+          mode='overworld'; startPatrolTimer(); renderOverworld(true);
         });
       }
       return;
@@ -2552,6 +2658,7 @@ function buildEnemies(ch){
 }
 
 function startBattle(ch, y, x){
+  stopPatrolTimer();
   battle = { ch, y, x, enemies:buildEnemies(ch), activeIdx:0, round:1, await:null, menu:null,
              over:false, kind:ENEMIES[ch].kind, opens:ENEMIES[ch].opens };
   svBuilt=0;   // force a fresh Status Window build for this fight's party
@@ -2928,6 +3035,11 @@ function winBattle(){
   const locDef = LOCATION_DEFS[currentLocation];
   if(locDef && locDef.bossKey === ch) defeatedBosses[currentLocation] = true;
   if(battle.kind!=='boss' && battle.y >= 0) map[battle.y][battle.x]=GROUND[ch];
+  const defeatedP = patrols.find(p => p.x === battle.x && p.y === battle.y && p.ch === ch);
+  if(defeatedP){
+    if(!defeatedP.respawn) defeatedPatrols.add(defeatedP.id);
+    patrols = patrols.filter(p => p !== defeatedP);
+  }
   if(battle.opens) openGate(battle.opens);
   const xp = ENEMIES[ch].xp + (ENEMIES[ch].adds||[]).reduce((s,a)=>s+ADD_DEFS[a].xp,0);
   const lvUps=[];
@@ -2939,7 +3051,7 @@ function winBattle(){
     startDialogueSeq(RECRUITMENT_DIALOGUES.titanium_post, () => {
       recruitMember('titanium'); SFX.level();
       showBanner('★ Titanium 🪓 joined the crew!'); saveGame();
-      mode='overworld'; showScreen('overworld'); renderOverworld(true); saveGame();
+      mode='overworld'; showScreen('overworld'); renderOverworld(true); startPatrolTimer(); saveGame();
     });
     return;
   }
@@ -2994,7 +3106,7 @@ function applySalvage(memberKey){
   claimedSalvages[pendingSalvage] = { member:memberKey, stat, amount:sv.amount };
   pendingSalvage = null; pendingSalvageStat = null;
   saveGame();
-  if(salvageReturn === 'overworld'){ salvageReturn=null; mode='overworld'; showScreen('overworld'); renderOverworld(true); saveGame(); }
+  if(salvageReturn === 'overworld'){ salvageReturn=null; mode='overworld'; showScreen('overworld'); renderOverworld(true); startPatrolTimer(); saveGame(); }
   else if(salvageReturn === 'ending-briefing'){ salvageReturn=null; mode='ending-briefing'; showScreen('ending-briefing'); }
   else { salvageReturn=null; mode='victory'; showScreen('victory'); }
 }
@@ -3004,7 +3116,7 @@ function openGate(gateChar){
   }
 }
 function closeReward(){
-  mode='overworld'; showScreen('overworld'); renderOverworld(true); saveGame();
+  mode='overworld'; showScreen('overworld'); renderOverworld(true); startPatrolTimer(); saveGame();
 }
 function gameOver(){
   if(battle) battle.over=true;
