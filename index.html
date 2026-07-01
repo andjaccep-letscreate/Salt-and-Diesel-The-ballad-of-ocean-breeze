@@ -1282,6 +1282,59 @@ function patrolTick(){
     p.x = nx; p.y = ny;
     needRender = true;
   }
+  crewPaceTick();
+  if(needRender) renderOverworld(false);
+}
+
+/* ======================== PHASE 1D-2: RECRUITED CREW AMBIENT PACING ==============
+   Once a crew member is recruited, their N/D/R recruit-tile stops sitting still and
+   paces a short back-and-forth loop in their home zone — same ping-pong movement
+   as hostile patrols, but no battle/dialogue trigger and no defeat tracking. Reuses
+   the same 2000ms patrolTimer tick, so it inherits all the same pause/resume rules
+   (battle, dialogue, menus, zone changes) for free. */
+const CREW_PACE_DEFS = {
+  silver:   { ch:'N', locId:'lake-worth', sx:4, sy:8, path:[[2,8],[3,8],[4,8],[5,8]] },
+  titanium: { ch:'D', locId:'downtown',   sx:5, sy:7, path:[[2,7],[3,7],[4,7],[5,7]] },
+  platinum: { ch:'R', locId:'wellington', sx:3, sy:8, path:[[1,8],[2,8],[3,8],[4,8]] },
+};
+let crewPacers = [];
+
+function buildCrewPacers(locId){
+  crewPacers = [];
+  if(!map) return;
+  for(const [key, d] of Object.entries(CREW_PACE_DEFS)){
+    if(d.locId !== locId || !recruited[key]) continue;   // only paces once recruited, only in their home zone
+    if(map[d.sy][d.sx] !== d.ch) map[d.sy][d.sx] = d.ch;
+    const pathIdx = d.path.findIndex(p => p[0]===d.sx && p[1]===d.sy);
+    crewPacers.push({ key, ch:d.ch, sx:d.sx, sy:d.sy, x:d.sx, y:d.sy, path:d.path, idx: pathIdx>=0?pathIdx:0, fwd:true });
+  }
+}
+
+/* one ping-pong step per crew pacer; treats the player and any occupied tile as a
+   soft obstacle (reverse direction, no interaction) — ambient flavor only, never
+   fires dialogue or changes game state. */
+function crewPaceTick(){
+  if(!crewPacers.length || reducedMotion()) return;
+  let needRender = false;
+  for(const p of crewPacers){
+    const oldX = p.x, oldY = p.y;
+    if(p.fwd){
+      p.idx++;
+      if(p.idx >= p.path.length){ p.fwd = false; p.idx = p.path.length - 2; }
+    } else {
+      p.idx--;
+      if(p.idx < 0){ p.fwd = true; p.idx = 1; }
+    }
+    const [nx, ny] = p.path[p.idx];
+    if(nx === oldX && ny === oldY) continue;
+    if(SOLID.has(map[ny][nx]) || (nx === player.x && ny === player.y)){ p.fwd = !p.fwd; continue; }
+    const occupant = map[ny][nx];
+    if(occupant !== p.ch && (occupant in ENEMIES || occupant==='N' || occupant==='D' || occupant==='R')){ p.fwd = !p.fwd; continue; }
+    if(map[oldY][oldX] === p.ch) map[oldY][oldX] = GROUND[p.ch] || '.';
+    map[ny][nx] = p.ch;
+    p.x = nx; p.y = ny;
+    needRender = true;
+  }
   if(needRender) renderOverworld(false);
 }
 
@@ -2119,6 +2172,7 @@ function recruitMember(key){
   const m = makeMember(key, party[0].lv);
   recruited[key] = true;
   party.push(m);
+  buildCrewPacers(currentLocation);   // start ambient pacing immediately if recruited in their home zone
 }
 /* Return to the title. NOTE: does NOT clear the save (so a page reload can
    still offer Continue). A fresh run is begun from "Start the Job". */
@@ -2193,6 +2247,7 @@ function loadLocation(locId){
   document.body.dataset.loc = loc.palette;
   stopPatrolTimer();
   buildPatrols(locId);
+  buildCrewPacers(locId);
   initGlows();
 }
 
@@ -2394,6 +2449,7 @@ function continueGame(){
       const locDef = LOCATION_DEFS[currentLocation];
       if(locDef) document.body.dataset.loc = locDef.palette;
       buildPatrols(currentLocation);
+      buildCrewPacers(currentLocation);
       const glowData = data.glows || {};
       for(const [k,g] of Object.entries(glowingUpgrades)){ if(glowData[k]){ glowingUpgrades[k].x = glowData[k].x; glowingUpgrades[k].y = glowData[k].y; glowingUpgrades[k].collected = glowData[k].collected; } }
       initGlows();
