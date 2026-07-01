@@ -147,3 +147,36 @@ Beginner-friendly on purpose — see `CLAUDE.md` for the format and rules.
            If sign-off given, merge to main. Do NOT start Phase 5 party system
            until explicitly asked and the party-system-prompt file is handed
            over.
+
+## [2026-07-01] — Phase 1D: enemy patrols, weapon glows, crew pacing (+2 bug fixes)
+- Goal:    Ship Phase 1D-1a (11 patrol enemies walk paths, red 2-tile warning
+           pulse, permanent defeats), 1D-1b (4 randomized glowing weapon-upgrade
+           tiles, one per zone, one-time pickup), and 1D-2 (recruited crew
+           members pace a small loop in their home zone). Merge 1A–1D-1b to main.
+- Did:     All in index.html on claude/dieselpunk-rpg-game-21nkt7. PATROL_DEFS +
+           patrolTick on a 2s timer; GLOWING_TILES + randomized spawn zones +
+           Yes/No collect dialogue; CREW_PACE_DEFS + crewPaceTick reusing the
+           same timer. Merged f0f6405..669d226 to main (fast-forward). Fixed two
+           bugs found by verification: Platinum's pacer anchor was sx:3 but her
+           map tile is x=4 (duplicate 'R' appeared), and glow tiles could spawn
+           on a pacing path and wall the pacer in (5% of Downtown runs froze
+           Titanium) — glow spawner now skips path tiles.
+- Learned: "Node vm harness" = we load the game's real JS into Node with a fake
+           document/localStorage so we can run thousands of battles and map
+           checks without a browser. "Off-by-one" = counting from 0 vs 1 —
+           Platinum's tile column was miscounted by one, a classic. A solid tile
+           dropped on a walker's path doesn't crash anything; the walker just
+           reverses forever, which *looks* frozen — why we quantify oddities
+           instead of shrugging ("96% of ticks moved" led straight to the bug).
+- Gotchas: Playwright clicks on the dialogue sometimes ate the next arrow-key
+           press — worked around by calling the game's own button handler.
+           raw.githubusercontent.com serves plain text; use raw.githack.com for
+           playable previews. Screenshot byte-diffs are unreliable (PNG encoding
+           jitter); compare game state / DOM positions instead.
+- Numbers: 200-run sim after all fixes: Districts 100/100/100 smart, Baron 100,
+           Golfer 92 smart / 0 careless, full loop 100 smart, Shadow 100/100,
+           zero exceptions. Glow spawns 2000/2000 valid; pacers 100% mobile;
+           save/load round-trip clean. Combat code untouched (git diff proof).
+- Next:    Andres previews ?v=N and approves 1D-2 merge; then Phase 1D-3
+           (polish) only when asked. Fable-model improvement plan proposed —
+           awaiting pick.

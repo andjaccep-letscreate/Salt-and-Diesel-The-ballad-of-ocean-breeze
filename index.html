@@ -1295,7 +1295,7 @@ function patrolTick(){
 const CREW_PACE_DEFS = {
   silver:   { ch:'N', locId:'lake-worth', sx:4, sy:8, path:[[2,8],[3,8],[4,8],[5,8]] },
   titanium: { ch:'D', locId:'downtown',   sx:5, sy:7, path:[[2,7],[3,7],[4,7],[5,7]] },
-  platinum: { ch:'R', locId:'wellington', sx:3, sy:8, path:[[1,8],[2,8],[3,8],[4,8]] },
+  platinum: { ch:'R', locId:'wellington', sx:4, sy:8, path:[[1,8],[2,8],[3,8],[4,8]] },
 };
 let crewPacers = [];
 
@@ -1368,7 +1368,12 @@ function isValidGlowSpawn(x, y){
   const ch = map[y][x];
   const blocked = new Set(['B','W','T','F','a','b','c','5','6','7','8','9','i','v','q',
     'N','D','R','G','X','A','1','2','3','4','S','K','L','H','C','V','E','J','Q','M','g','c','b','h']);
-  return !blocked.has(ch);
+  if(blocked.has(ch)) return false;
+  // never spawn on a crew pacing path — a solid glow there would wall the pacer in
+  for(const d of Object.values(CREW_PACE_DEFS)){
+    if(d.locId === currentLocation && d.path.some(p => p[0]===x && p[1]===y)) return false;
+  }
+  return true;
 }
 
 function spawnGlowingTile(upgrade, zone){
