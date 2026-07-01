@@ -155,6 +155,16 @@
   @keyframes glowPulse{ 0%,100%{ opacity:1; text-shadow:0 0 8px #00d9ff,0 0 12px rgba(0,217,255,0.6); } 50%{ opacity:0.85; text-shadow:0 0 4px #00d9ff,0 0 8px rgba(0,217,255,0.4); } }
   .cell .mk.tile-glow{ animation:glowPulse 1.5s ease-in-out infinite; color:#00d9ff; font-weight:bold; }
 
+  /* ---- Phase 1D-3: smooth-glide movers (patrols + recruited crew) ----
+     Same technique as #player: absolutely-positioned overlay sprites whose
+     transform transitions between tiles, so movers glide instead of teleporting
+     with the grid redraw. Sits above tiles/fog, below Larry. */
+  #movers{ position:absolute; inset:0; z-index:4; pointer-events:none; }
+  .mover{ position:absolute; left:0; top:0; display:flex; align-items:center; justify-content:center;
+    font-size:calc(var(--board)/11*0.62); line-height:1; text-shadow:0 1px 2px rgba(0,0,0,.55);
+    transition:transform .55s ease-in-out; will-change:transform; }
+  .mover.near-warn{ animation: nearPulse .8s ease-in-out infinite; }
+
   /* ---- BATTLE STAGE: side-view face-off (hero left faces right, enemy right faces left) ---- */
   #stage{ position:relative; width:100%; max-width:480px; height:min(40vw,160px);
     border:2px solid var(--brass-d); border-radius:10px; overflow:hidden; background:#0e1116; }
@@ -335,8 +345,8 @@
   #stage-hero.guard{ border-radius:8px; animation: guardFlash .4s ease; }
 
   @media (prefers-reduced-motion: reduce){
-    #player{ transition:none; }
-    #player.walking .leg-a, #player.walking .leg-b, #player.walking .body-bob,
+    #player, .mover{ transition:none; }
+    #player.walking .leg-a, #player.walking .leg-b, #player.walking .body-bob, .mover.near-warn,
     .larry:not(.walking) .body-bob, .cell .mk.marker, .cell .mk.near-warn, .larry .bolt-arc,
     .larry.atk, .larry.atk .bolt-arm, .larry.atk-od, .larry.atk-od .bolt-arm,
     .larry.atk .bolt-arc, .larry.atk-od .bolt-arc,
@@ -587,7 +597,7 @@
     to{ transform:translate(calc(-50% + var(--dx)), -6px) scale(1.4); opacity:0; } }
 
   @media (prefers-reduced-motion: reduce){
-    #fog, #title .frame::before, #title .blimp, #banner.show, #battle.shaking,
+    #fog, .t-water, #title .frame::before, #title .blimp, #banner.show, #battle.shaking,
     .float, .eface.enter, .eface.hit, .eface.lunge, .hpanel.hurt, .spark,
     #battle.danger::before, #flash.go, #cutscene .cs-emoji, #title h1,
     .screen.active, .caret::after, .dust,
@@ -615,6 +625,33 @@
   body[data-loc="cane"]{ --bg:#090e06; --panel:#111a0e; --panel2:#182215; --brass:#8bc34a; --brass-d:#5a8a20; --rivet:#243a18; }
   body[data-loc="luxury"]{ --bg:#120c06; --panel:#1e1208; --panel2:#281a0a; --brass:#ffb830; --brass-d:#cc8800; --rivet:#3a2a0a; }
   /* "urban" keeps the default brass palette — no override needed */
+
+  /* ====== Phase 1D-3: per-zone ambiance (CSS only — no new assets/logic) ======
+     Static color grade on the map grid (filters are never animated: cheap on
+     phones), plus re-tinted / re-timed drift on the existing #fog layer and a
+     per-zone water-ripple pace. HUD/dialogue sit outside #grid, so text
+     readability is unaffected. All motion here is already covered by the
+     prefers-reduced-motion block (#fog, .t-water). */
+  body[data-loc="coastal"] #grid{ filter:saturate(1.06) hue-rotate(-8deg) brightness(.97); }
+  body[data-loc="cane"]    #grid{ filter:sepia(.14) saturate(1.05) brightness(1.02); }
+  body[data-loc="urban"]   #grid{ filter:contrast(1.06) saturate(.88); }
+  body[data-loc="luxury"]  #grid{ filter:saturate(1.12) contrast(1.03); }
+  /* Lake Worth: waterlogged — bluer sea-mist, slow drift, dragging ripple */
+  body[data-loc="coastal"] #fog{ opacity:.14; animation-duration:34s;
+    background: radial-gradient(55% 40% at 30% 30%, #9fd4f0 0%, transparent 60%),
+                radial-gradient(45% 35% at 75% 65%, #7fb3d6 0%, transparent 60%); }
+  body[data-loc="coastal"] .t-water{ animation-duration:9s; }
+  /* Wellington: warm cane-field haze on a lazy drift */
+  body[data-loc="cane"] #fog{ opacity:.12; animation-duration:30s;
+    background: radial-gradient(55% 40% at 30% 30%, #e8d9a8 0%, transparent 60%),
+                radial-gradient(45% 35% at 75% 65%, #cdb97f 0%, transparent 60%); }
+  /* Downtown: restless gray smog, faster industrial churn */
+  body[data-loc="urban"] #fog{ opacity:.16; animation-duration:18s;
+    background: radial-gradient(55% 40% at 30% 30%, #b9bec6 0%, transparent 60%),
+                radial-gradient(45% 35% at 75% 65%, #8e959f 0%, transparent 60%); }
+  /* Palm Island: minimal atmosphere — keep the tension on the enemies */
+  body[data-loc="luxury"] #fog{ opacity:.07; }
+  body[data-loc="luxury"] .t-water{ animation-duration:4.5s; }
 
   /* =================== FLOOD BAR =================== */
   #flood-bar-wrap{ width:min(96vw,480px); display:flex; align-items:center; gap:8px; margin-bottom:2px; }
@@ -762,6 +799,8 @@
     <div id="fog"></div>
     <div id="airship" aria-hidden="true"></div>
     <div id="grid"></div>
+    <!-- Phase 1D-3: overlay layer for gliding movers (patrols + recruited crew) -->
+    <div id="movers" aria-hidden="true"></div>
     <!-- Persistent hero sprite overlay (NOT rebuilt each move, so it can tween). -->
     <div id="player" class="larry" data-dir="down" aria-hidden="true">
       <svg class="sprite" viewBox="0 0 32 48" preserveAspectRatio="xMidYMax meet" aria-label="Larry">
@@ -1283,7 +1322,9 @@ function patrolTick(){
     needRender = true;
   }
   crewPaceTick();
-  if(needRender) renderOverworld(false);
+  // Phase 1D-3: mover steps only touch the overlay sprites (a few transform
+  // writes) — the 143-cell grid repaint now happens only on player movement.
+  if(needRender) renderMovers();
 }
 
 /* ======================== PHASE 1D-2: RECRUITED CREW AMBIENT PACING ==============
@@ -1335,7 +1376,7 @@ function crewPaceTick(){
     p.x = nx; p.y = ny;
     needRender = true;
   }
-  if(needRender) renderOverworld(false);
+  if(needRender) renderMovers();   // overlay-only, same as patrolTick (Phase 1D-3)
 }
 
 /* ======================== PHASE 1D-1b: WEAPON GLOW SYSTEM ========================
@@ -2524,6 +2565,11 @@ function buildTilePool(){
 function renderOverworld(instant){
   const {camX, camY} = cameraOrigin();
   if(!tilePool || tilePool.length !== VIEW_W*VIEW_H) buildTilePool();
+  // Phase 1D-3: tiles occupied by a live mover draw ground only — their emoji
+  // rides on the #movers overlay so it can glide (see renderMovers).
+  const moverAt = new Set();
+  for(const p of patrols)    moverAt.add(p.y*MAP_W + p.x);
+  for(const c of crewPacers) moverAt.add(c.y*MAP_W + c.x);
   let i = 0;
   for(let vy=0; vy<VIEW_H; vy++){
     for(let vx=0; vx<VIEW_W; vx++, i++){
@@ -2531,7 +2577,7 @@ function renderOverworld(instant){
       const ch = map[my][mx];
       const base = (ch in GROUND) ? GROUND[ch] : ch;     // floor under markers
       const cls  = TCLASS[base] || 't-road';
-      const glyph = EMOJI[ch] || '';
+      const glyph = moverAt.has(my*MAP_W + mx) ? '' : (EMOJI[ch] || '');
       const t = tilePool[i];
       t.cell.className = 'cell ' + cls;
       if(glyph){
@@ -2552,6 +2598,7 @@ function renderOverworld(instant){
     }
   }
   positionPlayer(camX, camY, instant);   // hero is a separate overlay
+  renderMovers(instant);                 // movers are too (Phase 1D-3)
   updateHUD();
 }
 
@@ -2572,12 +2619,63 @@ function positionPlayer(camX, camY, instant){
   if(instant){ void pl.offsetWidth; pl.style.transition = ''; }  // restore tween
 }
 
+/* ---- Phase 1D-3: glide layer for patrols + crew pacers ----
+   One absolutely-positioned sprite per live mover (same overlay technique as
+   #player), tweened between tiles by the .mover CSS transition. When the
+   CAMERA moves the terrain snaps a whole tile, so sprites must snap with it
+   (a tween there would make them swim against the ground) — detected by
+   comparing the camera origin against the previous call. Sprites more than
+   one tile outside the viewport are hidden; the 1-tile margin lets a
+   glide-out finish before .board's overflow clips it. */
+let moverPool = {};
+let lastCamX = null, lastCamY = null;
+function renderMovers(forceInstant){
+  const wrap = document.getElementById('movers'); if(!wrap) return;
+  const {camX, camY} = cameraOrigin();
+  const camMoved = camX !== lastCamX || camY !== lastCamY;
+  lastCamX = camX; lastCamY = camY;
+  const tile = document.getElementById('grid').clientWidth / VIEW_W;
+  const seen = new Set();
+  const all = [];
+  for(const p of patrols)    all.push({ id:'p:'+p.id,  ch:p.ch, x:p.x, y:p.y, hostile:true  });
+  for(const c of crewPacers) all.push({ id:'c:'+c.key, ch:c.ch, x:c.x, y:c.y, hostile:false });
+  for(const m of all){
+    seen.add(m.id);
+    let el = moverPool[m.id], isNew = false;
+    if(!el){
+      el = document.createElement('div');
+      el.className = 'mover';
+      wrap.appendChild(el);
+      moverPool[m.id] = el;
+      isNew = true;
+    }
+    if(el.textContent !== EMOJI[m.ch]) el.textContent = EMOJI[m.ch] || '';
+    const vx = m.x - camX, vy = m.y - camY;
+    if(vx < -1 || vx > VIEW_W || vy < -1 || vy > VIEW_H){
+      el.style.display = 'none';
+      continue;
+    }
+    const wasHidden = el.style.display === 'none';
+    el.style.display = '';
+    const snap = forceInstant || camMoved || isNew || wasHidden;
+    if(snap) el.style.transition = 'none';
+    el.style.width = tile + 'px'; el.style.height = tile + 'px';
+    el.style.transform = `translate(${vx*tile}px, ${vy*tile}px)`;
+    if(snap){ void el.offsetWidth; el.style.transition = ''; }   // restore tween
+    // hostile 2-tile proximity warning rides the sprite (was on the grid cell pre-1D-3)
+    el.classList.toggle('near-warn', m.hostile && Math.abs(m.x-player.x) + Math.abs(m.y-player.y) <= 2);
+  }
+  for(const id in moverPool){
+    if(!seen.has(id)){ moverPool[id].remove(); delete moverPool[id]; }
+  }
+}
+
 /* Keep the sprite aligned if the viewport is resized/rotated (debounced). */
 let resizeTimer = null;
 window.addEventListener('resize', ()=>{
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(()=>{
-    if(mode==='overworld'){ const {camX,camY}=cameraOrigin(); positionPlayer(camX,camY,true); }
+    if(mode==='overworld'){ const {camX,camY}=cameraOrigin(); positionPlayer(camX,camY,true); renderMovers(true); }
   }, 120);
 });
 
