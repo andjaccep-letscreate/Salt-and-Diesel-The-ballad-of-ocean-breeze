@@ -152,6 +152,8 @@
   .cell .mk.marker{ animation: markerPulse 1.8s ease-in-out infinite; }
   @keyframes nearPulse{ 0%,100%{ filter:drop-shadow(0 0 0 transparent); } 50%{ filter:drop-shadow(0 0 6px #ff4444); } }
   .cell .mk.near-warn{ animation: nearPulse .8s ease-in-out infinite; }
+  @keyframes glowPulse{ 0%,100%{ opacity:1; text-shadow:0 0 8px #00d9ff,0 0 12px rgba(0,217,255,0.6); } 50%{ opacity:0.85; text-shadow:0 0 4px #00d9ff,0 0 8px rgba(0,217,255,0.4); } }
+  .cell .mk.tile-glow{ animation:glowPulse 1.5s ease-in-out infinite; color:#00d9ff; font-weight:bold; }
 
   /* ---- BATTLE STAGE: side-view face-off (hero left faces right, enemy right faces left) ---- */
   #stage{ position:relative; width:100%; max-width:480px; height:min(40vw,160px);
@@ -991,7 +993,12 @@
   <div class="box">
     <div class="who"><span id="d-face">📰</span><b class="accent" id="d-name" style="font-size:.78rem;letter-spacing:.1em;margin-left:6px"></b></div>
     <div class="say" id="d-say"></div>
+    <div id="dlg-q" style="min-height:3em; margin-bottom:1em;"></div>
     <button class="btn" style="width:100%" onclick="closeDialogue()">Continue</button>
+    <div style="display:flex; gap:0.5em; margin-top:0.5em;">
+      <button class="btn" id="dlg-yes" style="flex:1; display:none" onclick="collectGlowingTile(document.getElementById('dlg-q').dataset.upgrade)">Yes</button>
+      <button class="btn" id="dlg-no" style="flex:1; display:none" onclick="mode='overworld'; document.getElementById('dialogue').classList.remove('active');">No</button>
+    </div>
   </div>
 </div>
 
@@ -1156,12 +1163,13 @@ let defeatedBosses  = {};
 let pendingTravelDest = null;
 
 /* solid tiles block movement; gates are solid until "opened" (mutated to '.') */
-const SOLID = new Set(['B','W','T','F','a','b','c','5','6','7','8','9','i','v','q']);
+const SOLID = new Set(['B','W','T','F','a','b','c','5','6','7','8','9','i','v','q','g','h']);
 /* base terrain under each special marker (for color + what it reverts to) */
 const GROUND = {
   '1':'.','2':'.','3':'=','4':'.','a':'.','b':'.','c':'.',
   'N':'.','D':'.','R':',','k':',','u':',','o':',','L':'.','H':',','S':'.','K':'.','G':'=','C':',','V':',','X':',',
   'E':'.','J':'.','A':'=','Q':'.','M':'.','e':'.',
+  'g':'.','c':'.','b':'.','h':'.',
 };
 /* emoji marker per tile (floors have none) */
 const EMOJI = {
@@ -1173,12 +1181,14 @@ const EMOJI = {
   '5':'🏠','6':'🏛️','7':'⛲','8':'📦','9':'🪨','i':'🌿','v':'⛵','q':'🗿',
   'L':'🦩','H':'🦀','S':'🔧','K':'⏳','G':'🎣','C':'🛞','V':'🔥','X':'👊',
   'E':'💨','J':'⌚','A':'🎩','Q':'⛳','M':'🦈','e':'🌉',
+  'g':'🌴','c':'🚗','b':'⛵','h':'🏠',
 };
 /* terrain CSS class per base char */
 const TCLASS = {'.':'t-road',',':'t-grass','=':'t-plank','P':'t-plaza','W':'t-water','B':'t-bldg','T':'t-grass','F':'t-bldg',
-  '5':'t-bldg','6':'t-bldg','7':'t-road','8':'t-road','9':'t-road','i':'t-grass','v':'t-water','q':'t-road'};
+  '5':'t-bldg','6':'t-bldg','7':'t-road','8':'t-road','9':'t-road','i':'t-grass','v':'t-water','q':'t-road',
+  'g':'t-grass','c':'t-road','b':'t-water','h':'t-bldg'};
 /* tiles whose emoji marker should gently pulse to invite interaction */
-const INTERACTIVE = new Set(['1','2','3','4','N','D','R','k','u','o','L','H','E','J','A','Q','M','e']);
+const INTERACTIVE = new Set(['1','2','3','4','N','D','R','k','u','o','L','H','E','J','A','Q','M','e','g','c','b','h']);
 
 /* ======================== PHASE 1D-1: ENEMY PATROL SYSTEM ========================
    Regular (kind:'patrol') enemies walk predefined back-and-forth paths. Mini-bosses,
@@ -1273,6 +1283,105 @@ function patrolTick(){
     needRender = true;
   }
   if(needRender) renderOverworld(false);
+}
+
+/* ======================== PHASE 1D-1b: WEAPON GLOW SYSTEM ========================
+   Glowing tiles spawn randomly within zones to reward exploration.
+   Each glow is one-time collectible, persists across saves, marks as solid tile. */
+
+const GLOWING_TILES = {
+  g:{ emoji:'🌴', name:'Glowing Palm Tree', upgrade:'silver', charName:'Silver' },
+  c:{ emoji:'🚗', name:'Glowing Car', upgrade:'platinum', charName:'Platinum' },
+  b:{ emoji:'⛵', name:'Glowing Boat', upgrade:'titanium', charName:'Titanium' },
+  h:{ emoji:'🏠', name:'Glowing House', upgrade:'gold', charName:'Gold' },
+};
+
+const glowSpawnZones = {
+  silver:   { locId:'wellington', minX:3, maxX:8,   minY:4,  maxY:10 },
+  platinum: { locId:'downtown',   minX:3, maxX:9,   minY:6,  maxY:14 },
+  titanium: { locId:'lake-worth', minX:10, maxX:12, minY:8,  maxY:16 },
+  gold:     { locId:'palm-island',minX:5, maxX:11, minY:8,  maxY:14 },
+};
+
+let glowingUpgrades = {
+  silver:   { char:'g', locId:'wellington', x:0, y:0, collected:false },
+  platinum: { char:'c', locId:'downtown',   x:0, y:0, collected:false },
+  titanium: { char:'b', locId:'lake-worth', x:0, y:0, collected:false },
+  gold:     { char:'h', locId:'palm-island',x:0, y:0, collected:false },
+};
+
+function isValidGlowSpawn(x, y){
+  if(!map || y<0 || y>=MAP_H || x<0 || x>=MAP_W) return false;
+  const ch = map[y][x];
+  const blocked = new Set(['B','W','T','F','a','b','c','5','6','7','8','9','i','v','q',
+    'N','D','R','G','X','A','1','2','3','4','S','K','L','H','C','V','E','J','Q','M','g','c','b','h']);
+  return !blocked.has(ch);
+}
+
+function spawnGlowingTile(upgrade, zone){
+  let x=0, y=0, found=false;
+  for(let attempt=0; attempt<20; attempt++){
+    x = Math.floor(Math.random() * (zone.maxX - zone.minX + 1)) + zone.minX;
+    y = Math.floor(Math.random() * (zone.maxY - zone.minY + 1)) + zone.minY;
+    if(isValidGlowSpawn(x, y)){ found=true; break; }
+  }
+  if(!found){
+    x = Math.floor((zone.minX + zone.maxX) / 2);
+    y = Math.floor((zone.minY + zone.maxY) / 2);
+  }
+  glowingUpgrades[upgrade].x = x;
+  glowingUpgrades[upgrade].y = y;
+}
+
+function initGlows(){
+  for(const [upgrade, zone] of Object.entries(glowSpawnZones)){
+    if(!glowingUpgrades[upgrade].collected && zone.locId === currentLocation){
+      if(glowingUpgrades[upgrade].x === 0 && glowingUpgrades[upgrade].y === 0){
+        spawnGlowingTile(upgrade, zone);
+      }
+      if(map && glowingUpgrades[upgrade].y >= 0 && glowingUpgrades[upgrade].x >= 0){
+        map[glowingUpgrades[upgrade].y][glowingUpgrades[upgrade].x] = glowingUpgrades[upgrade].char;
+      }
+    }
+  }
+}
+
+function checkAdjacentGlows(){
+  for(const [upgrade, glow] of Object.entries(glowingUpgrades)){
+    if(!glow.collected && glow.locId === currentLocation){
+      const dist = Math.abs(glow.x - player.x) + Math.abs(glow.y - player.y);
+      if(dist === 1){
+        const tile = GLOWING_TILES[glow.char];
+        showGlowPrompt(upgrade, glow, tile);
+        return;
+      }
+    }
+  }
+}
+
+function showGlowPrompt(upgrade, glow, tile){
+  const yesBtn = document.getElementById('dlg-yes');
+  const noBtn = document.getElementById('dlg-no');
+  if(!yesBtn || !noBtn) return;
+  document.getElementById('dlg-q').textContent = `Found a weapon upgrade!\nThis ancient ${tile.name} radiates with dimensional energy.\nAdd it to ${tile.charName}'s loadout?`;
+  document.getElementById('dlg-q').dataset.upgrade = upgrade;
+  yesBtn.style.display = 'inline-block';
+  noBtn.style.display = 'inline-block';
+  mode = 'dialogue-choice';
+  document.getElementById('dialogue').classList.add('active');
+}
+
+function collectGlowingTile(upgrade){
+  glowingUpgrades[upgrade].collected = true;
+  const g = glowingUpgrades[upgrade];
+  if(map && g.y >= 0 && g.x >= 0 && map[g.y][g.x] === g.char){
+    map[g.y][g.x] = GROUND[g.char] || '.';
+  }
+  showBanner('★ Weapon Upgrade collected!');
+  document.getElementById('dialogue').classList.remove('active');
+  mode = 'overworld';
+  renderOverworld(false);
+  saveGame();
 }
 
 /* briefly (re)play a one-shot CSS animation class on an element */
@@ -2001,6 +2110,7 @@ function resetState(){
   defeatedBosses = {}; pendingTravelDest = null;
   activeDialogue = null; pendingTitaniumRescue = false;
   defeatedPatrols = new Set();
+  glowingUpgrades = { silver:{char:'g',locId:'wellington',x:0,y:0,collected:false}, platinum:{char:'c',locId:'downtown',x:0,y:0,collected:false}, titanium:{char:'b',locId:'lake-worth',x:0,y:0,collected:false}, gold:{char:'h',locId:'palm-island',x:0,y:0,collected:false} };
   loadLocation('lake-worth');   // sets map, MAP_H, MAP_W, player, currentLocation, palette
 }
 /* recruit a friend at the leader's current level (level-band: no inflated stats) */
@@ -2083,6 +2193,7 @@ function loadLocation(locId){
   document.body.dataset.loc = loc.palette;
   stopPatrolTimer();
   buildPatrols(locId);
+  initGlows();
 }
 
 function setFloodBar(){
@@ -2239,10 +2350,12 @@ const SAVE_KEY_V1 = 'salt_diesel_save_v1';
 function saveGame(){
   try{
     if(!map) return;
+    const glowData = {};
+    for(const [k,g] of Object.entries(glowingUpgrades)){ glowData[k] = {x:g.x, y:g.y, collected:g.collected}; }
     const data = { v:3, party, recruited, player, facing,
       map: map.map(r => r.join('')), seen: [...seenDistricts], salvaged: claimedSalvages, worldState,
       loc: currentLocation, bosses: defeatedBosses,
-      defeatedPatrols: Array.from(defeatedPatrols) };
+      defeatedPatrols: Array.from(defeatedPatrols), glows: glowData };
     localStorage.setItem(SAVE_KEY, JSON.stringify(data));
   }catch(e){ /* storage unavailable — skip silently */ }
 }
@@ -2281,6 +2394,9 @@ function continueGame(){
       const locDef = LOCATION_DEFS[currentLocation];
       if(locDef) document.body.dataset.loc = locDef.palette;
       buildPatrols(currentLocation);
+      const glowData = data.glows || {};
+      for(const [k,g] of Object.entries(glowingUpgrades)){ if(glowData[k]){ glowingUpgrades[k].x = glowData[k].x; glowingUpgrades[k].y = glowData[k].y; glowingUpgrades[k].collected = glowData[k].collected; } }
+      initGlows();
       busy = false; battle = null;
       enterWorld(false); return;
     }
@@ -2362,7 +2478,9 @@ function renderOverworld(instant){
         if(t.span.textContent !== glyph) t.span.textContent = glyph;
         const near = (ch in ENEMIES && ENEMIES[ch].kind==='patrol') &&
           Math.abs(mx-player.x)+Math.abs(my-player.y) <= 2;
-        t.span.className = near ? 'mk near-warn' : (INTERACTIVE.has(ch) ? 'mk marker' : 'mk');
+        const isGlow = ch in GLOWING_TILES;
+        if(isGlow) t.span.className = 'mk tile-glow';
+        else t.span.className = near ? 'mk near-warn' : (INTERACTIVE.has(ch) ? 'mk marker' : 'mk');
       } else {
         // deterministic tiny brightness jitter so open areas aren't one flat slab
         const v = (mx*7 + my*13) % 6;
@@ -2478,6 +2596,7 @@ function move(dy, dx){
   SFX.step();
   renderOverworld(false);   // animate the tween
   checkDistrict();          // announce a district the first time you enter it
+  checkAdjacentGlows();     // check if adjacent to uncollected glowing tile
   saveGame();               // autosave each step
 }
 
