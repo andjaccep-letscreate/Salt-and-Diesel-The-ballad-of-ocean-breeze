@@ -1033,10 +1033,10 @@
     <div class="who"><span id="d-face">📰</span><b class="accent" id="d-name" style="font-size:.78rem;letter-spacing:.1em;margin-left:6px"></b></div>
     <div class="say" id="d-say"></div>
     <div id="dlg-q" style="min-height:3em; margin-bottom:1em;"></div>
-    <button class="btn" style="width:100%" onclick="closeDialogue()">Continue</button>
+    <button class="btn" id="dlg-continue" style="width:100%" onclick="closeDialogue()">Continue</button>
     <div style="display:flex; gap:0.5em; margin-top:0.5em;">
       <button class="btn" id="dlg-yes" style="flex:1; display:none" onclick="collectGlowingTile(document.getElementById('dlg-q').dataset.upgrade)">Yes</button>
-      <button class="btn" id="dlg-no" style="flex:1; display:none" onclick="mode='overworld'; document.getElementById('dialogue').classList.remove('active');">No</button>
+      <button class="btn" id="dlg-no" style="flex:1; display:none" onclick="hideGlowChoiceButtons(); mode='overworld'; document.getElementById('dialogue').classList.remove('active');">No</button>
     </div>
   </div>
 </div>
@@ -1266,12 +1266,25 @@ function buildPatrols(locId){
   if(!defs || !map) return;
   for(const d of defs){
     const id = locId + ':' + d.sx + ':' + d.sy;
-    if(defeatedPatrols.has(id) && !d.respawn) continue;
+    // sample the path's real base terrain ('.'/','/'=') so tiles restore
+    // correctly when the patrol moves on — GROUND[ch] alone paints '.' road
+    // over ',' grass on the rural maps
+    let under = GROUND[d.ch] || '.';
+    for(const pt of d.path){
+      const t = map[pt[1]][pt[0]];
+      if(t==='.'||t===','||t==='='){ under = t; break; }
+    }
+    if(defeatedPatrols.has(id) && !d.respawn){
+      // pristine map reloads (zone travel) re-place defeated patrols' chars —
+      // clear the tile so they don't resurrect as static ghost enemies
+      if(map[d.sy][d.sx] === d.ch) map[d.sy][d.sx] = under;
+      continue;
+    }
     if(map[d.sy][d.sx] !== d.ch) map[d.sy][d.sx] = d.ch;
     const pathIdx = d.path.findIndex(p => p[0]===d.sx && p[1]===d.sy);
     patrols.push({
       id, ch:d.ch, sx:d.sx, sy:d.sy,
-      x:d.sx, y:d.sy,
+      x:d.sx, y:d.sy, under,
       path:d.path, idx: pathIdx >= 0 ? pathIdx : 0, fwd:true,
       respawn:!!d.respawn
     });
@@ -1303,8 +1316,10 @@ function patrolTick(){
       p.fwd = !p.fwd;
       continue;
     }
-    if(map[oldY][oldX] === p.ch) map[oldY][oldX] = GROUND[p.ch] || '.';
+    const occupant = map[ny][nx];
     if(nx === player.x && ny === player.y){
+      if(map[oldY][oldX] === p.ch) map[oldY][oldX] = p.under;
+      if(occupant==='.'||occupant===','||occupant==='=') p.under = occupant;
       map[ny][nx] = p.ch;
       p.x = nx; p.y = ny;
       needRender = true;
@@ -1312,11 +1327,12 @@ function patrolTick(){
       startBattle(p.ch, ny, nx);
       return;
     }
-    const occupant = map[ny][nx];
     if(occupant in ENEMIES || occupant === 'N' || occupant === 'D' || occupant === 'R'){
-      p.fwd = !p.fwd;
+      p.fwd = !p.fwd;   // bounce BEFORE clearing the old tile, so the map char is never lost
       continue;
     }
+    if(map[oldY][oldX] === p.ch) map[oldY][oldX] = p.under;   // restore the real terrain, not GROUND's generic '.'
+    if(occupant==='.'||occupant===','||occupant==='=') p.under = occupant;
     map[ny][nx] = p.ch;
     p.x = nx; p.y = ny;
     needRender = true;
@@ -1345,9 +1361,14 @@ function buildCrewPacers(locId){
   if(!map) return;
   for(const [key, d] of Object.entries(CREW_PACE_DEFS)){
     if(d.locId !== locId || !recruited[key]) continue;   // only paces once recruited, only in their home zone
+    let under = GROUND[d.ch] || '.';   // sample real path terrain, same as buildPatrols
+    for(const pt of d.path){
+      const t = map[pt[1]][pt[0]];
+      if(t==='.'||t===','||t==='='){ under = t; break; }
+    }
     if(map[d.sy][d.sx] !== d.ch) map[d.sy][d.sx] = d.ch;
     const pathIdx = d.path.findIndex(p => p[0]===d.sx && p[1]===d.sy);
-    crewPacers.push({ key, ch:d.ch, sx:d.sx, sy:d.sy, x:d.sx, y:d.sy, path:d.path, idx: pathIdx>=0?pathIdx:0, fwd:true });
+    crewPacers.push({ key, ch:d.ch, sx:d.sx, sy:d.sy, x:d.sx, y:d.sy, under, path:d.path, idx: pathIdx>=0?pathIdx:0, fwd:true });
   }
 }
 
@@ -1371,7 +1392,9 @@ function crewPaceTick(){
     if(SOLID.has(map[ny][nx]) || (nx === player.x && ny === player.y)){ p.fwd = !p.fwd; continue; }
     const occupant = map[ny][nx];
     if(occupant !== p.ch && (occupant in ENEMIES || occupant==='N' || occupant==='D' || occupant==='R')){ p.fwd = !p.fwd; continue; }
-    if(map[oldY][oldX] === p.ch) map[oldY][oldX] = GROUND[p.ch] || '.';
+    if(map[oldY][oldX] === p.ch) map[oldY][oldX] = p.under;
+    const t = map[ny][nx];
+    if(t==='.'||t===','||t==='=') p.under = t;
     map[ny][nx] = p.ch;
     p.x = nx; p.y = ny;
     needRender = true;
@@ -1462,6 +1485,12 @@ function showGlowPrompt(upgrade, glow, tile){
   const yesBtn = document.getElementById('dlg-yes');
   const noBtn = document.getElementById('dlg-no');
   if(!yesBtn || !noBtn) return;
+  // present as a clean discovery card — no stale speaker/text from a previous NPC chat
+  document.getElementById('d-face').textContent = tile.emoji;
+  document.getElementById('d-name').textContent = 'DISCOVERY';
+  document.getElementById('d-say').textContent = '';
+  const c = document.getElementById('dlg-continue');
+  if(c) c.style.display = 'none';   // Yes/No are the only choices here
   document.getElementById('dlg-q').textContent = `Found a weapon upgrade!\nThis ancient ${tile.name} radiates with dimensional energy.\nAdd it to ${tile.charName}'s loadout?`;
   document.getElementById('dlg-q').dataset.upgrade = upgrade;
   yesBtn.style.display = 'inline-block';
@@ -1470,7 +1499,17 @@ function showGlowPrompt(upgrade, glow, tile){
   document.getElementById('dialogue').classList.add('active');
 }
 
+function hideGlowChoiceButtons(){
+  const y = document.getElementById('dlg-yes'), n = document.getElementById('dlg-no');
+  const q = document.getElementById('dlg-q'), c = document.getElementById('dlg-continue');
+  if(y) y.style.display = 'none';
+  if(n) n.style.display = 'none';
+  if(q) q.textContent = '';        // never leak the glow question into a normal dialogue
+  if(c) c.style.display = '';      // restore Continue for normal dialogues
+}
 function collectGlowingTile(upgrade){
+  if(!glowingUpgrades[upgrade] || glowingUpgrades[upgrade].collected) return;  // stale/double-tap guard
+  hideGlowChoiceButtons();
   glowingUpgrades[upgrade].collected = true;
   const g = glowingUpgrades[upgrade];
   if(map && g.y >= 0 && g.x >= 0 && map[g.y][g.x] === g.char){
@@ -2453,8 +2492,17 @@ function saveGame(){
     if(!map) return;
     const glowData = {};
     for(const [k,g] of Object.entries(glowingUpgrades)){ glowData[k] = {x:g.x, y:g.y, collected:g.collected}; }
+    // snapshot the map WITHOUT live movers: they rebuild at their start tiles
+    // on load, so saving their current-position chars would leave ghost
+    // duplicates on the restored map
+    const rows = map.map(r => r.join(''));
+    const strip = (x, y, ch, under) => {
+      if(rows[y] && rows[y][x] === ch) rows[y] = rows[y].slice(0,x) + (under||'.') + rows[y].slice(x+1);
+    };
+    for(const p of patrols)    strip(p.x, p.y, p.ch, p.under);
+    for(const c of crewPacers) strip(c.x, c.y, c.ch, c.under);
     const data = { v:3, party, recruited, player, facing,
-      map: map.map(r => r.join('')), seen: [...seenDistricts], salvaged: claimedSalvages, worldState,
+      map: rows, seen: [...seenDistricts], salvaged: claimedSalvages, worldState,
       loc: currentLocation, bosses: defeatedBosses,
       defeatedPatrols: Array.from(defeatedPatrols), glows: glowData };
     localStorage.setItem(SAVE_KEY, JSON.stringify(data));
@@ -2815,6 +2863,7 @@ const AFTER_LINES = {
   titanium:[{ speaker:'TITANIUM', text:"Titanium cracks his knuckles. \"Ready when you are.\"" }],
 };
 function startDialogueSeq(lines, onEnd){
+  hideGlowChoiceButtons();   // defensive: never show stale glow Yes/No in a normal dialogue
   activeDialogue = { lines, idx:0, onEnd };
   mode = 'dialogue';
   document.getElementById('dialogue').classList.add('active');
@@ -3312,8 +3361,8 @@ function winBattle(){
   // Track location gate-boss defeat
   const locDef = LOCATION_DEFS[currentLocation];
   if(locDef && locDef.bossKey === ch) defeatedBosses[currentLocation] = true;
-  if(battle.kind!=='boss' && battle.y >= 0) map[battle.y][battle.x]=GROUND[ch];
   const defeatedP = patrols.find(p => p.x === battle.x && p.y === battle.y && p.ch === ch);
+  if(battle.kind!=='boss' && battle.y >= 0) map[battle.y][battle.x] = (defeatedP && defeatedP.under) || GROUND[ch];
   if(defeatedP){
     if(!defeatedP.respawn) defeatedPatrols.add(defeatedP.id);
     patrols = patrols.filter(p => p !== defeatedP);
