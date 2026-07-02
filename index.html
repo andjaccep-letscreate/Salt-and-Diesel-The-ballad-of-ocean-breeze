@@ -997,6 +997,94 @@
     #stage-hero:not(.larry) .sprite, .foe-spr, .foe.boss .foe-spr, .crew-chip.active::after,
     #battle:has(#stage-hero.flinch)::after{ animation:none; }
   }
+
+  /* ============ PHASE 1V-3: HUD & UI POLISH (presentation + one layout fix) ============ */
+  /* --- 1. KNOWN BUG FIX: at narrow widths the HUD wrapped to two rows.
+         Sizing-only fix: gauges/buttons shrink instead of wrapping. --- */
+  @media (max-width:480px){
+    .hud{ flex-wrap:nowrap; gap:5px; padding:7px 8px; }
+    .hud .stat{ font-size:.64rem; letter-spacing:.04em; }
+    .minigauge{ flex:1 1 52px; min-width:52px; }
+    .muteBtn{ min-width:34px; min-height:34px; font-size:.85rem; padding:0 5px; flex:none; }
+  }
+
+  /* --- 2. overworld HUD skin: riveted steel panel + cyan accents (1V-2 language) --- */
+  .hud{ background:
+    radial-gradient(2.5px 2.5px at 7px 7px, rgba(63,200,240,.4) 0 55%, transparent 65%),
+    radial-gradient(2.5px 2.5px at calc(100% - 7px) 7px, rgba(63,200,240,.4) 0 55%, transparent 65%),
+    radial-gradient(2.5px 2.5px at 7px calc(100% - 7px), rgba(63,200,240,.4) 0 55%, transparent 65%),
+    radial-gradient(2.5px 2.5px at calc(100% - 7px) calc(100% - 7px), rgba(63,200,240,.4) 0 55%, transparent 65%),
+    linear-gradient(180deg,#131c28,#0d141d);
+    box-shadow:0 2px 0 #000, inset 0 1px 0 #ffffff10, inset 0 0 0 1px rgba(63,200,240,.07); }
+  .gauge{ border-color:var(--brass-d);
+    background:linear-gradient(180deg,#05070a,#0c1016);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,.7), inset 0 0 0 1px rgba(63,200,240,.06); }
+  .gauge .fill{ box-shadow: inset 0 -2px 3px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.16); } /* glass shine */
+  /* flood meter as a diegetic water gauge: brass bezel, tick marks, rippled cyan fill */
+  #flood-bar{ height:9px; border:1px solid var(--brass-d); background:
+    repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgba(63,200,240,.22) calc(10% - 1px) 10%),
+    linear-gradient(180deg,#05070a,#0b1016); }
+  #flood-bar-fill{ background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,.14) 0 6px, transparent 6px 12px),
+    linear-gradient(180deg,#5fe0ff,#1b6ef3);
+    box-shadow:0 0 6px rgba(63,169,255,.4); }
+  /* D-pad + crew strip: same skin family */
+  .dpad .btn{ background:
+    radial-gradient(2.5px 2.5px at 7px 7px, rgba(63,200,240,.35) 0 55%, transparent 65%),
+    radial-gradient(2.5px 2.5px at calc(100% - 7px) 7px, rgba(63,200,240,.35) 0 55%, transparent 65%),
+    linear-gradient(180deg,#1c2632,#111823); }
+  .dpad .btn:active{ border-color:#3fc8f0; box-shadow:0 1px 0 #000, 0 0 8px rgba(0,217,255,.3), inset 0 1px 0 #ffffff14; }
+  .ps-slot{ background:linear-gradient(180deg,#131c28,#0d141d); }
+  .ps-slot:not(.ps-away){ border-color:var(--brass-d);
+    box-shadow: inset 0 -2px 0 rgba(63,200,240,.4); }              /* recruited: lit cyan base */
+  .ps-slot.ps-away{ opacity:.45; border-style:dashed; }            /* not yet found: dashed silhouette */
+  .ps-slot.ps-away .ps-em{ filter:grayscale(1) brightness(.45); }
+
+  /* --- 3. dialogue & narrative surfaces: period texture, stamped headers --- */
+  #dialogue .box{ background:
+    radial-gradient(circle at 22% 32%, rgba(255,255,255,.03) 0 1px, transparent 2px),
+    radial-gradient(circle at 68% 62%, rgba(0,0,0,.08) 0 1px, transparent 2px),
+    linear-gradient(160deg,#182029,#10161d);
+    background-size:7px 7px, 11px 11px, 100% 100%;
+    box-shadow:0 8px 24px rgba(0,0,0,.6), inset 0 0 0 1px rgba(63,200,240,.08), inset 0 0 40px rgba(0,0,0,.3); }
+  #dialogue .who b{ padding:2px 8px; border:1.5px solid var(--brass-d); border-radius:4px;
+    background:rgba(217,164,65,.08); box-shadow:inset 0 0 4px rgba(0,0,0,.5); }   /* stamped nameplate */
+  #briefing-intro .paper{ background:
+    radial-gradient(circle at 30% 40%, rgba(120,90,40,.07) 0 1px, transparent 2px),
+    radial-gradient(circle at 72% 66%, rgba(120,90,40,.05) 0 1px, transparent 2px),
+    linear-gradient(170deg,#f5edd4 0%,#ede1bc 100%);
+    background-size:9px 9px, 13px 13px, 100% 100%;
+    box-shadow:0 6px 28px rgba(0,0,0,.75), 0 1px 0 #b09a60 inset, inset 0 0 26px rgba(120,90,40,.16); } /* aged fibers + edge tint */
+  /* title screen: richer frame, deco rules around the sub, skyline + water base */
+  #title .frame{ background:
+    radial-gradient(circle at 24% 28%, rgba(255,255,255,.025) 0 1px, transparent 2px),
+    linear-gradient(165deg,#131a24,#0c1119);
+    background-size:8px 8px, 100% 100%;
+    box-shadow:0 0 0 6px #000 inset, inset 0 0 34px rgba(63,200,240,.05); }
+  #title .frame::after{ content:""; position:absolute; left:0; right:0; bottom:0; height:32%;
+    z-index:0; pointer-events:none; opacity:.55; background:
+    linear-gradient(#0a121c,#0a121c) no-repeat 8% 30%/14% 42%,
+    linear-gradient(#0c1520,#0c1520) no-repeat 26% 12%/12% 60%,
+    linear-gradient(#0a121c,#0a121c) no-repeat 58% 22%/16% 50%,
+    linear-gradient(#0c1520,#0c1520) no-repeat 82% 8%/13% 64%,
+    linear-gradient(180deg, transparent 68%, rgba(63,169,255,.16) 70%, rgba(27,110,243,.10) 100%); }
+  #title h1{ font-size:1.72rem; }
+  #title .sub{ display:flex; align-items:center; gap:10px; justify-content:center; }
+  #title .sub::before, #title .sub::after{ content:""; height:1px; flex:1; max-width:70px;
+    background:linear-gradient(90deg, transparent, var(--brass-d)); }
+  #title .sub::after{ background:linear-gradient(90deg, var(--brass-d), transparent); }
+
+  /* --- 4. screen & dialogue transitions (brief, deterministic) --- */
+  @keyframes screenIn{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
+  .screen.active{ animation: screenIn .22s ease; }
+  @keyframes boxIn{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:none; } }
+  #dialogue.active .box{ animation: boxIn .2s ease; }
+
+  /* --- reduced-motion: 1V-3 transitions become hard cuts (cascade-last, 1V-2 discipline) --- */
+  @media (prefers-reduced-motion: reduce){
+    .screen.active, #dialogue.active .box{ animation:none; }
+    #flood-bar-fill, .gauge .fill{ transition:none; }
+  }
 </style>
 </head>
 <body>
