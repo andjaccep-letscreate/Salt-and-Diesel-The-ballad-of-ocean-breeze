@@ -180,3 +180,36 @@ Beginner-friendly on purpose — see `CLAUDE.md` for the format and rules.
 - Next:    Andres previews ?v=N and approves 1D-2 merge; then Phase 1D-3
            (polish) only when asked. Fable-model improvement plan proposed —
            awaiting pick.
+
+## [2026-07-02] — Phase 1D-3 polish + full-code audit (8 bug fixes)
+- Goal:    Ship 1D-3 (smooth-glide movers, render efficiency, per-zone
+           ambiance), then a whole-file diagnostic/audit with permission to
+           fix anything except combat balance.
+- Did:     1D-3: movers became overlay sprites that glide 0.55s between tiles
+           (grid cells under them draw ground only); patrol ticks no longer
+           repaint the 143-cell grid; four zones got distinct CSS color grades
+           + re-tinted fog + water pace. Audit fixed 8 bugs: ghost duplicate
+           enemies on every save/Continue (map snapshot now strips live
+           movers); defeated patrols resurrecting after zone travel; patrols
+           vanishing when bouncing off NPCs; road-tile trails painted over
+           grass; winBattle terrain restore; glow Yes/No buttons leaking into
+           later dialogues (stale-collect risk + double-tap guard); stale
+           speaker face/text in the discovery prompt; Shadow World patrols
+           frozen (timer never restarted after the boss fight).
+- Learned: "Overlay sprite" = a div positioned above the tile grid moved with
+           CSS transform, so the browser animates it smoothly — the grid
+           itself can't animate because it's redrawn in place. "Snapshot
+           stripping" = removing moving things from a save so they don't get
+           restored twice. An audit finds the most bugs at SEAMS — where two
+           systems meet (save+patrols, dialogue+glow prompts, timer+screens).
+- Gotchas: The "audit agent" hit a session usage limit and returned nothing —
+           the whole audit ended up being direct code reading, which found
+           real bugs the sims never caught because sims start fresh (never
+           save/reload mid-wander like a real player).
+- Numbers: 13-check audit regression suite ALL PASS; all prior suites green;
+           200-run sim after every change: zero exceptions, Districts
+           100/100/100, Baron 100, Golfer ~92 smart / 0 careless, full loop
+           100, Shadow 100/100. Browser-verified glide (real interpolated
+           positions), zone filters, reduced-motion, zero console errors.
+- Next:    Andres playtests ?v=N (glide + zone moods + audit fixes) and
+           approves merge of 1D-3 + audit to main. 1D-4/1E only when asked.

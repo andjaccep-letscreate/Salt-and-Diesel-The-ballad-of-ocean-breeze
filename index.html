@@ -2280,6 +2280,7 @@ function chaseShadow(){
   mode = 'overworld';
   showScreen('overworld');
   renderOverworld(true);
+  startPatrolTimer();   // timer was stopped by the boss fight — without this, Shadow World patrols freeze
 }
 function respawnShadowWorld(){
   // Place 6 shadow-patrol encounters back on the map (rows 3-8, col 20 area)
