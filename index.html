@@ -73,6 +73,7 @@
   }
   #grid{ display:grid; grid-template-columns:repeat(11,1fr); width:100%; }
   .cell{
+    position:relative;   /* containing block for prop pseudo-elements (1V-1) */
     aspect-ratio:1/1; display:flex; align-items:center; justify-content:center;
     font-size:calc(var(--board)/11*0.62); line-height:1; overflow:hidden;
     /* tiled depth: thin inner edge on every tile + drop shadow under emoji markers */
@@ -653,6 +654,142 @@
   body[data-loc="luxury"] #fog{ opacity:.07; }
   body[data-loc="luxury"] .t-water{ animation-duration:4.5s; }
 
+  /* ============ PHASE 1V-1: WORLD VISUAL IDENTITY (rendering only) ============ */
+  /* -- upgraded flood water: layered shimmer + drifting sheen (no emoji) -- */
+  .t-water{ background:
+    radial-gradient(65% 45% at 30% 30%, rgba(190,235,255,.10), transparent 70%),
+    repeating-linear-gradient(90deg, rgba(140,215,240,.15) 0 3px, transparent 3px 9px),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.05) 0 1px, transparent 1px 6px),
+    linear-gradient(180deg,#1d5273,#123246);
+    background-size:200% 100%, 18px 100%, 100% 12px, 100% 100%;
+    animation:ripple 7s linear infinite; }
+  @keyframes ripple{ from{ background-position:0 0, 0 0, 0 0, 0 0; }
+    to{ background-position:200% 0, 18px 0, 0 12px, 0 0; } }
+
+  /* -- zone ground materials (same tile classes, per-district reskins) -- */
+  body[data-loc="coastal"] .t-road{ background:      /* warm beach sand */
+    radial-gradient(circle at 28% 32%, rgba(255,255,255,.12) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 70% 64%, rgba(120,90,50,.20) 0 1px, transparent 1.5px),
+    linear-gradient(150deg,#8d7a55,#786649);
+    background-size:6px 6px, 9px 9px, 100% 100%; }
+  body[data-loc="cane"] .t-road{ background:          /* packed dirt road */
+    radial-gradient(circle at 35% 40%, rgba(0,0,0,.16) 0 1px, transparent 1.6px),
+    repeating-linear-gradient(90deg, rgba(90,64,38,.25) 0 7px, transparent 7px 15px),
+    linear-gradient(160deg,#5d4a30,#4a3a24);
+    background-size:8px 8px, 100% 3px, 100% 100%; }
+  body[data-loc="luxury"] .t-road{ background:        /* manicured lawn w/ mower stripes */
+    repeating-linear-gradient(90deg, rgba(255,255,255,.045) 0 8px, transparent 8px 16px),
+    radial-gradient(circle at 30% 30%, rgba(150,200,120,.14) 0 1px, transparent 1.5px),
+    linear-gradient(160deg,#2c4a24,#213a1a);
+    background-size:100% 100%, 8px 8px, 100% 100%; }
+
+  /* -- connected streets per zone (laid on ROAD_NET rows/cols by tileDeco) -- */
+  body[data-loc="urban"] .cell.v-street{ background:  /* fresh asphalt */
+    radial-gradient(circle at 30% 30%, rgba(255,255,255,.05) 0 1px, transparent 1.4px),
+    linear-gradient(135deg,#282c33,#1e2126); background-size:7px 7px, 100% 100%; }
+  body[data-loc="urban"] .cell.v-sh{ background-image:  /* streetcar rails run east–west */
+    linear-gradient(180deg, transparent 34%, rgba(190,200,212,.30) 34% 38%, transparent 38% 62%, rgba(190,200,212,.30) 62% 66%, transparent 66%),
+    radial-gradient(circle at 30% 30%, rgba(255,255,255,.05) 0 1px, transparent 1.4px),
+    linear-gradient(135deg,#282c33,#1e2126);
+    background-size:100% 100%, 7px 7px, 100% 100%; }
+  body[data-loc="urban"] .cell.v-sv{ background-image:  /* north–south: painted dashes */
+    linear-gradient(90deg, transparent 46%, rgba(214,199,122,.5) 46% 54%, transparent 54%),
+    radial-gradient(circle at 30% 30%, rgba(255,255,255,.05) 0 1px, transparent 1.4px),
+    linear-gradient(135deg,#282c33,#1e2126);
+    background-size:100% 60%, 7px 7px, 100% 100%; background-repeat:no-repeat, repeat, no-repeat;
+    background-position:0 20%, 0 0, 0 0; }
+  body[data-loc="urban"] .cell.v-walk{ background:    /* concrete sidewalk w/ joints */
+    repeating-linear-gradient(90deg, rgba(0,0,0,.14) 0 1px, transparent 1px 50%),
+    repeating-linear-gradient(0deg, rgba(0,0,0,.14) 0 1px, transparent 1px 50%),
+    linear-gradient(140deg,#3e444d,#343a42); }
+  body[data-loc="coastal"] .cell.v-street{ background: /* old cracked coastal asphalt */
+    radial-gradient(circle at 62% 40%, rgba(0,0,0,.28) 0 1px, transparent 1.6px),
+    linear-gradient(135deg,#37383c,#2a2b2f); background-size:9px 9px, 100% 100%; }
+  body[data-loc="cane"] .cell.v-street{ background:   /* wagon-rutted dirt lane */
+    repeating-linear-gradient(90deg, rgba(0,0,0,.20) 0 2px, transparent 2px 11px),
+    linear-gradient(160deg,#66512f,#523f22); background-size:100% 100%, 100% 100%; }
+  body[data-loc="luxury"] .cell.v-street{ background: /* cut-stone pavers */
+    repeating-linear-gradient(90deg, rgba(0,0,0,.18) 0 1.5px, transparent 1.5px 33.3%),
+    repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 1.5px, transparent 1.5px 50%),
+    linear-gradient(140deg,#8a8578,#736e60); }
+
+  /* -- seafoam edge where ground meets the seawall/water above -- */
+  .cell.v-shore{ box-shadow: inset 0 0 0 1px rgba(0,0,0,.22), inset 0 7px 9px -4px rgba(215,242,255,.55); }
+
+  /* -- building facades: 4 rotating pure-CSS fronts replace the repeated emoji -- */
+  .cell.v-b0{ background:                              /* deco pilasters + dim windows */
+    repeating-linear-gradient(90deg, rgba(0,0,0,.20) 0 2px, transparent 2px 8px),
+    repeating-linear-gradient(0deg, rgba(217,164,65,.10) 0 2px, transparent 2px 7px),
+    linear-gradient(180deg,#2b3038,#191d23); border-top:2px solid rgba(156,111,31,.55); }
+  .cell.v-b1{ background:                              /* teal storefront awning + lamp-lit door */
+    linear-gradient(180deg,#175e5e 0 10%, #d9d2b8 10% 14%, #175e5e 14% 24%, transparent 24%),
+    radial-gradient(24% 20% at 50% 62%, rgba(255,184,48,.45), transparent 70%),
+    linear-gradient(180deg,#33383f,#20242a); border-top:2px solid rgba(156,111,31,.55); }
+  .cell.v-b2{ background:                              /* warm lit window grid (evening) */
+    repeating-linear-gradient(90deg, rgba(255,190,80,.26) 0 3px, transparent 3px 8px),
+    repeating-linear-gradient(0deg, rgba(255,190,80,.20) 0 3px, transparent 3px 8px),
+    linear-gradient(180deg,#262b32,#15181d); border-top:2px solid rgba(156,111,31,.55); }
+  .cell.v-b3{ background:                              /* aged brick + heavy cornice */
+    repeating-linear-gradient(0deg, rgba(126,62,42,.38) 0 3px, rgba(84,42,30,.38) 3px 6px),
+    repeating-linear-gradient(90deg, rgba(0,0,0,.10) 0 1px, transparent 1px 7px),
+    linear-gradient(180deg,#2e2723,#1c1714); border-top:3px double rgba(156,111,31,.65); }
+
+  /* -- sparse zone props on empty ground (deterministic; pure decoration) -- */
+  .cell.v-prop1::before, .cell.v-prop2::before{ content:""; position:absolute; inset:0; pointer-events:none; }
+  body[data-loc="coastal"] .cell.v-prop1::before{ background:   /* weathered dock piling */
+    radial-gradient(32% 9% at 30% 87%, rgba(0,0,0,.35), transparent 70%),
+    linear-gradient(180deg,#6b4e2a,#443016);
+    background-size:100% 100%, 13% 55%; background-position:0 0, 24% 32%; background-repeat:no-repeat; }
+  body[data-loc="coastal"] .cell.v-prop2::before{ background:   /* shells + tide specks */
+    radial-gradient(circle at 30% 66%, rgba(238,230,210,.8) 0 8%, transparent 12%),
+    radial-gradient(circle at 62% 42%, rgba(220,205,180,.7) 0 6%, transparent 10%),
+    radial-gradient(circle at 74% 74%, rgba(238,230,210,.6) 0 5%, transparent 9%); }
+  body[data-loc="cane"] .cell.v-prop1::before{ background:      /* hedgerow tuft */
+    radial-gradient(58% 42% at 50% 76%, #1e3a16 0 58%, transparent 64%),
+    radial-gradient(34% 26% at 28% 66%, #24451b 0 55%, transparent 62%); }
+  body[data-loc="cane"] .cell.v-prop2::before{ background:      /* sugarcane stalks */
+    linear-gradient(180deg,#8a9a3e,#5c6e28), linear-gradient(180deg,#96a648,#66782e), linear-gradient(180deg,#8a9a3e,#5c6e28);
+    background-size:7% 62%, 7% 74%, 7% 55%; background-position:30% 82%, 50% 78%, 68% 85%; background-repeat:no-repeat; }
+  body[data-loc="urban"] .cell.v-prop1::before{ background:     /* streetlamp + warm pool */
+    radial-gradient(30% 22% at 30% 16%, rgba(255,196,88,.75) 0 28%, rgba(255,196,88,.18) 55%, transparent 72%),
+    linear-gradient(180deg,#3a3f47,#22262c),
+    radial-gradient(36% 10% at 30% 88%, rgba(255,196,88,.16), transparent 70%);
+    background-size:100% 100%, 6% 62%, 100% 100%; background-position:0 0, 27% 30%, 0 0; background-repeat:no-repeat; }
+  body[data-loc="urban"] .cell.v-prop2::before{ background:     /* manhole / drain grate */
+    repeating-linear-gradient(90deg, rgba(0,0,0,.5) 0 1.5px, transparent 1.5px 4px),
+    radial-gradient(circle at 50% 62%, #14171c 0 22%, transparent 26%);
+    background-size:24% 12%, 100% 100%; background-position:39% 60%, 0 0; background-repeat:no-repeat; }
+  body[data-loc="luxury"] .cell.v-prop1::before{ background:    /* clipped topiary */
+    radial-gradient(30% 9% at 50% 86%, rgba(0,0,0,.32), transparent 70%),
+    radial-gradient(42% 38% at 50% 52%, #2f5a24 0 58%, transparent 64%),
+    linear-gradient(180deg,#5a4326,#3e2d18);
+    background-size:100% 100%, 100% 100%, 9% 20%; background-position:0 0, 0 0, 47% 76%; background-repeat:no-repeat; }
+  body[data-loc="luxury"] .cell.v-prop2::before{ background:    /* flowerbed dots */
+    radial-gradient(circle at 32% 62%, rgba(240,140,180,.85) 0 7%, transparent 11%),
+    radial-gradient(circle at 55% 74%, rgba(250,240,220,.85) 0 6%, transparent 10%),
+    radial-gradient(circle at 70% 56%, rgba(240,140,180,.7) 0 6%, transparent 10%),
+    radial-gradient(circle at 46% 50%, rgba(255,220,120,.7) 0 5%, transparent 9%); }
+
+  /* -- 1947 dusk vignette over the board (static: reduced-motion safe) -- */
+  #board::after{ content:""; position:absolute; inset:0; z-index:6; pointer-events:none;
+    background:
+      radial-gradient(125% 96% at 50% 42%, transparent 56%, rgba(8,6,16,.40) 100%),
+      linear-gradient(180deg, rgba(255,150,60,.05), transparent 28% 72%, rgba(18,10,38,.14)); }
+  body[data-loc="coastal"] #board::after{ background:
+    radial-gradient(125% 96% at 50% 42%, transparent 56%, rgba(4,10,20,.42) 100%),
+    linear-gradient(180deg, rgba(120,200,255,.05), transparent 28% 72%, rgba(8,18,40,.14)); }
+  body[data-loc="cane"] #board::after{ background:
+    radial-gradient(125% 96% at 50% 42%, transparent 56%, rgba(10,10,4,.42) 100%),
+    linear-gradient(180deg, rgba(255,190,90,.06), transparent 28% 72%, rgba(30,24,6,.14)); }
+  body[data-loc="luxury"] #board::after{ background:
+    radial-gradient(125% 96% at 50% 42%, transparent 58%, rgba(14,8,2,.36) 100%),
+    linear-gradient(180deg, rgba(255,184,48,.06), transparent 28% 72%, rgba(28,14,2,.12)); }
+
+  /* -- readability: grounded sprites + diegetic cyan Aethel-glow on interactives -- */
+  .cell .mk{ position:relative; z-index:1; }
+  .cell .mk:not(:empty), .mover{ background: radial-gradient(48% 14% at 50% 90%, rgba(0,0,0,.36), transparent 72%); }
+  .cell .mk.marker{ filter: drop-shadow(0 0 4px rgba(0,217,255,.45)) drop-shadow(0 1px 1px rgba(0,0,0,.6)); }
+
   /* =================== FLOOD BAR =================== */
   #flood-bar-wrap{ width:min(96vw,480px); display:flex; align-items:center; gap:8px; margin-bottom:2px; }
   #flood-bar{ flex:1; height:6px; background:#05070a; border:1px solid var(--rivet); border-radius:3px; overflow:hidden; }
@@ -1228,6 +1365,37 @@ const TCLASS = {'.':'t-road',',':'t-grass','=':'t-plank','P':'t-plaza','W':'t-wa
   'g':'t-grass','c':'t-road','b':'t-water','h':'t-bldg'};
 /* tiles whose emoji marker should gently pulse to invite interaction */
 const INTERACTIVE = new Set(['1','2','3','4','N','D','R','k','u','o','L','H','E','J','A','Q','M','e','g','c','b','h']);
+
+/* ---- Phase 1V-1: render-only tile classification (roads, shore, props, facades) ----
+   Purely visual: turns '.' tiles on these rows/cols into CONNECTED streets per
+   zone, everything else into zone ground. Never touches map data or SOLID. */
+const ROAD_NET = {
+  'lake-worth':  { rows:[1,15],      cols:[12] },
+  'wellington':  { rows:[1,4],       cols:[12] },
+  'downtown':    { rows:[1,5,9,14],  cols:[3,12,20] },
+  'palm-island': { rows:[1,14],      cols:[12] },
+};
+const NO_GLYPH = new Set(['B','W']);   // drawn as pure-CSS facade / animated water instead of emoji
+function tileDeco(ch, base, mx, my){
+  if(ch === 'B') return ' v-b' + ((mx*5 + my*3) % 4);   // rotating building facades
+  if(base !== '.' && base !== ',') return '';
+  let d = '';
+  const net = ROAD_NET[currentLocation];
+  if(base === '.' && net){
+    const onV = net.cols.indexOf(mx) >= 0, onH = net.rows.indexOf(my) >= 0;
+    if(onV && onH)  d += ' v-street v-cross';
+    else if(onV)    d += ' v-street v-sv';
+    else if(onH)    d += ' v-street v-sh';
+    else            d += ' v-walk';
+  }
+  if(my > 0 && map[my-1][mx] === 'W') d += ' v-shore';   // foam edge under the seawall
+  if(ch === base){                                       // plain empty ground only — never under markers
+    const h = (mx*7 + my*13) % 23;                       // deterministic sparse scatter
+    if(h === 3) d += ' v-prop1';
+    else if(h === 11) d += ' v-prop2';
+  }
+  return d;
+}
 
 /* ======================== PHASE 1D-1: ENEMY PATROL SYSTEM ========================
    Regular (kind:'patrol') enemies walk predefined back-and-forth paths. Mini-bosses,
@@ -2626,9 +2794,9 @@ function renderOverworld(instant){
       const ch = map[my][mx];
       const base = (ch in GROUND) ? GROUND[ch] : ch;     // floor under markers
       const cls  = TCLASS[base] || 't-road';
-      const glyph = moverAt.has(my*MAP_W + mx) ? '' : (EMOJI[ch] || '');
+      const glyph = (moverAt.has(my*MAP_W + mx) || NO_GLYPH.has(ch)) ? '' : (EMOJI[ch] || '');
       const t = tilePool[i];
-      t.cell.className = 'cell ' + cls;
+      t.cell.className = 'cell ' + cls + tileDeco(ch, base, mx, my);
       if(glyph){
         t.cell.style.filter = '';
         if(t.span.textContent !== glyph) t.span.textContent = glyph;
