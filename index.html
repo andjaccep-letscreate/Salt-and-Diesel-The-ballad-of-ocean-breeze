@@ -2822,7 +2822,7 @@ const BRIEFING_PAGES = [
     head:'FIELD CONTACT — ALPHA',
     title:'SILVER',
     sub:'Lake Worth Beach · ACTIVE · STANDING BY',
-    body:"Precision mechanic. Expert on the coastal waterways — she's been running surveillance there for three weeks. First contact when you reach the beach. Read her well; she doesn't repeat herself.",
+    body:"Precision mechanic. Expert on the coastal waterways — he's been running surveillance there for three weeks. First contact when you reach the beach. Read him well; he doesn't repeat himself.",
     blur:false,
   },
   {
@@ -2830,7 +2830,7 @@ const BRIEFING_PAGES = [
     head:'FIELD CONTACT — BETA',
     title:'PLATINUM',
     sub:'Wellington Estates · ACTIVE · MANAGING LOCAL SITUATION',
-    body:"Street negotiator. Knows every back road between Palm Beach County and the Glades. Currently at the sugarcane refinery managing a situation. She won't wait forever.",
+    body:"Street negotiator. Knows every back road between Palm Beach County and the Glades. Currently at the sugarcane refinery managing a situation. He won't wait forever.",
     blur:false,
   },
   {
@@ -3188,8 +3188,8 @@ function move(dy, dx){
   if(ch==='N' || ch==='D' || ch==='R'){ openDialogue(ch); return; }      // talk; stay put
   if(ch==='e'){ tryTravel(); return; }                                    // exit tile → travel
   // Recruitment gates: must find ally before facing the area boss
-  if(ch==='G' && !recruited.silver)  { showBanner("Find Silver first — she knows this pier."); return; }
-  if(ch==='X' && !recruited.platinum){ showBanner("Find Platinum first — she has the crowd."); return; }
+  if(ch==='G' && !recruited.silver)  { showBanner("Find Silver first — he knows this pier."); return; }
+  if(ch==='X' && !recruited.platinum){ showBanner("Find Platinum first — he has the crowd."); return; }
   if(ch==='A' && !recruited.titanium){ showBanner("Rescue Titanium first — full crew for the Baron."); return; }
   if(ch in ENEMIES){ startBattle(ch, ny, nx); return; }                  // fight; stay put
   if(ch==='k' || ch==='u' || ch==='o'){ takePickup(ch, ny, nx); }        // grab, then step on
@@ -3260,7 +3260,7 @@ const RECRUITMENT_DIALOGUES = {
 };
 /* after-lines shown to already-recruited crew members */
 const AFTER_LINES = {
-  silver:  [{ speaker:'SILVER',   text:"Silver adjusts her goggles. \"On your six, Gold.\"" }],
+  silver:  [{ speaker:'SILVER',   text:"Silver adjusts his goggles. \"On your six, Gold.\"" }],
   platinum:[{ speaker:'PLATINUM', text:"Platinum recalibrates a gauntlet. \"I've patched worse.\"" }],
   titanium:[{ speaker:'TITANIUM', text:"Titanium cracks his knuckles. \"Ready when you are.\"" }],
 };
