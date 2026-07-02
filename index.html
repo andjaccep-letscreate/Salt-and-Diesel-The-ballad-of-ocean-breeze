@@ -856,6 +856,147 @@
     padding:16px; max-width:460px; width:100%; }
   #dialogue .who{ color:var(--brass); font-size:2rem; display:flex; align-items:center; gap:6px; }
   #dialogue .say{ font-size:.95rem; line-height:1.5; margin:8px 0 14px; }
+
+  /* ============ PHASE 1V-2: BATTLE SCENE OVERHAUL (presentation only) ============
+     Placed at stylesheet end so it wins the cascade over the older scene rules.
+     Backdrops are keyed by the ZONE (body[data-loc]) to match 1V-1's overworld
+     identity; the boss "tower" set-piece keeps its own look via a more specific
+     rule. All new animation is disabled in the reduced-motion block at the end
+     of this section (the 1V-1 cascade lesson). */
+
+  /* --- shared: perspective ground plane + horizon depth --- */
+  #stage .stage-floor{ height:27%; border-top:none; overflow:hidden; }
+  #stage .stage-floor::before{ content:""; position:absolute; inset:0;
+    transform:perspective(85px) rotateX(34deg); transform-origin:50% 0; }
+  #stage .stage-floor::after{ content:""; position:absolute; left:0; right:0; top:0; height:3px;
+    background:linear-gradient(90deg, transparent, rgba(63,200,240,.28) 30% 70%, transparent); }
+
+  /* --- Lake Worth Beach: pier planks, tilted pilings, seafoam horizon, flooded shoreline --- */
+  body[data-loc="coastal"] #stage::before{ background:
+    linear-gradient(86deg, transparent 18%, rgba(20,14,8,.75) 18.6% 19.8%, transparent 20.4%),
+    linear-gradient(94deg, transparent 30%, rgba(24,17,10,.7) 30.6% 31.6%, transparent 32.2%),
+    radial-gradient(50% 26% at 72% 66%, rgba(220,245,255,.10), transparent 70%),
+    linear-gradient(180deg, transparent 62%, rgba(226,240,248,.16) 62.5% 63.5%, transparent 64.5%),
+    linear-gradient(180deg, transparent 64%, #17445c 64% 73%, #103246 73%),
+    linear-gradient(180deg, #2c4a5e 0%, #3d5a6a 38%, #6d8592 62%, #17445c 64%); }
+  body[data-loc="coastal"] #stage .stage-far{ background:
+    repeating-linear-gradient(88deg, transparent 0 34px, rgba(10,20,26,.5) 34px 38px, transparent 38px 76px); }
+  body[data-loc="coastal"] #stage .stage-floor{ background:linear-gradient(180deg,#503b26,#2c2013); }
+  body[data-loc="coastal"] #stage .stage-floor::before{ background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,.35) 0 2px, transparent 2px 30px),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.05) 0 2px, transparent 2px 8px),
+    linear-gradient(180deg,#54402a,#38291a); }
+
+  /* --- Wellington: grass lot, hedgerow band, dirt road edge, stormy horizon --- */
+  body[data-loc="cane"] #stage::before{ background:
+    radial-gradient(40% 22% at 26% 30%, rgba(220,228,214,.10), transparent 70%),
+    linear-gradient(180deg, transparent 56%, rgba(20,32,14,.85) 58% 66%, transparent 66%),
+    radial-gradient(24% 12% at 20% 62%, #16240f 0 60%, transparent 66%),
+    radial-gradient(28% 13% at 55% 61%, #182a11 0 60%, transparent 66%),
+    radial-gradient(22% 11% at 84% 62%, #16240f 0 60%, transparent 66%),
+    linear-gradient(180deg, #3a4438 0%, #55604e 40%, #77806a 58%, #2c3d20 66%, #24331a 100%); }
+  body[data-loc="cane"] #stage .stage-far{ background:
+    repeating-linear-gradient(90deg, transparent 0 9px, rgba(24,42,17,.55) 9px 12px, transparent 12px 22px); }
+  body[data-loc="cane"] #stage .stage-floor{ background:linear-gradient(180deg,#2c3d20,#1a2612); }
+  body[data-loc="cane"] #stage .stage-floor::before{ background:
+    radial-gradient(circle at 30% 40%, rgba(150,200,120,.14) 0 2px, transparent 3px),
+    radial-gradient(circle at 70% 70%, rgba(60,110,55,.4) 0 2px, transparent 3px),
+    linear-gradient(90deg, transparent 68%, rgba(90,64,38,.55) 72% 100%),
+    linear-gradient(180deg,#2e421f,#1d2c12);
+    background-size:11px 11px, 14px 14px, 100% 100%, 100% 100%; }
+
+  /* --- Downtown WPB: art-deco facades, lit windows, power lines, streetcar rails --- */
+  body[data-loc="urban"] #stage::before{ background:
+    linear-gradient(180deg, transparent 24%, rgba(8,8,14,.55) 24.4% 24.9%, transparent 25.4%),
+    linear-gradient(180deg, transparent 30%, rgba(8,8,14,.5) 30.4% 30.8%, transparent 31.4%),
+    repeating-linear-gradient(90deg, transparent 0 26px, rgba(255,190,80,.20) 26px 28px, transparent 28px 34px, rgba(255,190,80,.14) 34px 36px, transparent 36px 58px),
+    repeating-linear-gradient(90deg, transparent 0 44px, rgba(10,10,18,.75) 44px 78px, transparent 78px 96px),
+    linear-gradient(180deg, #3b2a4a 0%, #56355a 30%, #7a4a52 52%, #232030 64%, #1a1824 100%); }
+  body[data-loc="urban"] #stage .stage-far{ background:
+    repeating-linear-gradient(90deg, transparent 0 12px, rgba(6,6,12,.6) 12px 20px, transparent 20px 30px); }
+  body[data-loc="urban"] #stage .stage-floor{ background:linear-gradient(180deg,#23262c,#121419); }
+  body[data-loc="urban"] #stage .stage-floor::before{ background:
+    linear-gradient(90deg, transparent 31%, rgba(190,200,212,.30) 31.5% 33%, transparent 33.5% 66%, rgba(190,200,212,.30) 66.5% 68%, transparent 68.5%),
+    radial-gradient(circle at 40% 40%, rgba(255,255,255,.05) 0 1px, transparent 2px),
+    linear-gradient(180deg,#26292f,#15171c);
+    background-size:100% 100%, 9px 9px, 100% 100%; }
+
+  /* --- Palm Island: manicured lawn, seawall, mansion silhouettes, dusk sky --- */
+  body[data-loc="luxury"] #stage::before{ background:
+    radial-gradient(30% 18% at 78% 30%, rgba(255,200,120,.30), transparent 70%),
+    radial-gradient(16% 20% at 16% 51%, #100e1a 0 58%, transparent 64%),
+    radial-gradient(13% 16% at 34% 53%, #14101e 0 58%, transparent 64%),
+    radial-gradient(15% 18% at 58% 52%, #100e1a 0 58%, transparent 64%),
+    linear-gradient(180deg, transparent 60%, rgba(138,133,120,.8) 61% 64%, rgba(90,86,74,.9) 64% 66%, transparent 66%),
+    linear-gradient(180deg, #2a1c3a 0%, #5a2e4e 34%, #a2553e 54%, #1c2c14 66%, #16220f 100%); }
+  body[data-loc="luxury"] #stage .stage-far{ background:
+    repeating-linear-gradient(90deg, transparent 0 20px, rgba(10,8,16,.5) 20px 30px, transparent 30px 52px); }
+  body[data-loc="luxury"] #stage .stage-floor{ background:linear-gradient(180deg,#1e3216,#12200c); }
+  body[data-loc="luxury"] #stage .stage-floor::before{ background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 10px, transparent 10px 20px),
+    linear-gradient(180deg,#22391a,#152610); }
+
+  /* boss set-piece keeps its Mana-Spire drama in every zone */
+  body[data-loc] #stage[data-scene="tower"]::before{ background:
+    linear-gradient(90deg, transparent calc(72% - 4px), rgba(63,169,255,.55) calc(72% - 4px), rgba(63,169,255,.85) 72%, rgba(63,169,255,.55) calc(72% + 4px), transparent calc(72% + 4px)),
+    radial-gradient(15% 66% at 72% 56%, rgba(63,169,255,.40) 0 38%, rgba(27,110,243,.20) 55%, transparent 72%),
+    repeating-linear-gradient(90deg, transparent 0 16px, rgba(0,0,0,.55) 16px 26px, transparent 26px 44px),
+    linear-gradient(180deg,#10132a 0%, #0a0c1c 60%, #05060c 100%); }
+
+  /* --- combatant staging: ground shadows, menace framing, idle presence --- */
+  .foe{ position:relative; }
+  .foe::before{ content:""; position:absolute; left:12%; right:12%; bottom:16px; height:8px; z-index:0;
+    background:radial-gradient(50% 50% at 50% 50%, rgba(0,0,0,.5), transparent 72%); }
+  #stage-hero::after{ content:""; position:absolute; left:6%; right:6%; bottom:-4px; height:9px;
+    background:radial-gradient(50% 50% at 50% 50%, rgba(0,0,0,.5), transparent 72%); }
+  .foe-spr{ position:relative; z-index:1; transform-origin:50% 100%; transform:scale(1.06); }
+  .foe.boss .foe-spr{ transform:scale(1.1); }
+  @keyframes stageBreathe{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-1.6px); } }
+  @keyframes stageBreatheFoe{ 0%,100%{ transform:scale(1.06) translateY(0); } 50%{ transform:scale(1.06) translateY(-1.6px); } }
+  @keyframes stageBreatheBoss{ 0%,100%{ transform:scale(1.1) translateY(0); } 50%{ transform:scale(1.1) translateY(-2px); } }
+  #stage-hero:not(.larry) .sprite{ animation: stageBreathe 3.4s ease-in-out infinite; }  /* Larry has his own body-bob idle */
+  .foe-spr{ animation: stageBreatheFoe 3.8s ease-in-out infinite; }
+  .foe.boss .foe-spr{ animation: stageBreatheBoss 4.2s ease-in-out infinite; }
+  .foe:nth-child(2) .foe-spr{ animation-delay:-1.3s; }
+  .foe:nth-child(3) .foe-spr{ animation-delay:-2.6s; }
+
+  /* --- action readability: stronger hit flash, held damage numbers, edge pulse --- */
+  @keyframes struck{ 0%,100%{ opacity:1; filter:none; } 40%{ opacity:.55; filter:brightness(2.3) saturate(.35); } }
+  .fx-float{ font-family:"Courier New",monospace; font-weight:800;
+    text-shadow:0 2px 3px rgba(0,0,0,.95), 0 0 8px rgba(0,0,0,.7); }
+  .fx-float.dmg{ color:#ff9a7e; font-size:1.35rem; }
+  .fx-float.crit{ color:#ffd479; font-size:1.9rem; text-shadow:0 2px 3px rgba(0,0,0,.95), 0 0 12px rgba(255,180,60,.55); }
+  .fx-float.heal{ color:#8fe39a; font-size:1.35rem; }
+  #battle::after{ content:""; position:absolute; inset:0; pointer-events:none; z-index:9;
+    background:radial-gradient(115% 100% at 50% 50%, transparent 64%, rgba(226,97,63,.42) 100%); opacity:0; }
+  @keyframes edgePulse{ 0%,100%{ opacity:0; } 35%{ opacity:1; } }
+  #battle:has(#stage-hero.flinch)::after{ animation: edgePulse .32s ease; }
+
+  /* --- unmistakable turn indicator: cyan Aethel accents on the active member --- */
+  .svc.active{ border-left:4px solid #3fc8f0;
+    box-shadow:0 0 0 1px #3fc8f0, 0 0 12px rgba(0,217,255,.30); }
+  .svc.active .svc-nm{ color:#aef4ff; }
+  .svc.active .svc-nm::before{ content:"▶ "; color:#3fc8f0; font-size:.55rem; }
+  @keyframes caretPulse{ 0%,100%{ opacity:.45; transform:translateX(0); } 50%{ opacity:1; transform:translateX(-2px); } }
+  .crew-chip.active::after{ content:"◀"; color:#3fc8f0; font-size:.55rem; margin-left:2px;
+    animation: caretPulse 1.1s ease-in-out infinite; }
+
+  /* --- battle UI dressing: riveted panels + cyan accents (skin only) --- */
+  .log{ background:linear-gradient(180deg,#0a1119,#05070a); border:2px solid var(--brass-d);
+    box-shadow: inset 0 0 0 1px rgba(63,200,240,.10), inset 0 10px 16px -12px rgba(0,0,0,.9); }
+  #actions .btn{ background:
+    radial-gradient(2.5px 2.5px at 7px 7px, rgba(63,200,240,.4) 0 55%, transparent 65%),
+    radial-gradient(2.5px 2.5px at calc(100% - 7px) 7px, rgba(63,200,240,.4) 0 55%, transparent 65%),
+    linear-gradient(180deg,#1c2632,#111823); }
+  #actions .btn.abil:not(:disabled):hover, #actions .btn.cmd:not(:disabled):hover{
+    border-color:#3fc8f0; box-shadow:0 2px 0 #000, 0 0 8px rgba(0,217,255,.25), inset 0 1px 0 #ffffff14; }
+  .svc{ box-shadow: inset 0 0 0 1px rgba(63,200,240,.06); }
+
+  /* --- reduced-motion: every animation introduced by 1V-2 goes dead here --- */
+  @media (prefers-reduced-motion: reduce){
+    #stage-hero:not(.larry) .sprite, .foe-spr, .foe.boss .foe-spr, .crew-chip.active::after,
+    #battle:has(#stage-hero.flinch)::after{ animation:none; }
+  }
 </style>
 </head>
 <body>
@@ -1962,8 +2103,9 @@ function pulse(id, cls, ms){
 
 /* floating combat number over the enemy ('epanel') or hero ('hpanel') panel */
 function floatDamage(parentId, text, kind){
-  spawnFx(parentId, { cls:'fx-float '+kind, text:String(text), ttl:0.85,
-    top:'16%', y0:8, vy:-44, sc0:0.8, sc1:1.1 });
+  // 1V-2: slightly longer hold + slower drift so numbers are readable on mobile
+  spawnFx(parentId, { cls:'fx-float '+kind, text:String(text), ttl:1.05,
+    top:'16%', y0:8, vy:-34, sc0:0.8, sc1:1.1 });
 }
 function shakeScreen(){ flash('battle','shaking', 360); }
 
