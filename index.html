@@ -665,6 +665,9 @@
     animation:ripple 7s linear infinite; }
   @keyframes ripple{ from{ background-position:0 0, 0 0, 0 0, 0 0; }
     to{ background-position:200% 0, 18px 0, 0 12px, 0 0; } }
+  /* this .t-water rule sits AFTER the global reduced-motion block, so it must
+     re-disable its own animation there (equal specificity, later cascade wins) */
+  @media (prefers-reduced-motion: reduce){ .t-water{ animation:none; } }
 
   /* -- zone ground materials (same tile classes, per-district reskins) -- */
   body[data-loc="coastal"] .t-road{ background:      /* warm beach sand */
