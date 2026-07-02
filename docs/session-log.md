@@ -213,3 +213,15 @@ Beginner-friendly on purpose — see `CLAUDE.md` for the format and rules.
            positions), zone filters, reduced-motion, zero console errors.
 - Next:    Andres playtests ?v=N (glide + zone moods + audit fixes) and
            approves merge of 1D-3 + audit to main. 1D-4/1E only when asked.
+
+## [2026-07-02] — Phase 1V-1 shipped: overworld visual identity
+- Goal:    Merge the approved world-visual overhaul (connected streets, zone
+           ground materials, CSS building facades, animated water, dusk
+           vignette, props, cyan marker glow) to main.
+- Did:     Merged commits a311cae + 39ca9a0 (and the earlier 1D-3 + audit
+           commits) to main after hub playtest sign-off. Rendering-only diff;
+           combat/save/pathing untouched; 200-run sim + browser pass green.
+- Known:   At 390px the HUD's speaker + gear buttons wrap onto a second row —
+           pre-existing (not caused by 1V-1). Logged for Phase 1V-3; do not
+           fix before then.
+- Next:    Phase 1V-2 only when the hub hands over its spec.
