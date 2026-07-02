@@ -1085,6 +1085,37 @@
     .screen.active, #dialogue.active .box{ animation:none; }
     #flood-bar-fill, .gauge .fill{ transition:none; }
   }
+
+  /* ============ PHASE 1D-3M: MOVEMENT POLISH (smooth camera + feedback) ============ */
+  /* The grid no longer sizes the board (it lives in the absolute #world), so the
+     board declares its own 11×13 shape. #world is one tile larger on every side
+     (the overscan ring) and glides one tile per camera step via slideWorld(). */
+  .board{ aspect-ratio: 11 / 13; }
+  #world{ position:absolute; z-index:1;
+    left:calc(-100% / 11); top:calc(-100% / 13); width:calc(100% * 13 / 11);
+    transition:transform .12s linear; will-change:transform; }
+  #grid{ grid-template-columns:repeat(13, 1fr); }
+  .cell.t-void{ background:#000; box-shadow:none; }
+  /* Larry's own glide (edge-clamped steps) matches the world glide */
+  #player{ transition:transform .12s linear; }
+  /* movers de-lockstepped: small per-slot delays so the world doesn't march in unison */
+  .mover:nth-child(3n+2){ transition-delay:.05s; }
+  .mover:nth-child(3n){ transition-delay:.09s; }
+  /* blocked-move bump: nudge via the `translate` property so the positioning
+     transform is never touched */
+  @keyframes bumpNudge{ 0%,100%{ translate:0 0; } 40%{ translate:var(--bx,2px) var(--by,0); } }
+  #player.bump .sprite{ animation: bumpNudge .18s ease; }
+  /* interactive markers step up their Aethel glow when the player is adjacent */
+  .cell .mk.marker.adj{ filter: drop-shadow(0 0 7px rgba(0,217,255,.8)) drop-shadow(0 1px 1px rgba(0,0,0,.6)); }
+  .cell .mk.tile-glow.adj{ text-shadow:0 0 12px #00d9ff, 0 0 20px rgba(0,217,255,.8); }
+  /* held D-pad must not scroll/zoom the page while dragging */
+  .dpad .btn{ touch-action:none; }
+
+  /* --- reduced-motion: glide + bump go dead; movement snaps tile-to-tile --- */
+  @media (prefers-reduced-motion: reduce){
+    #world, #player, .mover{ transition:none; }
+    #player.bump .sprite{ animation:none; }
+  }
 </style>
 </head>
 <body>
@@ -1167,9 +1198,12 @@
   <div class="board" id="board">
     <div id="fog"></div>
     <div id="airship" aria-hidden="true"></div>
-    <div id="grid"></div>
-    <!-- Phase 1D-3: overlay layer for gliding movers (patrols + recruited crew) -->
-    <div id="movers" aria-hidden="true"></div>
+    <!-- 1D-3M: #world slides one tile on camera steps; grid + movers ride it together -->
+    <div id="world">
+      <div id="grid"></div>
+      <!-- Phase 1D-3: overlay layer for gliding movers (patrols + recruited crew) -->
+      <div id="movers" aria-hidden="true"></div>
+    </div>
     <!-- Persistent hero sprite overlay (NOT rebuilt each move, so it can tween). -->
     <div id="player" class="larry" data-dir="down" aria-hidden="true">
       <svg class="sprite" viewBox="0 0 32 48" preserveAspectRatio="xMidYMax meet" aria-label="Larry">
@@ -1290,11 +1324,11 @@
   </div>
   <div id="ctrl-zone">
     <div class="dpad" ontouchstart="event.preventDefault()">
-      <button class="btn up"    onmousedown="move(-1,0)" ontouchstart="event.preventDefault();move(-1,0)">▲</button>
-      <button class="btn left"  onmousedown="move(0,-1)" ontouchstart="event.preventDefault();move(0,-1)">◀</button>
+      <button class="btn up"    onpointerdown="padPress(event,-1,0)" onpointerup="padStop()" onpointerleave="padStop()">▲</button>
+      <button class="btn left"  onpointerdown="padPress(event,0,-1)" onpointerup="padStop()" onpointerleave="padStop()">◀</button>
       <div class="mid">🕶️</div>
-      <button class="btn right" onmousedown="move(0,1)"  ontouchstart="event.preventDefault();move(0,1)">▶</button>
-      <button class="btn down"  onmousedown="move(1,0)"  ontouchstart="event.preventDefault();move(1,0)">▼</button>
+      <button class="btn right" onpointerdown="padPress(event,0,1)"  onpointerup="padStop()" onpointerleave="padStop()">▶</button>
+      <button class="btn down"  onpointerdown="padPress(event,1,0)"  onpointerup="padStop()" onpointerleave="padStop()">▼</button>
     </div>
     <div class="hint" id="ow-hint">Arrow keys / D-pad to roam &middot; walk into markers to act</div>
     <div id="party-strip"></div>
@@ -2006,6 +2040,7 @@ function noise(dur, gain){
 function sfx(fn){ if(!audioCtx || !sfxEnabled) return; fn(); }
 const SFX = {
   step(){ sfx(()=> tone(170,0.05,'square',0.05)); },
+  thud(){ sfx(()=>{ tone(74,0.09,'square',0.10); noise(0.05,0.07); }); },   /* blocked-move bump (1D-3M) */
   strike(){ sfx(()=>{ noise(0.12,0.16); tone(240,0.08,'square',0.10); }); },
   overdrive(){ sfx(()=>{ noise(0.22,0.22); tone(110,0.26,'sawtooth',0.16); }); },
   brace(){ sfx(()=> tone(330,0.12,'triangle',0.12)); },
@@ -2998,11 +3033,16 @@ let facing = 'down';   // last direction the hero moved (drives the sprite view)
    (built once). Each move only updates each tile's class / glyph / brightness
    instead of rebuilding the grid's innerHTML — far less GC and layout churn. */
 let tilePool = null;
+/* Phase 1D-3M: the pool renders ONE extra ring of tiles beyond the viewport
+   (13×15 instead of 11×13) so the #world container can slide a full tile
+   during the camera glide without exposing bare board background. */
+const OVERSCAN = 1;
 function buildTilePool(){
   const grid = document.getElementById('grid');
   grid.innerHTML = '';
   tilePool = [];
-  for(let i=0; i<VIEW_W*VIEW_H; i++){
+  const count = (VIEW_W + 2*OVERSCAN) * (VIEW_H + 2*OVERSCAN);
+  for(let i=0; i<count; i++){
     const cell = document.createElement('div');
     cell.className = 'cell';
     const span = document.createElement('span');
@@ -3014,42 +3054,81 @@ function buildTilePool(){
 }
 function renderOverworld(instant){
   const {camX, camY} = cameraOrigin();
-  if(!tilePool || tilePool.length !== VIEW_W*VIEW_H) buildTilePool();
+  if(!tilePool || tilePool.length !== (VIEW_W + 2*OVERSCAN) * (VIEW_H + 2*OVERSCAN)) buildTilePool();
   // Phase 1D-3: tiles occupied by a live mover draw ground only — their emoji
   // rides on the #movers overlay so it can glide (see renderMovers).
   const moverAt = new Set();
   for(const p of patrols)    moverAt.add(p.y*MAP_W + p.x);
   for(const c of crewPacers) moverAt.add(c.y*MAP_W + c.x);
   let i = 0;
-  for(let vy=0; vy<VIEW_H; vy++){
-    for(let vx=0; vx<VIEW_W; vx++, i++){
-      const my = camY+vy, mx = camX+vx;
+  for(let vy=0; vy<VIEW_H + 2*OVERSCAN; vy++){
+    for(let vx=0; vx<VIEW_W + 2*OVERSCAN; vx++, i++){
+      const my = camY+vy-OVERSCAN, mx = camX+vx-OVERSCAN;
+      const t = tilePool[i];
+      if(my<0 || my>=MAP_H || mx<0 || mx>=MAP_W){       // overscan past the map edge
+        t.cell.className = 'cell t-void';
+        t.cell.style.filter = '';
+        if(t.span.textContent) t.span.textContent = '';
+        t.span.className = 'mk';
+        continue;
+      }
       const ch = map[my][mx];
       const base = (ch in GROUND) ? GROUND[ch] : ch;     // floor under markers
       const cls  = TCLASS[base] || 't-road';
       const glyph = (moverAt.has(my*MAP_W + mx) || NO_GLYPH.has(ch)) ? '' : (EMOJI[ch] || '');
-      const t = tilePool[i];
-      t.cell.className = 'cell ' + cls + tileDeco(ch, base, mx, my);
+      const t2 = t;
+      t2.cell.className = 'cell ' + cls + tileDeco(ch, base, mx, my);
       if(glyph){
-        t.cell.style.filter = '';
-        if(t.span.textContent !== glyph) t.span.textContent = glyph;
-        const near = (ch in ENEMIES && ENEMIES[ch].kind==='patrol') &&
-          Math.abs(mx-player.x)+Math.abs(my-player.y) <= 2;
+        t2.cell.style.filter = '';
+        if(t2.span.textContent !== glyph) t2.span.textContent = glyph;
+        const dist = Math.abs(mx-player.x)+Math.abs(my-player.y);
+        const near = (ch in ENEMIES && ENEMIES[ch].kind==='patrol') && dist <= 2;
+        const adj  = dist === 1 ? ' adj' : '';           // 1D-3M: intensity step when adjacent
         const isGlow = ch in GLOWING_TILES;
-        if(isGlow) t.span.className = 'mk tile-glow';
-        else t.span.className = near ? 'mk near-warn' : (INTERACTIVE.has(ch) ? 'mk marker' : 'mk');
+        if(isGlow) t2.span.className = 'mk tile-glow' + adj;
+        else t2.span.className = near ? 'mk near-warn' : (INTERACTIVE.has(ch) ? 'mk marker' + adj : 'mk');
       } else {
         // deterministic tiny brightness jitter so open areas aren't one flat slab
         const v = (mx*7 + my*13) % 6;
-        t.cell.style.filter = `brightness(${(0.9 + v*0.035).toFixed(3)})`;
-        if(t.span.textContent) t.span.textContent = '';
-        t.span.className = 'mk';
+        t2.cell.style.filter = `brightness(${(0.9 + v*0.035).toFixed(3)})`;
+        if(t2.span.textContent) t2.span.textContent = '';
+        t2.span.className = 'mk';
       }
     }
   }
+  slideWorld(camX, camY, instant);       // camera glide (1D-3M)
   positionPlayer(camX, camY, instant);   // hero is a separate overlay
   renderMovers(instant);                 // movers are too (Phase 1D-3)
   updateHUD();
+}
+
+/* ---- Phase 1D-3M: smooth camera ----
+   On a one-tile camera step: the grid re-renders instantly for the NEW camera,
+   then #world (grid + movers) is offset one tile back toward the old view and
+   tweened to zero. Terrain and movers glide together under a centered Larry.
+   Any non-step change (zone load, travel, battle return, teleport) snaps.
+   The tween always settles at translate(0,0) == the rendered game state, so
+   the visual can never desync from the logical tile. */
+let worldCamX = null, worldCamY = null;
+function slideWorld(camX, camY, instant){
+  const w = document.getElementById('world'); if(!w || !w.style) return;
+  const dx = worldCamX === null ? 0 : camX - worldCamX;
+  const dy = worldCamY === null ? 0 : camY - worldCamY;
+  worldCamX = camX; worldCamY = camY;
+  const stepped = Math.abs(dx) + Math.abs(dy) === 1;
+  if(instant || !stepped || mode !== 'overworld' || reducedMotion()){
+    w.style.transition = 'none';
+    w.style.transform = 'translate(0,0)';
+    void w.offsetWidth; w.style.transition = '';
+    return;
+  }
+  const board = document.getElementById('board');
+  const tile = (board ? board.clientWidth : 0) / VIEW_W;
+  w.style.transition = 'none';
+  w.style.transform = `translate(${dx*tile}px, ${dy*tile}px)`;   // start at the old view…
+  void w.offsetWidth;
+  w.style.transition = '';
+  w.style.transform = 'translate(0,0)';                          // …and glide to the new one
 }
 
 /* Place the persistent hero sprite over its viewport cell. When the camera is
@@ -3059,7 +3138,8 @@ function renderOverworld(instant){
    when (re)entering the overworld) so he doesn't glide in from the corner. */
 function positionPlayer(camX, camY, instant){
   const pl = document.getElementById('player');
-  const tile = document.getElementById('grid').clientWidth / VIEW_W;
+  const board = document.getElementById('board');
+  const tile = (board ? board.clientWidth : 0) / VIEW_W;   // 1D-3M: grid is overscanned; board width is the true viewport
   const vx = player.x - camX, vy = player.y - camY;
   pl.style.width = tile + 'px';
   pl.style.height = tile + 'px';
@@ -3084,7 +3164,8 @@ function renderMovers(forceInstant){
   const {camX, camY} = cameraOrigin();
   const camMoved = camX !== lastCamX || camY !== lastCamY;
   lastCamX = camX; lastCamY = camY;
-  const tile = document.getElementById('grid').clientWidth / VIEW_W;
+  const board = document.getElementById('board');
+  const tile = (board ? board.clientWidth : 0) / VIEW_W;   // 1D-3M: board width, not the overscanned grid
   const seen = new Set();
   const all = [];
   for(const p of patrols)    all.push({ id:'p:'+p.id,  ch:p.ch, x:p.x, y:p.y, hostile:true  });
@@ -3110,7 +3191,8 @@ function renderMovers(forceInstant){
     const snap = forceInstant || camMoved || isNew || wasHidden;
     if(snap) el.style.transition = 'none';
     el.style.width = tile + 'px'; el.style.height = tile + 'px';
-    el.style.transform = `translate(${vx*tile}px, ${vy*tile}px)`;
+    // +OVERSCAN: #movers now lives inside #world, which sits one tile up-left of the viewport
+    el.style.transform = `translate(${(vx+OVERSCAN)*tile}px, ${(vy+OVERSCAN)*tile}px)`;
     if(snap){ void el.offsetWidth; el.style.transition = ''; }   // restore tween
     // hostile 2-tile proximity warning rides the sprite (was on the grid cell pre-1D-3)
     el.classList.toggle('near-warn', m.hostile && Math.abs(m.x-player.x) + Math.abs(m.y-player.y) <= 2);
@@ -3180,9 +3262,9 @@ function move(dy, dx){
   document.getElementById('player').dataset.dir = facing;
 
   const ny = player.y + dy, nx = player.x + dx;
-  if(ny<0 || ny>=MAP_H || nx<0 || nx>=MAP_W) return;   // bounds
+  if(ny<0 || ny>=MAP_H || nx<0 || nx>=MAP_W){ blockedBump(dy,dx); return; }   // bounds
   const ch = map[ny][nx];
-  if(SOLID.has(ch)) return;                            // collision (incl. closed gates)
+  if(SOLID.has(ch)){ blockedBump(dy,dx); return; }     // collision (incl. closed gates)
 
   // Decide what walking onto this tile does, BEFORE committing the step.
   if(ch==='N' || ch==='D' || ch==='R'){ openDialogue(ch); return; }      // talk; stay put
@@ -3209,16 +3291,53 @@ function move(dy, dx){
   saveGame();               // autosave each step
 }
 
-/* keyboard support (desktop) */
+/* ---- Phase 1D-3M: blocked-move feedback (presentation only — no state change) ----
+   A tiny nudge of the sprite toward the wall plus a soft thud. Uses the CSS
+   `translate` property so it never fights the positioning `transform`. */
+function blockedBump(dy, dx){
+  const spr = document.querySelector('#player .sprite');
+  if(spr && spr.style && spr.style.setProperty){
+    spr.style.setProperty('--bx', (dx*3) + 'px');
+    spr.style.setProperty('--by', (dy*3) + 'px');
+  }
+  pulse('player', 'bump', 180);
+  if(SFX.thud) SFX.thud();
+}
+
+/* keyboard support (desktop). Held arrows: the OS key-repeat can fire far
+   faster than the 120ms camera glide, which would restart the tween into a
+   stutter — steps are paced to the glide so held-walking is one continuous
+   motion (state stays strictly tile-by-tile; this only paces the repeats). */
+const STEP_MS = 120;
+let lastStepAt = 0;
+function pacedMove(dy, dx){
+  const now = performance.now ? performance.now() : 0;
+  if(now - lastStepAt < STEP_MS - 5) return;
+  lastStepAt = now;
+  move(dy, dx);
+}
 document.addEventListener('keydown', (e)=>{
   const k = e.key;
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(k)) e.preventDefault();
   if(mode!=='overworld') return;
-  if(k==='ArrowUp'||k==='w') move(-1,0);
-  else if(k==='ArrowDown'||k==='s') move(1,0);
-  else if(k==='ArrowLeft'||k==='a') move(0,-1);
-  else if(k==='ArrowRight'||k==='d') move(0,1);
+  if(k==='ArrowUp'||k==='w') pacedMove(-1,0);
+  else if(k==='ArrowDown'||k==='s') pacedMove(1,0);
+  else if(k==='ArrowLeft'||k==='a') pacedMove(0,-1);
+  else if(k==='ArrowRight'||k==='d') pacedMove(0,1);
 });
+
+/* D-pad press-and-hold: first step immediately, then repeat at the glide rate
+   until release. Pointer events cover mouse + touch in one path. */
+let padTimer = null;
+function padStop(){ if(padTimer){ clearInterval(padTimer); padTimer = null; } }
+function padPress(e, dy, dx){
+  if(e && e.preventDefault) e.preventDefault();
+  padStop();
+  pacedMove(dy, dx);
+  padTimer = setInterval(()=> pacedMove(dy, dx), STEP_MS);
+}
+document.addEventListener('pointerup', padStop);
+document.addEventListener('pointercancel', padStop);
 
 /* ----------------------- PICKUPS & NPCS --------------------------- */
 function takePickup(ch, y, x){
