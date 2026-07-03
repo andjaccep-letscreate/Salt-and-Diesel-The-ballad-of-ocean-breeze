@@ -1116,6 +1116,82 @@
     #world, #player, .mover{ transition:none; }
     #player.bump .sprite{ animation:none; }
   }
+
+  /* ============ PHASE 1B-1: BATTLE FEEL & PRESENTATION (presentation only) ============
+     Cascade-last so these win. State resolution is untouched — this is the
+     theatrical layer: number-pop, enemy presence, portrait cards, tight menu,
+     payload tint. All motion disabled in the reduced-motion block at the end. */
+
+  /* --- stable FX overlay + punchy damage/heal number pop --- */
+  #stage-fx{ position:absolute; inset:0; z-index:7; pointer-events:none; overflow:visible; }
+  #stage-fx .fx-float{ position:absolute; font-family:"Courier New",monospace; font-weight:800;
+    text-shadow:0 2px 3px rgba(0,0,0,.95), 0 0 9px rgba(0,0,0,.7); white-space:nowrap; }
+  #stage-fx .fx-float.dmg{  color:#ff9a7e; font-size:1.5rem; }
+  #stage-fx .fx-float.crit{ color:#ffd479; font-size:2.05rem; text-shadow:0 2px 3px rgba(0,0,0,.95), 0 0 14px rgba(255,180,60,.6); }
+  #stage-fx .fx-float.heal{ color:#8fe39a; font-size:1.5rem; }
+  /* (the pop/grow itself is driven by the JS fx scaler 0.7→1.15; CSS only styles it) */
+
+  /* --- enemy presence: bigger framed foes, boss bigger still, idle + telegraph --- */
+  #stage-enemies{ right:2%; gap:6px; }
+  .foe{ width:70px; }
+  .foe.boss{ width:92px; }
+  .foe-spr{ height:70px; transform:scale(1.12); transform-origin:50% 100%;
+    filter: drop-shadow(0 6px 5px rgba(0,0,0,.5)); }
+  .foe.boss .foe-spr{ height:92px; transform:scale(1.18);
+    filter: drop-shadow(0 8px 7px rgba(0,0,0,.6)) drop-shadow(0 0 10px rgba(226,97,63,.3)); }
+  @keyframes foeIdle{ 0%,100%{ transform:scale(1.12) translateY(0); } 50%{ transform:scale(1.12) translateY(-2px); } }
+  @keyframes foeIdleBoss{ 0%,100%{ transform:scale(1.18) translateY(0); } 50%{ transform:scale(1.18) translateY(-2.5px); } }
+  .foe-spr{ animation:foeIdle 3.6s ease-in-out infinite; }
+  .foe.boss .foe-spr{ animation:foeIdleBoss 4.2s ease-in-out infinite; }
+  .foe:nth-child(2) .foe-spr{ animation-delay:-1.2s; } .foe:nth-child(3) .foe-spr{ animation-delay:-2.4s; }
+  /* enemy attack telegraph: override the real foe lunge with a brief anticipatory
+     wind-up (pull back AWAY from the hero) before the strike lands — no JS/timing
+     change, the lunge is still the same .foe.foe-atk pulse. */
+  @keyframes foeLunge{ 0%{ transform:translateX(0); } 18%{ transform:translateX(5px); } 42%{ transform:translateX(-13px); } 100%{ transform:translateX(0); } }
+  /* full enemy name, no word-split truncation, clean ellipsis if very long */
+  .foe-nm{ max-width:96px; margin:2px auto 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    font-size:.54rem; text-align:center; }
+  .foe.boss .foe-nm{ max-width:112px; color:#ffd479; }
+  .foe-bar{ height:6px; box-shadow: inset 0 1px 2px rgba(0,0,0,.6); }
+  .foe.boss .foe-bar{ height:7px; box-shadow: inset 0 1px 2px rgba(0,0,0,.6), 0 0 6px rgba(226,97,63,.4); }
+
+  /* --- party cards: portrait-forward, tighter meters --- */
+  .svc{ padding:4px 7px 5px; display:grid; grid-template-columns:auto 1fr; grid-template-rows:auto auto;
+    gap:1px 7px; align-items:center; }
+  .svc-top{ grid-column:2; }
+  .svc .meter{ grid-column:2; }
+  .svc-em{ grid-row:1 / span 4; grid-column:1; font-size:1.5rem; width:30px; height:30px;
+    display:flex; align-items:center; justify-content:center; border-radius:7px;
+    background:linear-gradient(180deg,#1a2430,#0d141d); box-shadow:inset 0 0 0 1px rgba(63,200,240,.18); }
+  .svc.active .svc-em{ box-shadow:inset 0 0 0 1px #3fc8f0, 0 0 8px rgba(0,217,255,.4); }
+  .svc-nm{ font-size:.66rem; }
+  .svc .meter .mtrk{ height:7px; }
+  .svc .meter .mlbl{ font-size:.44rem; }
+
+  /* --- command menu: tighter, thumb-friendly, clearer active state --- */
+  #actions.actions{ gap:5px; }
+  #actions .btn{ padding:10px 8px; min-height:44px; letter-spacing:.06em; border-radius:9px; }
+  #actions .btn.cmd{ font-size:.92rem; }
+  #actions .btn.abil{ padding:8px 8px; }
+  #actions .btn.abil small{ font-size:.55rem; }
+  #actions .btn:active:not(:disabled){ transform:translateY(1px); border-color:#3fc8f0;
+    box-shadow:0 0 0 1px #3fc8f0, 0 0 9px rgba(0,217,255,.3); }
+
+  /* --- Silver's Payload Selector: signature per-ammo colour tell --- */
+  #actions .btn.pay{ border-left-width:4px; }
+  #actions .btn.pay-kinetic{    border-left-color:#ffd479; }
+  #actions .btn.pay-net{        border-left-color:#7fb3ff; }
+  #actions .btn.pay-magnetic{   border-left-color:#c98bff; }
+  #actions .btn.pay-flak{       border-left-color:#ff8a5c; }
+  #actions .btn.pay-incendiary{ border-left-color:#ff5c3a; }
+  #actions .btn.pay::after{ content:""; position:absolute; top:6px; right:6px; width:7px; height:7px;
+    border-radius:50%; background:currentColor; opacity:.5; }
+  #actions .btn.pay{ position:relative; }
+
+  /* --- reduced-motion: every 1B-1 animation goes dead (cascade-last) --- */
+  @media (prefers-reduced-motion: reduce){
+    .foe-spr, .foe.boss .foe-spr, .foe.foe-atk{ animation:none; }
+  }
 </style>
 </head>
 <body>
@@ -1345,6 +1421,8 @@
     <div id="stage-crew" aria-hidden="true"></div>
     <div id="stage-hero" class="larry combatant" data-dir="right" aria-hidden="true"></div>
     <div id="stage-enemies"></div>
+    <!-- 1B-1: stable FX overlay for floating damage/heal numbers (never rebuilt) -->
+    <div id="stage-fx" aria-hidden="true"></div>
   </div>
   <!-- ally-zone: reserved slot for future party formation UI -->
   <div id="ally-zone" aria-hidden="true"></div>
@@ -2094,6 +2172,12 @@ function stopMusic(){ if(musicTimer){ clearTimeout(musicTimer); musicTimer = nul
 
 /* ----------------------- settings menu ----------------------- */
 let menuOpen = false;
+/* 1B-1: brief input-lock during an action beat so the player can't double-tap
+   mid-animation. Checked ONLY in the human input handlers — the headless sim
+   drives combat through commitAbility directly and never reads this flag, so
+   combat resolution stays exactly synchronous. */
+let beatBusy = false;
+function startBeatLock(){ beatBusy = true; setTimeout(()=>{ beatBusy = false; renderBattle(); }, 340); }
 function openSettings(){
   menuOpen = true;
   document.getElementById('settings').classList.add('active');
@@ -2224,11 +2308,16 @@ function pulse(id, cls, ms){
   setTimeout(()=> el.classList.remove(cls), ms);
 }
 
-/* floating combat number over the enemy ('epanel') or hero ('hpanel') panel */
+/* Floating combat number. Phase 1B-1: numbers spawn on the STABLE #stage-fx
+   overlay (not the foe div, which renderEnemies rebuilds via innerHTML and would
+   destroy the node before it paints — the long-standing "damage number never
+   shows" bug). Anchored horizontally over the target's side of the stage. */
 function floatDamage(parentId, text, kind){
-  // 1V-2: slightly longer hold + slower drift so numbers are readable on mobile
-  spawnFx(parentId, { cls:'fx-float '+kind, text:String(text), ttl:1.05,
-    top:'16%', y0:8, vy:-34, sc0:0.8, sc1:1.1 });
+  let left = '50%';
+  if(parentId === 'stage-hero') left = '16%';
+  else if(parentId.indexOf('foe') === 0){ const i = parseInt(parentId.slice(3),10) || 0; left = (68 + i*9) + '%'; }
+  spawnFx('stage-fx', { cls:'fx-float '+kind, text:String(text), ttl:1.05,
+    left, top:'30%', y0:8, vy:-34, sc0:0.7, sc1:1.15 });
 }
 function shakeScreen(){ flash('battle','shaking', 360); }
 
@@ -3516,7 +3605,7 @@ function startBattle(ch, y, x){
   svBuilt=0;   // force a fresh Status Window build for this fight's party
   // per-fight reset: statuses, cooldowns, drones, Platinum's Patch charges; revive KO'd to 1 HP
   party.forEach(m=>{ m.st={}; m.cd={}; m.drone=null; m.special=0; if(!m.maxSpecial) m.maxSpecial=100; if(m.key==='platinum') m.patchCharges=3; if(m.hp<=0) m.hp=1; m.alive=true; });
-  mode='battle'; busy=false; logLines=[];
+  mode='battle'; busy=false; beatBusy=false; logLines=[];
   document.getElementById('stage').setAttribute('data-scene', SCENE_OF[ch]||'harbor');
   pushLog(ENEMIES[ch].intro, 'sys');
   battle.activeIdx = firstLivingAlly(0);
@@ -3541,7 +3630,7 @@ function renderEnemies(){
     return `<div class="foe${e.boss?' boss':''}${tgt}" id="foe${i}" onclick="pickTarget(${i})">
       <div class="foe-spr">${e.svg||('<span style=\"font-size:1.7rem\">'+e.face+'</span>')}</div>
       <div class="foe-bar"><i style="width:${pct}%"></i></div>
-      <div class="foe-nm">${e.name.split(' ')[0]} ${foeStatus(e)}</div></div>`;
+      <div class="foe-nm" title="${e.name}">${e.name} ${foeStatus(e)}</div></div>`;
   }).join('');
   // pre-allocate the enemy zone to 3 slots so the layout stays stable as foes fall
   const liveSlots = battle.enemies.filter(e=>e.alive).length;
@@ -3640,7 +3729,8 @@ function renderActions(){
   }
   const m=party[battle.activeIdx]; if(!m){ box.innerHTML=''; return; }
   const abilBtn=(id)=>{ const ab=ABIL[id]; const ok=abilUsable(m,id);
-    return `<button class="btn abil" ${ok?'':'disabled'} onclick="chooseAbility('${id}')">${ab.icon} ${ab.name}<small>${cdLabel(m,id)||ab.desc}</small></button>`; };
+    const payCls = ab.ammo ? (' pay pay-'+id) : '';   // 1B-1: per-ammo tint for Silver's Payload Selector
+    return `<button class="btn abil${payCls}" ${ok?'':'disabled'} onclick="chooseAbility('${id}')">${ab.icon} ${ab.name}<small>${cdLabel(m,id)||ab.desc}</small></button>`; };
   const hasPayload = bucketAbils(m,'payload').length>0;
 
   if(battle.menu==='payload'){          // nested ammo selector (Back returns to Skill)
@@ -3663,7 +3753,7 @@ function renderActions(){
     return `<button class="btn cmd" ${has?'':'disabled'} onclick="openCmd('${k}')">${icon} ${label}<span class="cmd-sub">${has?'':'—'}</span></button>`;
   }).join('');
 }
-function openCmd(k){ if(busy||battle.over||battle.await) return; const m=party[battle.activeIdx]; if(!m) return;
+function openCmd(k){ if(busy||battle.over||battle.await||beatBusy) return; const m=party[battle.activeIdx]; if(!m) return;
   const ids=bucketAbils(m,k);
   if(ids.length===1){ chooseAbility(ids[0]); return; }   // single option → go straight to targeting
   battle.menu=k; renderBattle(); }
@@ -3680,15 +3770,15 @@ function renderBattle(){
 /* ----- input: ability selection + targeting ----- */
 function cancelTarget(){ battle.await=null; renderBattle(); }   // keeps the open command submenu
 function chooseAbility(id){
-  if(busy||battle.over||menuOpen) return;
+  if(busy||battle.over||menuOpen||beatBusy) return;
   const m=party[battle.activeIdx]; if(!m||!abilUsable(m,id)) return;
   const ab=ABIL[id];
   if(ab.tgt==='enemy'){ const foes=aliveFoes(); if(foes.length===1){ commitAbility(id, battle.enemies.indexOf(foes[0])); } else { battle.await={id,tgt:'enemy'}; renderBattle(); } return; }
   if(ab.tgt==='ally'){ const al=aliveMembers(); if(al.length===1){ commitAbility(id, party.indexOf(al[0])); } else { battle.await={id,tgt:'ally'}; renderBattle(); } return; }
   commitAbility(id, -1);   // self / allenemies / none
 }
-function pickTarget(i){ if(!battle.await||battle.await.tgt!=='enemy')return; const e=battle.enemies[i]; if(!e||!e.alive)return; commitAbility(battle.await.id, i); }
-function pickAlly(i){ if(!battle.await||battle.await.tgt!=='ally')return; const m=party[i]; if(!m||!m.alive)return; commitAbility(battle.await.id, i); }
+function pickTarget(i){ if(beatBusy||!battle.await||battle.await.tgt!=='enemy')return; const e=battle.enemies[i]; if(!e||!e.alive)return; commitAbility(battle.await.id, i); }
+function pickAlly(i){ if(beatBusy||!battle.await||battle.await.tgt!=='ally')return; const m=party[i]; if(!m||!m.alive)return; commitAbility(battle.await.id, i); }
 
 function commitAbility(id, targetIdx){
   const m=party[battle.activeIdx]; const ab=ABIL[id]; if(!ab) return;
@@ -3728,6 +3818,7 @@ function commitAbility(id, targetIdx){
     if(droids_after===0) pushLog('All Interceptor Droids are down — THE BARON IS EXPOSED!','crit');
   }
   renderBattle();
+  startBeatLock();   // 1B-1: lock human input for the ~340ms action beat (sim never reads it)
   if(enemiesCleared()){ winBattle(); return; }
   advanceAlly();
 }
@@ -3868,7 +3959,7 @@ function endOfRound(){
   if(partyWiped()){ gameOver(); return; }
   party.forEach(m=>{ for(const k in m.cd) if(m.cd[k]>0) m.cd[k]--; m.st.guard=0; });
   battle.enemies.forEach(e=>{ ['defDown','atkDown','mark'].forEach(k=>{ if(e.st[k]>0) e.st[k]--; }); });
-  battle.round++; battle.activeIdx=firstLivingAlly(0); busy=false; renderBattle();
+  battle.round++; battle.activeIdx=firstLivingAlly(0); busy=false; beatBusy=false; renderBattle();
 }
 
 function grantXP(m, xp){
