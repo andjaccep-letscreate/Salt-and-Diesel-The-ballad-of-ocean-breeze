@@ -225,3 +225,10 @@ Beginner-friendly on purpose — see `CLAUDE.md` for the format and rules.
            pre-existing (not caused by 1V-1). Logged for Phase 1V-3; do not
            fix before then.
 - Next:    Phase 1V-2 only when the hub hands over its spec.
+
+## [2026-07-04] — Phase 5b: Legendary Weapons & Salvage Choice
+- Goal:    Add the four post-finale legendary powers (unlocked by beating the Golfer); confirm the salvage-choice system (Item 1) was already built.
+- Did:     index.html only. Item 1 (per-boss +5 salvage choice, persisted in claimedSalvages, no re-trigger) verified already-complete — no code change. Item 2 (legendaries): added LEGENDARY_DEFS + `legendaries` state, `unlockLegendaries()` on Golfer('Q') win, and four combat riders — Gold "Fairway Cleaver" (single-target strike lands twice), Silver "Foresight" (first incoming hit each battle fully evaded), Titanium "Fear Aura" (~30% stun-on-hit), Platinum "Initiative Core" (acts first via new `beginAllyPhase()` turn-order, baseline-identical when locked). Persisted `legendaries` in save/continue/reset. Added a Briefing-Room reveal panel (renderLegendaryReveal) + CSS. Added `battle.dmgBy` per-member damage tracking for the report.
+- Learned: In a Node `vm` sandbox, top-level `let` bindings are NOT settable from outside via `sandbox.x=…` (only readable via the copy-out bridge) — to flip `legendaries` in the sim you must CALL the real `unlockLegendaries()`, which reassigns the lexical binding. (`vm` = Node's sandboxed-script module.)
+- Gotchas: First damage-share run showed no legendary effect because I set `sandbox.legendaries` directly (dead write). Fixed by toggling via `unlockLegendaries()`. Legendaries only unlock AFTER the Golfer falls, so every locked baseline scenario (which ends at the Golfer) is untouched by construction — confirmed: baseline sim numbers unchanged.
+- Next:    Awaiting Andres' sign-off on the ?v= preview before any merge. Do NOT auto-start Phase 5c.

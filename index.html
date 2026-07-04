@@ -1191,6 +1191,16 @@
     border-radius:50%; background:currentColor; opacity:.5; }
   #actions .btn.pay{ position:relative; }
 
+  /* --- Phase 5b: legendary-weapons reveal on the Briefing Room screen --- */
+  #legendary-reveal .legend-panel{ margin:10px 0 14px; }
+  #legendary-reveal .legend-hd{ margin-bottom:8px; letter-spacing:.06em; }
+  #legendary-reveal .legend-row{ display:flex; align-items:flex-start; gap:10px; text-align:left;
+    padding:7px 10px; margin-bottom:6px; border-left:3px solid var(--accent);
+    background:rgba(0,0,0,.18); border-radius:6px; }
+  #legendary-reveal .legend-ic{ font-size:22px; line-height:1.05; flex:0 0 auto; }
+  #legendary-reveal .legend-owner{ opacity:.7; font-size:12px; }
+  #legendary-reveal .legend-pow{ font-size:12px; opacity:.82; }
+
   /* --- reduced-motion: every 1B-1 animation goes dead (cascade-last) --- */
   @media (prefers-reduced-motion: reduce){
     .foe-spr, .foe.boss .foe-spr, .foe.foe-atk{ animation:none; }
@@ -1472,6 +1482,7 @@
     But a transmission crackles from HQ — <span class="accent">the Prime Artifact Ball was a signal
     beacon.</span> Someone in the deep city has already responded. The Shadow Artifact stirs
     beneath the bay. The crew can stand down now… or follow the signal into darker waters.</p>
+    <div id="legendary-reveal"></div>
     <button class="btn" style="width:100%;margin-bottom:8px" onclick="sealEpisode()">Seal the Episode — End of Volume 1</button>
     <button class="btn" style="width:100%;background:var(--rust)" onclick="chaseShadow()">Chase the Shadow Artifact — Hard Mode</button>
   </div>
@@ -2765,6 +2776,35 @@ function makeMember(key, lv){
 let map;          // mutable 2D array of chars
 let party, recruited, hero, player, mode, busy, battle, lastCrit, lastDodge;
 
+/* ===================== PHASE 5b: LEGENDARY WEAPONS =====================
+   Unlocked when the Golfer (Episode-1 final boss) falls. Each crew member's
+   signature power. Persisted in the save; effects only apply while unlocked
+   (so they never touch the pre-finale balance the sim locks). */
+const LEGENDARY_DEFS = {
+  gold:     { name:'Fairway Cleaver', icon:'⚓', power:'Double Attack — every strike lands twice.' },
+  silver:   { name:'Foresight',       icon:'🎯', power:'Perfect Dodge — the first hit each battle is fully evaded.' },
+  platinum: { name:'Initiative Core', icon:'🦾', power:'First Mover — always acts first in the round.' },
+  titanium: { name:'Fear Aura',       icon:'🪓', power:'Fear Strike — hits may stun the target with dread.' },
+};
+let legendaries = { gold:false, silver:false, titanium:false, platinum:false };
+function anyLegendary(){ return legendaries.gold||legendaries.silver||legendaries.titanium||legendaries.platinum; }
+function unlockLegendaries(){
+  legendaries = { gold:true, silver:true, titanium:true, platinum:true };
+}
+/* Populate the Briefing-Room legendary showcase (only shows once unlocked). */
+function renderLegendaryReveal(){
+  const host = document.getElementById('legendary-reveal'); if(!host) return;
+  if(!anyLegendary()){ host.innerHTML=''; return; }
+  const order=['gold','silver','platinum','titanium'];
+  const rows = order.map(k=>{
+    const L=LEGENDARY_DEFS[k], nm=(MEMBER_DEFS[k]&&MEMBER_DEFS[k].name)||k;
+    return '<div class="legend-row"><span class="legend-ic">'+L.icon+'</span>'
+      + '<span><b class="accent">'+L.name+'</b> <span class="legend-owner">· '+nm+'</span><br>'
+      + '<span class="legend-pow">'+L.power+'</span></span></div>';
+  }).join('');
+  host.innerHTML = '<div class="legend-panel"><div class="deco accent legend-hd">★ LEGENDARY WEAPONS UNLOCKED ★</div>'+rows+'</div>';
+}
+
 function resetState(){
   party = [ makeMember('gold', 1) ];
   recruited = { silver:false, titanium:false, platinum:false };
@@ -2772,6 +2812,7 @@ function resetState(){
   mode = 'title'; busy = false; battle = null;
   facing = 'down'; seenDistricts = new Set();
   claimedSalvages = {}; pendingSalvage = null; pendingSalvageStat = null; salvageReturn = null;
+  legendaries = { gold:false, silver:false, titanium:false, platinum:false };
   worldState = null;
   defeatedBosses = {}; pendingTravelDest = null;
   activeDialogue = null; pendingTitaniumRescue = false;
@@ -3036,7 +3077,7 @@ function saveGame(){
     for(const c of crewPacers) strip(c.x, c.y, c.ch, c.under);
     const data = { v:3, party, recruited, player, facing,
       map: rows, seen: [...seenDistricts], salvaged: claimedSalvages, worldState,
-      loc: currentLocation, bosses: defeatedBosses,
+      loc: currentLocation, bosses: defeatedBosses, legendaries,
       defeatedPatrols: Array.from(defeatedPatrols), glows: glowData };
     localStorage.setItem(SAVE_KEY, JSON.stringify(data));
   }catch(e){ /* storage unavailable — skip silently */ }
@@ -3068,6 +3109,7 @@ function continueGame(){
       player = data.player; facing = data.facing || 'down';
       map = data.map.map(r => r.split('')); seenDistricts = new Set(data.seen || []);
       claimedSalvages = data.salvaged || {};
+      legendaries = Object.assign({ gold:false, silver:false, titanium:false, platinum:false }, data.legendaries || {});
       worldState = data.worldState || null;
       currentLocation = data.loc || 'lake-worth';
       defeatedBosses  = data.bosses || {};
@@ -3569,6 +3611,12 @@ function firstLivingAlly(from){ for(let i=Math.max(0,from);i<party.length;i++) i
 function enemiesCleared(){ return aliveFoes().length===0; }
 function partyWiped(){ return aliveMembers().length===0; }
 function enemyHit(e, ally, base, critCh, critMul){           // enemy → ally (respects Brace guard)
+  // PHASE 5b — Silver's Foresight: the first incoming hit each battle is fully evaded
+  if(legendaries.silver && ally.key==='silver' && ally._foresightReady){
+    ally._foresightReady=false; lastCrit=false;
+    pushLog(`${ally.name.split(' ')[0]}'s Foresight reads the blow — fully EVADED! 🎯`,'sys');
+    return 0;
+  }
   let b=base-Math.max(0, ally.def);
   let dmg=critRoll(b, critCh, critMul);
   if(stHas(ally,'guard')) dmg=Math.ceil(dmg/2);
@@ -3607,11 +3655,12 @@ function startBattle(ch, y, x){
              over:false, kind:ENEMIES[ch].kind, opens:ENEMIES[ch].opens };
   svBuilt=0;   // force a fresh Status Window build for this fight's party
   // per-fight reset: statuses, cooldowns, drones, Platinum's Patch charges; revive KO'd to 1 HP
-  party.forEach(m=>{ m.st={}; m.cd={}; m.drone=null; m.special=0; if(!m.maxSpecial) m.maxSpecial=100; if(m.key==='platinum') m.patchCharges=3; if(m.hp<=0) m.hp=1; m.alive=true; });
+  party.forEach(m=>{ m.st={}; m.cd={}; m.drone=null; m.special=0; if(!m.maxSpecial) m.maxSpecial=100; if(m.key==='platinum') m.patchCharges=3; if(m.hp<=0) m.hp=1; m.alive=true; m._foresightReady=(m.key==='silver'); });
+  battle.dmgBy = { gold:0, silver:0, titanium:0, platinum:0 };   // Phase 5b: per-member damage share
   mode='battle'; busy=false; beatBusy=false; logLines=[];
   document.getElementById('stage').setAttribute('data-scene', SCENE_OF[ch]||'harbor');
   pushLog(ENEMIES[ch].intro, 'sys');
-  battle.activeIdx = firstLivingAlly(0);
+  beginAllyPhase();
   showScreen('battle');
   renderBattle();
   if(battle.kind==='boss'||battle.kind==='minib'){ flashScreen(); shakeScreen(); const rl=ENEMIES[ch].riseLog||'⚠ THE LEVIATHAN AWAKENS ⚠'; pushLog('⚠ '+rl+' ⚠','crit'); }
@@ -3802,6 +3851,22 @@ function commitAbility(id, targetIdx){
   if(lastDodge && r.kind==='hit' && target && !r.aoe){   // target wove away (Cursed Boxer evasion)
     r.log = `${target.name.split(' ')[0]} bobs and weaves — ${m.name.split(' ')[0]}'s blow MISSES!`; r.val=0; r.crit=false; r._dodged=true;
   }
+  // ===== PHASE 5b — legendary strike riders (post-Golfer only; no effect until unlocked) =====
+  if(anyLegendary() && r.kind==='hit' && !r._dodged){
+    // GOLD — Fairway Cleaver: a single-target strike lands a second time
+    if(legendaries.gold && m.key==='gold' && target && !r.aoe && (r.val||0)>0){
+      const extra=r.val; target.hp=Math.max(0,target.hp-extra); if(target.hp<=0) target.alive=false;
+      r.val+=extra; r.log += ' — Fairway Cleaver strikes TWICE! ⚓';
+    }
+    // TITANIUM — Fear Aura: hits may stun surviving targets with dread
+    if(legendaries.titanium && m.key==='titanium'){
+      const foes = r.aoe ? aliveFoes() : (target && target.alive ? [target] : []);
+      let feared=false;
+      foes.forEach(f=>{ if(Math.random()<0.30){ stAdd(f,'stun',1); feared=true; } });
+      if(feared) r.log += ' — Fear Aura STUNS! 🪓';
+    }
+  }
+  if(battle.dmgBy && r.kind==='hit' && (r.val||0)>0 && battle.dmgBy[m.key]!=null) battle.dmgBy[m.key]+=r.val;
   // hero swing animation
   pulse('stage-hero','swing',360);
   if(m.key==='gold') attackAnim((id==='overdrive'||id==='breachingBlow')?'overdrive':'strike');
@@ -3825,8 +3890,29 @@ function commitAbility(id, targetIdx){
   if(enemiesCleared()){ winBattle(); return; }
   advanceAlly();
 }
+/* Build the round's ally turn order. Baseline = living members in array order
+   (identical to firstLivingAlly walking). Phase 5b: Platinum's Initiative Core
+   jumps her to the front — engaged ONLY when that legendary is unlocked, so the
+   locked pre-finale balance is untouched. */
+function beginAllyPhase(){
+  const living = party.map((m,i)=>i).filter(i=>party[i].alive);
+  if(legendaries.platinum){
+    const pi = party.findIndex(m=>m.key==='platinum' && m.alive);
+    if(pi>=0) living.sort((a,b)=> a===pi?-1 : b===pi?1 : a-b);
+  }
+  battle.order = living; battle.orderPos = 0;
+  battle.activeIdx = living.length ? living[0] : -1;
+}
 function advanceAlly(){
-  const n=firstLivingAlly(battle.activeIdx+1);
+  let n=-1;
+  if(battle.order){
+    battle.orderPos++;
+    while(battle.orderPos < battle.order.length){
+      const c=battle.order[battle.orderPos];
+      if(party[c] && party[c].alive){ n=c; break; }
+      battle.orderPos++;
+    }
+  } else { n=firstLivingAlly(battle.activeIdx+1); }
   if(n===-1) allyPhaseDone(); else { battle.activeIdx=n; renderBattle(); }
 }
 function allyPhaseDone(){
@@ -3962,7 +4048,7 @@ function endOfRound(){
   if(partyWiped()){ gameOver(); return; }
   party.forEach(m=>{ for(const k in m.cd) if(m.cd[k]>0) m.cd[k]--; m.st.guard=0; });
   battle.enemies.forEach(e=>{ ['defDown','atkDown','mark'].forEach(k=>{ if(e.st[k]>0) e.st[k]--; }); });
-  battle.round++; battle.activeIdx=firstLivingAlly(0); busy=false; beatBusy=false; renderBattle();
+  battle.round++; beginAllyPhase(); busy=false; beatBusy=false; renderBattle();
 }
 
 function grantXP(m, xp){
@@ -3977,6 +4063,9 @@ function winBattle(){
   battle.over=true;
   const ch=battle.ch;
   pushLog('Target down — the crew stands tall!','sys');
+  // PHASE 5b: felling the Golfer (Episode-1 finale) awakens every crew member's legendary
+  const legendaryUnlock = (ch==='Q' && battle.kind==='boss' && !anyLegendary());
+  if(legendaryUnlock) unlockLegendaries();
   // Track location gate-boss defeat
   const locDef = LOCATION_DEFS[currentLocation];
   if(locDef && locDef.bossKey === ch) defeatedBosses[currentLocation] = true;
@@ -4006,7 +4095,7 @@ function winBattle(){
   if(battle.kind==='boss'){
     SFX.win();
     if(hasSalvage){ pendingSalvage=sid; pendingSalvageStat=SALVAGES[sid].stats[Math.floor(Math.random()*SALVAGES[sid].stats.length)]; salvageReturn='ending-briefing'; saveGame(); mode='salvage'; showScreen('salvage'); renderSalvage(sid); return; }
-    mode='ending-briefing'; showScreen('ending-briefing'); return;
+    mode='ending-briefing'; renderLegendaryReveal(); showScreen('ending-briefing'); return;
   }
   if(lvUps.length) SFX.level();
   if(hasSalvage){            // mini-boss (e.g. the Angry Fisherman): choose a salvage, then back to the streets
@@ -4053,7 +4142,7 @@ function applySalvage(memberKey){
   pendingSalvage = null; pendingSalvageStat = null;
   saveGame();
   if(salvageReturn === 'overworld'){ salvageReturn=null; mode='overworld'; showScreen('overworld'); renderOverworld(true); startPatrolTimer(); saveGame(); }
-  else if(salvageReturn === 'ending-briefing'){ salvageReturn=null; mode='ending-briefing'; showScreen('ending-briefing'); }
+  else if(salvageReturn === 'ending-briefing'){ salvageReturn=null; mode='ending-briefing'; renderLegendaryReveal(); showScreen('ending-briefing'); }
   else { salvageReturn=null; mode='victory'; showScreen('victory'); }
 }
 function openGate(gateChar){
