@@ -1148,10 +1148,13 @@
      wind-up (pull back AWAY from the hero) before the strike lands — no JS/timing
      change, the lunge is still the same .foe.foe-atk pulse. */
   @keyframes foeLunge{ 0%{ transform:translateX(0); } 18%{ transform:translateX(5px); } 42%{ transform:translateX(-13px); } 100%{ transform:translateX(0); } }
-  /* full enemy name, no word-split truncation, clean ellipsis if very long */
-  .foe-nm{ max-width:96px; margin:2px auto 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-    font-size:.54rem; text-align:center; }
-  .foe.boss .foe-nm{ max-width:112px; color:#ffd479; }
+  /* full enemy name — wraps to 2 lines instead of word-splitting or clipping,
+     so "Barnacle Scrapper" / "The Angry Fisherman" show in full (was the
+     name.split(' ')[0] "The" bug). Very long boss names cap at 3 lines. */
+  .foe-nm{ max-width:104px; margin:2px auto 0; font-size:.52rem; line-height:1.15;
+    text-align:center; white-space:normal; overflow:hidden; display:-webkit-box;
+    -webkit-box-orient:vertical; -webkit-line-clamp:2; }
+  .foe.boss .foe-nm{ max-width:124px; color:#ffd479; -webkit-line-clamp:3; }
   .foe-bar{ height:6px; box-shadow: inset 0 1px 2px rgba(0,0,0,.6); }
   .foe.boss .foe-bar{ height:7px; box-shadow: inset 0 1px 2px rgba(0,0,0,.6), 0 0 6px rgba(226,97,63,.4); }
 
