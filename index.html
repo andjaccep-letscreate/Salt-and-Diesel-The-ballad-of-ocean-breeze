@@ -1137,9 +1137,56 @@
   #legendary-reveal .legend-owner{ opacity:.7; font-size:12px; }
   #legendary-reveal .legend-pow{ font-size:12px; opacity:.82; }
 
+  /* ============ PHASE 1T: TITLE BACKDROP + BUTTON HIERARCHY ============ */
+  #title .skyline{ position:absolute; left:0; right:0; bottom:0; z-index:0; width:100%; height:62%;
+    pointer-events:none; display:block; }
+  /* translucent info panels so the skyline reads through them */
+  #title .bio{ background:rgba(10,16,24,.72); }
+  #title .blurb{ text-shadow:0 1px 3px rgba(0,0,0,.7); }
+  @keyframes skyDrift{ from{ transform:translateX(0); } to{ transform:translateX(26px); } }
+  #title .sky-dirigible{ animation: skyDrift 46s ease-in-out infinite alternate; }
+  #title .sky-dirigible.d2{ animation-duration:64s; animation-direction:alternate-reverse; }
+  @keyframes skyShimmer{ 0%,100%{ opacity:.22; } 50%{ opacity:.36; } }
+  #title .sky-refl{ animation: skyShimmer 5.5s ease-in-out infinite; }
+  @keyframes winFlicker{ 0%,91%,100%{ opacity:.5; } 94%{ opacity:.28; } }
+  #title .sky-win{ animation: winFlicker 9s steps(1) infinite; }
+  /* primary action: brass riveted panel; resume: quiet steel */
+  #title .btn.title-primary{
+    background:
+      radial-gradient(2.5px 2.5px at 7px 7px, rgba(217,164,65,.55) 0 55%, transparent 65%),
+      radial-gradient(2.5px 2.5px at calc(100% - 7px) 7px, rgba(217,164,65,.55) 0 55%, transparent 65%),
+      radial-gradient(2.5px 2.5px at 7px calc(100% - 7px), rgba(217,164,65,.55) 0 55%, transparent 65%),
+      radial-gradient(2.5px 2.5px at calc(100% - 7px) calc(100% - 7px), rgba(217,164,65,.55) 0 55%, transparent 65%),
+      linear-gradient(180deg,#2c2212,#1b1408);
+    border:2px solid var(--brass); color:var(--brass);
+    font-weight:800; letter-spacing:.1em; text-transform:uppercase;
+    box-shadow:0 0 0 1px rgba(217,164,65,.3), 0 0 14px rgba(217,164,65,.18), 0 4px 14px rgba(0,0,0,.55); }
+  #title .btn.title-secondary{
+    background:linear-gradient(180deg,#161d26,#0e141c);
+    border:2px solid var(--rivet); color:#b9c4cf; letter-spacing:.06em; }
+  #title .title-mute{ position:absolute; top:8px; right:8px; z-index:2; }
+
+  /* ---- Phase 1T: opening cards read as ONE Planck Agency case file ---- */
+  #briefing-intro .case-tab{
+    position:relative; z-index:10; align-self:flex-start;
+    margin-left:max(18px, calc(50% - 190px));   /* sit on the paper's left edge */
+    margin-bottom:-6px;
+    background:linear-gradient(180deg,#c9a86a,#ac8a4a); color:#241503;
+    font-size:.55rem; font-weight:800; letter-spacing:.14em;
+    padding:4px 12px 9px; border-radius:6px 6px 0 0;
+    box-shadow:0 -2px 8px rgba(0,0,0,.35); }
+  #briefing-intro .paper{
+    border-top:3px solid #ac8a4a;                        /* folder edge ties tab + page together */
+    max-height:calc(100svh - 224px); overflow-y:auto; }  /* long copy scrolls; it can never clip silently */
+  /* clearer progress dots: hollow upcoming, filled done, glowing current */
+  #briefing-intro .br-dot{ width:9px; height:9px; border:1px solid #6a4220; background:#241503; }
+  #briefing-intro .br-dot.done{ background:#6a4220; }
+  #briefing-intro .br-dot.on{ background:var(--brass); box-shadow:0 0 6px rgba(217,164,65,.6); }
+
   /* --- reduced-motion: every 1B-1 animation goes dead (cascade-last) --- */
   @media (prefers-reduced-motion: reduce){
     .foe-spr, .foe.boss .foe-spr, .foe.foe-atk{ animation:none; }
+    #title .sky-dirigible, #title .sky-dirigible.d2, #title .sky-refl, #title .sky-win{ animation:none; }
   }
 </style>
 </head>
@@ -1148,11 +1195,69 @@
 <!-- ============================ TITLE ============================ -->
 <div id="title" class="screen active">
   <div class="frame">
+    <!-- Phase 1T: layered dieselpunk backdrop — deco skyline, dirigibles, flood water -->
+    <svg class="skyline" viewBox="0 0 480 190" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+      <defs>
+        <linearGradient id="sky-water" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#0f2437"/><stop offset="1" stop-color="#081522"/>
+        </linearGradient>
+        <radialGradient id="sky-aethel" cx="0.5" cy="0.45" r="0.6">
+          <stop offset="0" stop-color="rgba(63,200,240,.26)"/><stop offset="1" stop-color="rgba(63,200,240,0)"/>
+        </radialGradient>
+      </defs>
+      <ellipse cx="244" cy="118" rx="190" ry="92" fill="url(#sky-aethel)"/>
+      <g fill="#0a1420"><!-- far skyline -->
+        <rect x="0" y="96" width="52" height="66"/><rect x="14" y="82" width="10" height="18"/>
+        <rect x="60" y="76" width="34" height="86"/><rect x="70" y="62" width="14" height="16"/>
+        <rect x="104" y="100" width="42" height="62"/>
+        <rect x="150" y="58" width="30" height="104"/><rect x="160" y="44" width="10" height="16"/><rect x="163" y="30" width="4" height="16"/>
+        <rect x="188" y="88" width="40" height="74"/>
+        <rect x="236" y="48" width="34" height="114"/><rect x="244" y="34" width="18" height="16"/><rect x="250" y="18" width="6" height="18"/>
+        <rect x="278" y="92" width="36" height="70"/>
+        <rect x="322" y="66" width="30" height="96"/><rect x="330" y="52" width="14" height="16"/>
+        <rect x="358" y="98" width="44" height="64"/>
+        <rect x="408" y="72" width="34" height="90"/><rect x="418" y="58" width="12" height="16"/>
+        <rect x="448" y="104" width="32" height="58"/>
+      </g>
+      <g fill="#101d2e"><!-- near skyline: deco setbacks -->
+        <rect x="24" y="118" width="60" height="46"/><rect x="36" y="106" width="36" height="14"/><rect x="48" y="96" width="12" height="12"/>
+        <rect x="120" y="112" width="54" height="52"/><rect x="132" y="100" width="30" height="14"/>
+        <rect x="206" y="96" width="64" height="68"/><rect x="220" y="82" width="36" height="16"/><rect x="232" y="68" width="12" height="16"/><rect x="236" y="54" width="4" height="16"/>
+        <rect x="300" y="116" width="52" height="48"/><rect x="312" y="104" width="28" height="14"/>
+        <rect x="380" y="108" width="58" height="56"/><rect x="394" y="94" width="30" height="16"/><rect x="404" y="82" width="10" height="14"/>
+      </g>
+      <g class="sky-win" fill="#ffd479" opacity=".5"><!-- amber windows -->
+        <rect x="40" y="126" width="3" height="4"/><rect x="52" y="134" width="3" height="4"/><rect x="64" y="126" width="3" height="4"/>
+        <rect x="134" y="120" width="3" height="4"/><rect x="150" y="130" width="3" height="4"/>
+        <rect x="222" y="106" width="3" height="4"/><rect x="238" y="118" width="3" height="4"/><rect x="252" y="128" width="3" height="4"/>
+        <rect x="314" y="124" width="3" height="4"/><rect x="330" y="134" width="3" height="4"/>
+        <rect x="394" y="118" width="3" height="4"/><rect x="410" y="128" width="3" height="4"/><rect x="424" y="140" width="3" height="4"/>
+      </g>
+      <g class="sky-win-c" fill="#3fc8f0" opacity=".4"><!-- cyan Aethel windows -->
+        <rect x="246" y="60" width="3" height="4"/><rect x="252" y="76" width="3" height="4"/><rect x="242" y="92" width="3" height="4"/>
+        <rect x="158" y="72" width="3" height="4"/><rect x="166" y="90" width="3" height="4"/>
+        <rect x="332" y="80" width="3" height="4"/><rect x="416" y="88" width="3" height="4"/>
+      </g>
+      <g class="sky-dirigible" opacity=".42" fill="#22303f"><!-- patrol dirigibles -->
+        <ellipse cx="96" cy="40" rx="22" ry="7"/><rect x="88" y="47" width="14" height="4" rx="2"/><path d="M116 36l10-4v16l-10-4z"/>
+      </g>
+      <g class="sky-dirigible d2" opacity=".3" fill="#1c2836">
+        <ellipse cx="380" cy="24" rx="16" ry="5"/><rect x="374" y="29" width="10" height="3" rx="1.5"/><path d="M395 21l7-3v12l-7-3z"/>
+      </g>
+      <rect x="0" y="160" width="480" height="30" fill="url(#sky-water)"/><!-- flood water -->
+      <g class="sky-refl" stroke="#3fc8f0" stroke-width="1" opacity=".22"><!-- Aethel reflections -->
+        <line x1="30" y1="167" x2="74" y2="167"/><line x1="120" y1="173" x2="180" y2="173"/>
+        <line x1="230" y1="166" x2="266" y2="166"/><line x1="320" y1="176" x2="392" y2="176"/>
+        <line x1="410" y1="168" x2="452" y2="168"/><line x1="60" y1="181" x2="128" y2="181"/>
+        <line x1="250" y1="183" x2="330" y2="183"/>
+      </g>
+    </svg>
+    <button class="muteBtn title-mute" onclick="toggleMute()" aria-label="Toggle sound">🔊</button>
     <div class="blimp">🛩️</div>
     <div class="sub deco">West Palm Beach &middot; 1947</div>
     <h1>Salt &amp; Diesel</h1>
     <div class="sub deco">The Ballad of Ocean Breeze</div>
-    <div class="sub deco" style="color:var(--cobalt-l);margin-top:-8px">Volume 1: Florida — Episode 1</div>
+    <div class="sub deco" style="color:var(--cobalt-l);margin-top:-8px">Volume 1: Florida — Episode&nbsp;1</div>
     <p class="blurb">Art-deco towers claw at a bruised sky. Dirigibles hang over the
     Intracoastal like fat brass wasps, and every oil-fired engine in town answers to one
     man: <span class="accent">Baron Castellane</span>. His syndicate runs the docks, the
@@ -1166,8 +1271,8 @@
       and a worn tan work shirt, a hydraulic wrench slung over one shoulder. Hits hard,
       fixes harder.
     </div>
-    <button class="btn" style="width:100%;font-size:1.1rem" onclick="startFromTitle()">Start the Job</button>
-    <button class="btn" id="continueBtn" style="width:100%;margin-top:10px;display:none" onclick="continueGame()">Continue</button>
+    <button class="btn title-primary" style="width:100%;font-size:1.1rem" onclick="startFromTitle()">Start the Job</button>
+    <button class="btn title-secondary" id="continueBtn" style="width:100%;margin-top:10px;display:none" onclick="continueGame()">Resume</button>
   </div>
 </div>
 
@@ -1176,6 +1281,7 @@
   <div class="room">
     <div class="lamp-glow"></div>
     <div class="door" id="br-door"></div>
+    <div class="case-tab" aria-hidden="true">PLANCK AGENCY · CASE FILE WPB-47</div>
     <div class="paper" id="br-paper">
       <div class="paper-stamp" id="br-stamp">RESTRICTED</div>
       <div class="paper-head" id="br-head">PLANCK AGENCY DISPATCH</div>
@@ -2022,21 +2128,21 @@ function typeFinish(){              // skip to the full line
    SOUND — all effects are SYNTHESIZED with the Web Audio API at runtime
    (no audio files), so the game stays a single self-contained HTML file.
    ================================================================= */
-let audioCtx = null, masterGain = null, musicGain = null;
+let audioCtx = null, masterGain = null;
 let masterMuted = false, sfxEnabled = true, musicEnabled = true, volume = 0.7;
 function initAudio(){                 // must be created after a user gesture
   if(audioCtx){ if(audioCtx.state==='suspended') audioCtx.resume(); return; }
   try {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    masterGain = audioCtx.createGain();              // master volume bus
+    masterGain = audioCtx.createGain();              // master volume bus (SFX)
     masterGain.gain.value = masterMuted ? 0 : volume;
     masterGain.connect(audioCtx.destination);
-    musicGain = audioCtx.createGain();               // music sits below SFX
-    musicGain.gain.value = 0.45;
-    musicGain.connect(masterGain);
   } catch(e){ audioCtx = null; }
 }
-function applyVolume(){ if(masterGain) masterGain.gain.value = masterMuted ? 0 : volume; }
+function applyVolume(){
+  if(masterGain) masterGain.gain.value = masterMuted ? 0 : volume;
+  if(typeof musicWatch === 'function') musicWatch();   // sync the music bed too
+}
 
 /* one short tone (an oscillator with a quick volume envelope) -> destination bus */
 function tone(freq, dur, type, gain, delay, dest){
@@ -2082,41 +2188,115 @@ function toggleMute(){
   masterMuted = !masterMuted;
   if(!masterMuted) initAudio();
   applyVolume();
+  saveAudioPref();
   document.querySelectorAll('.muteBtn').forEach(b => b.textContent = masterMuted ? '🔇' : '🔊');
 }
 
 /* =================================================================
-   PROCEDURAL MUSIC — a slow dieselpunk loop generated on the fly with a
-   lookahead scheduler (no audio files). A bass line walks an A-minor scale
-   while sparse bell notes drift on top.
+   PHASE 1T: SOUNDTRACK — three looping MP3 tracks in /audio/ (the one
+   approved external-asset exception; everything else stays inline).
+   Track choice follows `mode`; transitions crossfade over ~500ms.
+   SFX stay synthesized above. All audio prefs persist in their own
+   localStorage key, so the SAVE format is untouched.
    ================================================================= */
-const MUSIC_BASS = [110.00, 0, 130.81, 0, 146.83, 0, 110.00, 0,
-                    98.00, 0, 130.81, 0, 164.81, 0, 146.83, 0];   // 16 steps
-const MUSIC_BELL = [0, 0, 440.00, 0, 0, 523.25, 0, 0,
-                    0, 659.25, 0, 0, 587.33, 0, 0, 0];
-const STEP_DUR = 0.26;                 // seconds per 16th step (~slow groove)
-let musicStep = 0, nextNoteTime = 0, musicTimer = null;
-function musicTick(){
-  if(!musicEnabled || !audioCtx){ musicTimer = null; return; }
-  // schedule any notes due within the next 200ms
-  while(nextNoteTime < audioCtx.currentTime + 0.2){
-    const b = MUSIC_BASS[musicStep];
-    if(b) tone(b, STEP_DUR*0.9, 'triangle', 0.18, nextNoteTime - audioCtx.currentTime, musicGain);
-    const m = MUSIC_BELL[musicStep];
-    if(m) tone(m, STEP_DUR*1.4, 'sine', 0.10, nextNoteTime - audioCtx.currentTime, musicGain);
-    nextNoteTime += STEP_DUR;
-    musicStep = (musicStep + 1) % 16;
+const MUSIC_TRACKS = {
+  title:   'audio/salt-and-diesel.mp3',      // title + opening briefing
+  explore: 'audio/sodium-tide.mp3',          // overworld
+  battle:  'audio/saltwater-rail-yard.mp3',  // combat
+};
+const MUSIC_VOL = 0.6;          // music bed sits under the SFX
+const AUDIO_PREF_KEY = 'salt_diesel_audio_v1';
+let musicEls = {};              // name -> HTMLAudio, created lazily
+let musicCurrent = null;        // track name currently sounding
+let musicFadeTimer = null, musicWatchTimer = null;
+let musicUnlocked = false;      // browsers block audio until a user gesture
+
+function musicTargetVol(){ return (masterMuted || !musicEnabled) ? 0 : MUSIC_VOL * volume; }
+function musicEl(name){
+  if(typeof Audio === 'undefined' || !MUSIC_TRACKS[name]) return null;
+  if(!musicEls[name]){
+    const a = new Audio(MUSIC_TRACKS[name]);
+    a.loop = true;                                  // seamless repeat
+    a.preload = (name === 'title') ? 'auto' : 'none';   // title preloads; others lazy-load on first play
+    a.volume = 0;
+    musicEls[name] = a;
   }
-  musicTimer = setTimeout(musicTick, 60);
+  return musicEls[name];
+}
+/* which track this moment wants */
+function desiredTrack(){
+  if(mode === 'battle') return 'battle';
+  if(mode === 'title' || mode === 'briefing-intro' ||
+     mode === 'victory' || mode === 'gameover' || mode === 'ending-briefing') return 'title';
+  return 'explore';               // overworld, dialogue, salvage, reward, travel
+}
+/* ~500ms equal-fade to `name` (null = fade everything out) */
+function crossfadeTo(name){
+  if(typeof Audio === 'undefined') return;
+  if(musicCurrent === name){
+    const el = name && musicEls[name];
+    if(el) el.volume = musicTargetVol();            // live volume/mute sync
+    return;
+  }
+  const from = musicCurrent ? musicEls[musicCurrent] : null;
+  const fromName = musicCurrent;
+  const to = name ? musicEl(name) : null;
+  musicCurrent = name;
+  if(to){ to.volume = 0; const p = to.play(); if(p && p.catch) p.catch(()=>{}); }
+  if(musicFadeTimer) clearInterval(musicFadeTimer);
+  const t0 = fxNow(), DUR = 500, fromV0 = from ? from.volume : 0;
+  musicFadeTimer = setInterval(()=>{
+    const k = Math.min(1, (fxNow() - t0) / DUR);
+    if(from) from.volume = fromV0 * (1 - k);
+    if(to) to.volume = musicTargetVol() * k;
+    if(k >= 1){
+      clearInterval(musicFadeTimer); musicFadeTimer = null;
+      if(from && from !== to){
+        from.pause();
+        if(fromName === 'battle') from.currentTime = 0;   // each fight starts its theme fresh; explore resumes in place
+      }
+    }
+  }, 50);
+}
+function musicWatch(){
+  if(!musicUnlocked || typeof Audio === 'undefined') return;
+  crossfadeTo((musicEnabled && !masterMuted) ? desiredTrack() : null);
 }
 function startMusic(){
-  if(!musicEnabled) return;
-  initAudio();
-  if(!audioCtx || musicTimer) return;
-  nextNoteTime = audioCtx.currentTime + 0.1;
-  musicTick();
+  if(typeof Audio === 'undefined') return;
+  if(!musicWatchTimer) musicWatchTimer = setInterval(musicWatch, 400);   // follows mode changes; no combat hooks needed
+  musicWatch();
 }
-function stopMusic(){ if(musicTimer){ clearTimeout(musicTimer); musicTimer = null; } }
+function stopMusic(){                       // tab hidden / hard stop: pause instantly
+  if(musicWatchTimer){ clearInterval(musicWatchTimer); musicWatchTimer = null; }
+  if(musicFadeTimer){ clearInterval(musicFadeTimer); musicFadeTimer = null; }
+  for(const k in musicEls){ try{ musicEls[k].pause(); }catch(e){} }
+  musicCurrent = null;
+}
+/* first user gesture anywhere unlocks audio (autoplay policy) */
+function unlockAudio(){
+  if(musicUnlocked) return;
+  musicUnlocked = true;
+  initAudio();
+  startMusic();
+}
+if(typeof document !== 'undefined' && document.addEventListener){
+  document.addEventListener('pointerdown', unlockAudio, true);
+  document.addEventListener('keydown', unlockAudio, true);
+}
+/* audio preferences: own key — NOT part of the run save */
+function saveAudioPref(){
+  try{ localStorage.setItem(AUDIO_PREF_KEY, JSON.stringify({ musicEnabled, sfxEnabled, masterMuted, volume })); }catch(e){}
+}
+function loadAudioPref(){
+  try{
+    const p = JSON.parse(localStorage.getItem(AUDIO_PREF_KEY) || '{}');
+    if(typeof p.musicEnabled === 'boolean') musicEnabled = p.musicEnabled;
+    if(typeof p.sfxEnabled === 'boolean') sfxEnabled = p.sfxEnabled;
+    if(typeof p.masterMuted === 'boolean') masterMuted = p.masterMuted;
+    if(typeof p.volume === 'number') volume = Math.max(0, Math.min(1, p.volume));
+  }catch(e){}
+}
 
 /* ----------------------- settings menu ----------------------- */
 let menuOpen = false;
@@ -2145,18 +2325,20 @@ function toggleNoir(){
   const b = document.getElementById('set-noir');
   b.textContent = noirOn ? 'ON' : 'OFF'; b.classList.toggle('off', !noirOn);
 }
-function setVolume(v){ volume = Math.max(0, Math.min(1, v/100)); initAudio(); applyVolume(); }
+function setVolume(v){ volume = Math.max(0, Math.min(1, v/100)); initAudio(); applyVolume(); saveAudioPref(); }
 function toggleSfx(){
   sfxEnabled = !sfxEnabled;
   const b = document.getElementById('set-sfx');
   b.textContent = sfxEnabled ? 'ON' : 'OFF'; b.classList.toggle('off', !sfxEnabled);
   if(sfxEnabled){ initAudio(); SFX.pickup(); }
+  saveAudioPref();
 }
 function toggleMusic(){
   musicEnabled = !musicEnabled;
   const b = document.getElementById('set-music');
   b.textContent = musicEnabled ? 'ON' : 'OFF'; b.classList.toggle('off', !musicEnabled);
-  if(musicEnabled) startMusic(); else stopMusic();
+  startMusic();          // the watcher fades the bed in or out to match the flag
+  saveAudioPref();
 }
 
 /* =================================================================
@@ -2900,7 +3082,7 @@ const BRIEFING_PAGES = [
     head:'PLANCK AGENCY DISPATCH',
     title:'MISSION BRIEFING',
     sub:'WEST PALM BEACH · FLORIDA · 1947',
-    body:"Sparkplug — Larry. West Palm Beach is 70% under and the city is fractured. A signal artifact of unknown origin surfaced on the coast. The docks are crooked, the law looks the other way, and three field contacts are standing by. Find them. Find the artifact. Don't get wet.",
+    body:"Sparkplug — Larry. You deploy ALONE: callsign GOLD, first boots on the flooded ground. Your three field contacts join you out there. West Palm Beach is 70% under and the city is fractured. A signal artifact of unknown origin surfaced on the coast. The docks are crooked and the law looks the other way. Find your contacts. Find the artifact. Don't get wet.",
     blur:false,
   },
   {
@@ -2953,7 +3135,7 @@ function renderBriefingPage(){
   const isLast = brIndex === BRIEFING_PAGES.length - 1;
   document.getElementById('br-btn').textContent = isLast ? 'Head Out' : 'Next';
   document.getElementById('br-dots').innerHTML =
-    BRIEFING_PAGES.map((_,i) => `<span class="br-dot${i===brIndex?' on':''}"></span>`).join('');
+    BRIEFING_PAGES.map((_,i) => `<span class="br-dot${i===brIndex?' on':(i<brIndex?' done':'')}"></span>`).join('');
 }
 function briefingNext(){
   if(!twDone){ typeFinish(); return; }
@@ -3012,7 +3194,7 @@ function refreshContinueBtn(){
       if(loc){ b.textContent = 'Resume — ' + loc.name; return; }
     }
   }catch(e){}
-  b.textContent = 'Continue';
+  b.textContent = 'Resume';
 }
 function continueGame(){
   try{
@@ -4138,6 +4320,11 @@ function autoPickAndAct(policy){
 
 
 /* ----------------------- BOOT ------------------------------------- */
+loadAudioPref();                                    // restore mute/volume prefs (own key, not the run save)
+if(typeof document !== 'undefined' && document.querySelectorAll){
+  document.querySelectorAll('.muteBtn').forEach(b => b.textContent = masterMuted ? '🔇' : '🔊');
+}
+musicEl('title');                                   // preload the title theme; the other two lazy-load
 newGame();
 </script>
 </body>
