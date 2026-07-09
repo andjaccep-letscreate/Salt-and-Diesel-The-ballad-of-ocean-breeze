@@ -253,3 +253,10 @@ Beginner-friendly on purpose — see `CLAUDE.md` for the format and rules.
 - Learned: CSS animations REPLACE the whole transform, so a depth scale on the same element gets wiped mid-animation — the fix is composing the scale into the keyframes via a CSS var (scale(var(--fs,1)) translateX(...)). Also: an unseeded sim varies run-to-run even on identical code, so "zero drift" is only provable with a seeded RNG A/B — ours came back byte-identical across 16 scenarios × 200 runs.
 - Gotchas: The sim's fake DOM lacks style.setProperty — any new CSS-var write from JS needs a guard or the headless suites crash. The seeded A/B first "failed" because the driver's policy functions used Node's Math.random while the game used the sandbox's — two streams; unifying them fixed it.
 - Next:    Awaiting hub sign-off on the 1B-2 preview. Note: 1T and 1B-2 are both on the branch, unmerged.
+
+## [2026-07-09] — 1B-2b follow-up: the fight owns half the screen
+- Goal:    Andres' adjustment after merging 1B-2 — in battle, at least half the screen goes to the stage and the fighting characters.
+- Did:     CSS only. Stage height: 215px → max(38svh, min(50svh, 100svh−420px)) — exactly 50% of a 390×844 phone, gracefully smaller on short phones so the HUD never clips. Sprites scaled with it (crew ~184px tall, foes 96px/126px boss). Compacted the log (48px) and crew status cards so the whole battle column fits 844px with zero scroll and the commands stay in the thumb zone. Tightened enemy-slot spread so the two bigger formations don't touch mid-stage.
+- Learned: svh units ("small viewport height") measure the viewport with mobile browser bars visible — safer than vh for "fits on one phone screen" math.
+- Gotchas: The first pass overflowed by 66px — the status window was the hog (85px/card after the legibility bumps); compacting paddings/meter heights won it back without shrinking any text.
+- Next:    Awaiting sign-off on the 1B-2b preview. 1T + 1B-2 are already merged to main; only this adjustment is pending.

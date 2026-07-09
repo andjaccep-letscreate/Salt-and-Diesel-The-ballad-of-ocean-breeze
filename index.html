@@ -1205,6 +1205,25 @@
     animation: curBob .7s ease-in-out infinite; }
   @keyframes curBob{ 0%,100%{ transform:translate(-50%,0); } 50%{ transform:translate(-50%,5px); } }
 
+  /* ============ PHASE 1B-2b: THE FIGHT OWNS ≥HALF THE SCREEN ============ */
+  /* 50svh at 390x844; shorter phones gracefully cede room to the HUD
+     (never under 38svh, never starving the ~396px command zone) */
+  #stage{ height:50vh; height:max(38svh, min(50svh, calc(100svh - 420px))); }
+  /* combatants scale WITH the bigger stage */
+  #stage-hero, .ally{ height:44%; }
+  .foe{ width:96px; } .foe.boss{ width:126px; }
+  .foe-spr{ height:96px; } .foe.boss .foe-spr{ height:126px; }
+  .foe-nm{ max-width:126px; font-size:.6rem; } .foe.boss .foe-nm{ max-width:150px; }
+  .foe-emoji{ font-size:3.1rem; }
+  /* compact the log + status rows so every control stays in the bottom thumb
+     zone with zero scroll: 422(stage)+48(log)+~296(hud)+44(bbar)+gaps ≤ 844 */
+  .log{ height:48px; font-size:.74rem; }
+  #battle{ gap:6px; }
+  .svc{ padding:2px 6px 3px; gap:0 7px; }
+  .svc .meter{ margin-top:1px; }
+  .svc .meter .mtrk{ height:6px; }
+  .svc-em{ font-size:1.35rem; width:27px; height:27px; }
+
   /* --- reduced-motion: every 1B-1 animation goes dead (cascade-last) --- */
   @media (prefers-reduced-motion: reduce){
     .foe-spr, .foe.boss .foe-spr, .foe.foe-atk{ animation:none; }
@@ -3809,9 +3828,9 @@ function foeStatus(e){ let s=''; if(stHas(e,'mark'))s+='🎯'; if(stHas(e,'burn'
    indexed by the enemy's ORIGINAL index, so survivors never shuffle around. */
 const FOE_SLOTS = {
   1: [[10,  9, 1.24, 5]],
-  2: [[ 5,  7, 1.10, 5], [26, 19, 0.92, 4]],
-  3: [[ 4,  6, 1.08, 5], [27, 13, 0.95, 4], [13, 27, 0.82, 3]],
-  4: [[ 3,  6, 1.05, 5], [27, 10, 0.94, 4], [10, 25, 0.84, 3], [31, 30, 0.76, 2]],
+  2: [[ 5,  7, 1.10, 5], [24, 19, 0.92, 4]],
+  3: [[ 4,  6, 1.08, 5], [24, 13, 0.95, 4], [12, 27, 0.82, 3]],
+  4: [[ 2,  6, 1.05, 5], [22,  9, 0.94, 4], [ 8, 24, 0.84, 3], [26, 30, 0.76, 2]],
 };
 function foeSlot(i){ const t=FOE_SLOTS[Math.min(battle.enemies.length,4)]||FOE_SLOTS[4]; return t[Math.min(i,t.length-1)]; }
 /* Dragon-Quest-style A/B/C/D suffix for duplicate enemy names (display only) */
