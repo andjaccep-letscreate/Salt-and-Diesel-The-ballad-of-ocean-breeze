@@ -204,23 +204,14 @@
   #stage-hero.swing{ animation: heroLunge .35s ease; }
 
   /* ---- LEFT crew formation: 4 silhouette chips stacked diagonally on the stage ---- */
-  #stage-crew{ position:absolute; left:3%; top:7%; z-index:2; display:flex; flex-direction:column;
-    gap:3px; pointer-events:none; }
-  .crew-chip{ display:flex; align-items:center; gap:3px; padding:1px 5px 1px 3px; border-radius:8px;
-    background:rgba(8,11,16,.62); border:1.5px solid var(--rivet); font-size:.6rem; color:#cdd3da;
-    transition:box-shadow .25s, border-color .25s, opacity .25s, transform .25s; opacity:.78; }
-  .crew-chip .cc-sil{ width:13px; height:18px; border-radius:3px 3px 1px 1px;
-    background:linear-gradient(180deg, var(--cc,#9aa3ad), #2b3038); box-shadow:inset 0 0 3px rgba(0,0,0,.5); }
-  .crew-chip .cc-em{ font-size:.72rem; }
-  .crew-chip:nth-child(1){ margin-left:0; }   .crew-chip:nth-child(2){ margin-left:14px; }
-  .crew-chip:nth-child(3){ margin-left:28px; } .crew-chip:nth-child(4){ margin-left:42px; }
-  .crew-chip.active{ opacity:1; border-color:var(--cc,#fff2c2); transform:translateX(4px);
-    box-shadow:0 0 0 1px var(--cc,#fff2c2), 0 0 9px var(--cc,#fff2c2); }
-  .crew-chip.ko{ opacity:.32; filter:grayscale(.85); }
-
-  /* RIGHT enemy zone: pre-allocated slots */
-  #stage-enemies{ min-width:64px; min-height:40px; }
-  #stage-enemies .foe-slot{ width:62px; opacity:.0; }   /* reserved empty slot keeps spacing stable */
+  /* 1B-2: #stage-crew is the full-party lineup layer (real sprites, not chips) */
+  #stage-crew{ position:absolute; inset:0; z-index:2; pointer-events:none; }
+  .ally{ position:absolute; height:46%; aspect-ratio:32/48;
+    transform:scale(var(--as,1)); transform-origin:50% 100%; opacity:.94; }
+  .ally .sprite, .ally > svg, .ally > div > svg{ width:100%; height:100%; display:block; }
+  .ally::after{ content:""; position:absolute; left:6%; right:6%; bottom:-4px; height:9px;
+    background:radial-gradient(50% 50% at 50% 50%, rgba(0,0,0,.5), transparent 72%); }
+  .ally.ko{ opacity:.35; filter:grayscale(.9); }
 
   /* ---- LOWER combat HUD: Action Menu (left) + Status Window (right) ---- */
   #combat-hud{ width:100%; max-width:480px; display:flex; gap:8px; align-items:stretch; }
@@ -339,7 +330,7 @@
     #stage .stage-haze, #stage-hero.flinch,
     #stage-hero.swing, .foe.foe-atk, .foe.knock, .foe.targetable{ animation:none; }
     /* under reduced motion, .struck (opacity blink) and .guard remain as the hit feedback */
-    .meter .mfill, .crew-chip, .svc{ transition:none; }   /* meters snap instead of sliding */
+    .meter .mfill, .svc{ transition:none; }   /* meters snap instead of sliding */
   }
 
   /* ---- battle feedback: screen shake (floating numbers use pooled .fx-float) ---- */
@@ -914,9 +905,7 @@
     box-shadow:0 0 0 1px #3fc8f0, 0 0 12px rgba(0,217,255,.30); }
   .svc.active .svc-nm{ color:#aef4ff; }
   .svc.active .svc-nm::before{ content:"▶ "; color:#3fc8f0; font-size:.55rem; }
-  @keyframes caretPulse{ 0%,100%{ opacity:.45; transform:translateX(0); } 50%{ opacity:1; transform:translateX(-2px); } }
-  .crew-chip.active::after{ content:"◀"; color:#3fc8f0; font-size:.55rem; margin-left:2px;
-    animation: caretPulse 1.1s ease-in-out infinite; }
+  /* (1B-2: the stage-side active tell is now #stage-hero's cyan glow + step-forward) */
 
   /* --- battle UI dressing: riveted panels + cyan accents (skin only) --- */
   .log{ background:linear-gradient(180deg,#0a1119,#05070a); border:2px solid var(--brass-d);
@@ -931,7 +920,7 @@
 
   /* --- reduced-motion: every animation introduced by 1V-2 goes dead here --- */
   @media (prefers-reduced-motion: reduce){
-    #stage-hero:not(.larry) .sprite, .foe-spr, .foe.boss .foe-spr, .crew-chip.active::after,
+    #stage-hero:not(.larry) .sprite, .foe-spr, .foe.boss .foe-spr,
     #battle:has(#stage-hero.flinch)::after{ animation:none; }
   }
 
@@ -1183,10 +1172,46 @@
   #briefing-intro .br-dot.done{ background:#6a4220; }
   #briefing-intro .br-dot.on{ background:var(--brass); box-shadow:0 0 6px rgba(217,164,65,.6); }
 
+  /* ============ PHASE 1B-2: FULL-PARTY / ALL-ENEMY STAGE (cascade-last) ============ */
+  /* taller stage buys room for two staggered formations; HUD stays in the thumb zone */
+  #stage{ height:min(56vw,215px); }
+  /* hero = the ACTIVE member, standing in their lineup slot (inline left/bottom/z
+     from setStageSprite). Cyan Aethel glow + slot step-forward = the turn tell. */
+  #stage-hero{ height:46%; transform:scale(var(--as,1)); transform-origin:50% 100%;
+    filter:drop-shadow(0 0 6px rgba(63,200,240,.45));
+    transition:left .25s ease, bottom .25s ease; }
+  /* hero action anims must COMPOSE with the depth scale (last @keyframes wins) */
+  @keyframes heroLunge{ 0%,100%{ transform:scale(var(--as,1)) translateX(0); } 35%{ transform:scale(var(--as,1)) translateX(7px); } }
+  @keyframes heroLungeBig{ 0%,100%{ transform:scale(var(--as,1)) translateX(0); } 30%{ transform:scale(var(--as,1)) translateX(11px); } }
+  @keyframes flinchL{ 0%,100%{ transform:scale(var(--as,1)) translateX(0);} 30%{ transform:scale(var(--as,1)) translateX(-8px);} 55%{ transform:scale(var(--as,1)) translateX(2px);} 80%{ transform:scale(var(--as,1)) translateX(-3px);} }
+  /* idle breathe for the waiting allies (Larry has his own body-bob) */
+  .ally:not(.larry) svg{ animation: stageBreathe 3.4s ease-in-out infinite; }
+  .ally:nth-child(2):not(.larry) svg{ animation-delay:-1.1s; }
+  .ally:nth-child(3):not(.larry) svg{ animation-delay:-2.2s; }
+  /* enemy zone becomes a full-stage depth layer; each .foe sits on its slot */
+  #stage-enemies{ position:absolute; inset:0; display:block; min-width:0; min-height:0;
+    z-index:2; pointer-events:none; }
+  .foe{ position:absolute; pointer-events:auto; transform:scale(var(--fs,1)); transform-origin:50% 100%; }
+  /* foe hit/telegraph anims compose with the depth scale (keeps the 1B-1 wind-up) */
+  @keyframes knockR{ 0%,100%{ transform:scale(var(--fs,1)) translateX(0);} 30%{ transform:scale(var(--fs,1)) translateX(9px);} 60%{ transform:scale(var(--fs,1)) translateX(3px);} }
+  @keyframes foeLunge{ 0%{ transform:scale(var(--fs,1)) translateX(0); } 18%{ transform:scale(var(--fs,1)) translateX(5px); } 42%{ transform:scale(var(--fs,1)) translateX(-13px); } 100%{ transform:scale(var(--fs,1)) translateX(0); } }
+  /* emoji-fallback foes stand ON the ground line, not adrift at the box top */
+  .foe-spr{ display:flex; align-items:flex-end; justify-content:center; }
+  .foe-emoji{ font-size:2.3rem; line-height:1; filter:drop-shadow(0 4px 4px rgba(0,0,0,.5)); }
+  /* bouncing selection cursor over targetable enemies */
+  .tgt-cur{ position:absolute; top:-15px; left:50%; z-index:6; pointer-events:none;
+    color:var(--brass); font-size:.85rem;
+    text-shadow:0 0 6px rgba(217,164,65,.85), 0 1px 2px #000;
+    animation: curBob .7s ease-in-out infinite; }
+  @keyframes curBob{ 0%,100%{ transform:translate(-50%,0); } 50%{ transform:translate(-50%,5px); } }
+
   /* --- reduced-motion: every 1B-1 animation goes dead (cascade-last) --- */
   @media (prefers-reduced-motion: reduce){
     .foe-spr, .foe.boss .foe-spr, .foe.foe-atk{ animation:none; }
     #title .sky-dirigible, #title .sky-dirigible.d2, #title .sky-refl, #title .sky-win{ animation:none; }
+    .tgt-cur{ animation:none; transform:translate(-50%,0); }   /* cursor stays visible, just static */
+    .ally:not(.larry) svg{ animation:none; }
+    #stage-hero{ transition:none; }
   }
 </style>
 </head>
@@ -3769,8 +3794,32 @@ function setStageSprite(m){
   const el=document.getElementById('stage-hero'); if(!el) return;
   if(m.key==='gold'){ const pl=document.getElementById('player'); el.innerHTML=pl?pl.innerHTML:''; el.classList.add('larry'); el.setAttribute('data-dir','right'); }
   else { el.innerHTML=MEMBER_SVG[m.key]||('<div style="font-size:2rem">'+m.emoji+'</div>'); el.classList.remove('larry'); }
+  // 1B-2: park the hero sprite in the active member's lineup slot, one step
+  // forward of it (the classic "it's my turn" step) — presentation only
+  const i = battle ? Math.max(0, battle.activeIdx) : 0;
+  const [L,B,S,Z] = allySlot(i);
+  if(el.style){ el.style.left=(L+4)+'%'; el.style.bottom=B+'%'; el.style.zIndex=Z+1;
+    if(el.style.setProperty) el.style.setProperty('--as', S); }
 }
 function foeStatus(e){ let s=''; if(stHas(e,'mark'))s+='🎯'; if(stHas(e,'burn'))s+='🔥'; if(stHas(e,'stun'))s+='💫'; if(stHas(e,'defDown'))s+='<span class="dn">DEF↓</span>'; if(stHas(e,'atkDown'))s+='<span class="dn">ATK↓</span>'; return s; }
+/* ============ PHASE 1B-2: ENEMY FORMATION (presentation only) ============
+   Every enemy in the encounter is drawn at once on depth slots — front row
+   larger and lower, back row smaller and higher, slight overlap, nearer in
+   front (research Area 1). Slots are keyed by the encounter's TOTAL size and
+   indexed by the enemy's ORIGINAL index, so survivors never shuffle around. */
+const FOE_SLOTS = {
+  1: [[10,  9, 1.24, 5]],
+  2: [[ 5,  7, 1.10, 5], [26, 19, 0.92, 4]],
+  3: [[ 4,  6, 1.08, 5], [27, 13, 0.95, 4], [13, 27, 0.82, 3]],
+  4: [[ 3,  6, 1.05, 5], [27, 10, 0.94, 4], [10, 25, 0.84, 3], [31, 30, 0.76, 2]],
+};
+function foeSlot(i){ const t=FOE_SLOTS[Math.min(battle.enemies.length,4)]||FOE_SLOTS[4]; return t[Math.min(i,t.length-1)]; }
+/* Dragon-Quest-style A/B/C/D suffix for duplicate enemy names (display only) */
+function foeLabel(i){
+  const nm=battle.enemies[i].name; let total=0, ord=0;
+  battle.enemies.forEach((e,j)=>{ if(e.name===nm){ total++; if(j<=i) ord++; } });
+  return total>1 ? ' '+String.fromCharCode(64+ord) : '';
+}
 function renderEnemies(){
   const wrap=document.getElementById('stage-enemies'); if(!wrap) return;
   const targeting = !!(battle.await && battle.await.tgt==='enemy');
@@ -3784,36 +3833,58 @@ function renderEnemies(){
       const bar=el.querySelector('.foe-bar i');
       if(bar) bar.style.width=Math.max(0,Math.min(100,e.hp/e.maxHp*100))+'%';
       const nm=el.querySelector('.foe-nm');
-      if(nm){ const h=`${e.name} ${foeStatus(e)}`; if(nm.innerHTML!==h) nm.innerHTML=h; }
+      if(nm){ const h=`${e.name}${foeLabel(i)} ${foeStatus(e)}`; if(nm.innerHTML!==h) nm.innerHTML=h; }
     });
     return;
   }
-  let html = battle.enemies.map((e,i)=>{
+  const html = battle.enemies.map((e,i)=>{
     if(!e.alive) return '';
     const pct=Math.max(0,Math.min(100,e.hp/e.maxHp*100));
     const tgt = targeting ? ' targetable':'';
     const kb  = targeting ? ` role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();pickTarget(${i});}"` : '';
-    return `<div class="foe${e.boss?' boss':''}${tgt}" id="foe${i}" onclick="pickTarget(${i})"${kb}>
-      <div class="foe-spr">${e.svg||('<span style=\"font-size:1.7rem\">'+e.face+'</span>')}</div>
+    const [R,B,S,Z]=foeSlot(i);
+    const cur = targeting ? '<span class="tgt-cur" aria-hidden="true">▼</span>' : '';
+    return `<div class="foe${e.boss?' boss':''}${tgt}" id="foe${i}" onclick="pickTarget(${i})"${kb}
+      style="right:${R}%;bottom:${B}%;z-index:${Z};--fs:${S}">${cur}
+      <div class="foe-spr">${e.svg||('<span class="foe-emoji">'+e.face+'</span>')}</div>
       <div class="foe-bar"><i style="width:${pct}%"></i></div>
-      <div class="foe-nm" title="${e.name}">${e.name} ${foeStatus(e)}</div></div>`;
+      <div class="foe-nm" title="${e.name}${foeLabel(i)}">${e.name}${foeLabel(i)} ${foeStatus(e)}</div></div>`;
   }).join('');
-  // pre-allocate the enemy zone to 3 slots so the layout stays stable as foes fall
-  const liveSlots = battle.enemies.filter(e=>e.alive).length;
-  for(let s=liveSlots; s<3; s++) html += '<div class="foe-slot"></div>';
   wrap.innerHTML = html;
   wrap.dataset.sig = sig;
 }
-/* LEFT crew formation: 4 diagonal silhouette chips (cosmetic team presence) */
+/* ============ PHASE 1B-2: FULL PARTY LINEUP (presentation only) ============
+   Every present crew member stands on the stage in a staggered side-view
+   column — nearer = lower, larger, in front (research Area 1 depth cues).
+   The ACTIVE member's slot is taken by #stage-hero (so all existing swing/
+   flinch/float FX keep their anchor); the others render here as .ally
+   sprites using the exact same art setStageSprite() uses. */
 const CREW_TINT={ gold:'#d9a441', silver:'#cfd6de', titanium:'#3fcf9e', platinum:'#3fa9ff' };
+/* slot tables per party size: [leftPct, bottomPct, scale, z]. Fewer bodies =
+   bigger + more spread (empty-stage guard). Index = position in `party`. */
+const ALLY_SLOTS = {
+  1: [[10, 10, 1.18, 5]],
+  2: [[13,  8, 1.08, 5], [4, 22, 0.94, 4]],
+  3: [[14,  7, 1.02, 5], [7, 18, 0.92, 4], [1, 29, 0.84, 3]],
+  4: [[15,  6, 1.00, 5], [9, 16, 0.92, 4], [4, 26, 0.85, 3], [0, 36, 0.78, 2]],
+};
+function allySlot(i){ const t=ALLY_SLOTS[party.length]||ALLY_SLOTS[4]; return t[Math.min(i,t.length-1)]; }
+function allyArt(m){
+  if(m.key==='gold'){ const pl=document.getElementById('player'); return pl?pl.innerHTML:''; }
+  return MEMBER_SVG[m.key]||('<div style="font-size:2rem">'+m.emoji+'</div>');
+}
 function renderCrew(){
   const wrap=document.getElementById('stage-crew'); if(!wrap) return;
+  const sig = party.length+'|'+battle.activeIdx+'|'+party.map(m=>m.alive?1:0).join('')+'|'+(battle.over?'o':'');
+  if(wrap.dataset && wrap.dataset.sig===sig) return;      // rebuild only on turn/KO change — keeps idle anims smooth
   wrap.innerHTML = party.map((m,i)=>{
-    const active=(!busy && i===battle.activeIdx && !battle.over)?' active':'';
+    if(i===battle.activeIdx && !battle.over) return '';   // the active slot is #stage-hero itself
+    const [L,B,S,Z]=allySlot(i);
     const ko=m.hp<=0?' ko':'';
-    return `<div class="crew-chip${active}${ko}" style="--cc:${CREW_TINT[m.key]||'#9aa3ad'}">
-      <span class="cc-sil"></span><span class="cc-em">${m.emoji}</span></div>`;
+    const larry=m.key==='gold'?' larry':'';
+    return `<div class="ally${ko}${larry}" data-dir="right" style="left:${L}%;bottom:${B}%;z-index:${Z};--as:${S};--cc:${CREW_TINT[m.key]||'#9aa3ad'}">${allyArt(m)}</div>`;
   }).join('');
+  if(wrap.dataset) wrap.dataset.sig = sig;
 }
 /* Status Window: structure is BUILT ONCE per fight; updateStatus() then only
    mutates style.width / classes / textContent so the CSS meters slide smoothly
