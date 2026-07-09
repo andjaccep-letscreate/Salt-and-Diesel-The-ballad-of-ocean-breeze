@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:,"><!-- no favicon fetch: keeps hosted consoles clean -->
 <title>SALT &amp; DIESEL — The Ballad of Ocean Breeze</title>
 <style>
   /* ============================ THEME ============================ */
@@ -1129,9 +1130,6 @@
   /* ============ PHASE 1T: TITLE BACKDROP + BUTTON HIERARCHY ============ */
   #title .skyline{ position:absolute; left:0; right:0; bottom:0; z-index:0; width:100%; height:62%;
     pointer-events:none; display:block; }
-  /* translucent info panels so the skyline reads through them */
-  #title .bio{ background:rgba(10,16,24,.72); }
-  #title .blurb{ text-shadow:0 1px 3px rgba(0,0,0,.7); }
   @keyframes skyDrift{ from{ transform:translateX(0); } to{ transform:translateX(26px); } }
   #title .sky-dirigible{ animation: skyDrift 46s ease-in-out infinite alternate; }
   #title .sky-dirigible.d2{ animation-duration:64s; animation-direction:alternate-reverse; }
@@ -1224,6 +1222,35 @@
   .svc .meter .mtrk{ height:6px; }
   .svc-em{ font-size:1.35rem; width:27px; height:27px; }
 
+  /* ============ PHASE 1T-3: TRANSITION VEIL + MINIMAL TITLE ============ */
+  /* the skyline key art carries the minimal title; the flexible spacer pushes
+     the start affordance down into the bottom thumb zone */
+  #title .frame{ min-height:min(92svh, 740px); display:flex; flex-direction:column; }
+  #title .title-spacer{ flex:1 1 auto; min-height:90px; }
+  @keyframes startPulse{ 0%,100%{ box-shadow:0 0 0 1px rgba(217,164,65,.3), 0 0 14px rgba(217,164,65,.18), 0 4px 14px rgba(0,0,0,.55); }
+    50%{ box-shadow:0 0 0 1px rgba(217,164,65,.55), 0 0 26px rgba(217,164,65,.42), 0 4px 14px rgba(0,0,0,.55); } }
+  #title .btn.title-primary{ animation: startPulse 2.6s ease-in-out infinite; }
+  /* world->battle veil */
+  #veil{ position:fixed; inset:0; z-index:80; display:none; pointer-events:none; }
+  #veil.on{ display:block; }
+  #veil .v-flash, #veil .v-mosaic, #veil .v-black{ position:absolute; inset:0; opacity:0; }
+  #veil .v-flash{ background:#fff; }
+  #veil.p1 .v-flash{ animation: veilFlash .3s ease-out forwards; }
+  @keyframes veilFlash{ 0%{ opacity:0; } 30%{ opacity:.85; } 100%{ opacity:0; } }
+  #veil .v-mosaic{ background:conic-gradient(#05070a 0 25%, transparent 0 50%, #05070a 0 75%, transparent 0);
+    background-size:10px 10px; }
+  #veil.p2 .v-mosaic{ animation: veilMosaic .46s steps(7) forwards; }
+  @keyframes veilMosaic{ 0%{ opacity:.25; background-size:8px 8px; } 100%{ opacity:1; background-size:130px 130px; } }
+  #veil .v-black{ background:#000; }
+  #veil.p3 .v-black{ opacity:1; }
+  #veil.rm .v-black{ animation: veilIn .22s ease forwards; }   /* reduced-motion: plain fade */
+  @keyframes veilIn{ from{ opacity:0; } to{ opacity:1; } }
+  #veil.out .v-black{ animation: veilOut .24s ease forwards; }
+  @keyframes veilOut{ from{ opacity:1; } to{ opacity:0; } }
+  /* battle screen pops in as the veil clears */
+  @keyframes battlePop{ from{ opacity:.25; transform:scale(1.015); } to{ opacity:1; transform:none; } }
+  #battle.battle-in{ animation: battlePop .24s ease; }
+
   /* --- reduced-motion: every 1B-1 animation goes dead (cascade-last) --- */
   @media (prefers-reduced-motion: reduce){
     .foe-spr, .foe.boss .foe-spr, .foe.foe-atk{ animation:none; }
@@ -1231,6 +1258,9 @@
     .tgt-cur{ animation:none; transform:translate(-50%,0); }   /* cursor stays visible, just static */
     .ally:not(.larry) svg{ animation:none; }
     #stage-hero{ transition:none; }
+    #title .btn.title-primary{ animation:none; }               /* gentle pulse off; static brass reads fine */
+    #veil.p1 .v-flash, #veil.p2 .v-mosaic{ animation:none; }   /* belt+braces: JS already picks the rm path */
+    #battle.battle-in{ animation:none; }
   }
 </style>
 </head>
@@ -1302,20 +1332,9 @@
     <h1>Salt &amp; Diesel</h1>
     <div class="sub deco">The Ballad of Ocean Breeze</div>
     <div class="sub deco" style="color:var(--cobalt-l);margin-top:-8px">Volume 1: Florida — Episode&nbsp;1</div>
-    <p class="blurb">Art-deco towers claw at a bruised sky. Dirigibles hang over the
-    Intracoastal like fat brass wasps, and every oil-fired engine in town answers to one
-    man: <span class="accent">Baron Castellane</span>. His syndicate runs the docks, the
-    rail yards, and the cops who look the other way. Somebody has to throw a wrench in the
-    works.</p>
-    <div class="bio">
-      <span class="face">🕶️</span>
-      <strong class="accent">SPARKPLUG</strong> &mdash; real name <strong>Larry</strong>.
-      A broad-shouldered, easygoing troubleshooter with short dark hair and a grin that
-      says he's already figured the angle. Never seen without his signature tinted goggles
-      and a worn tan work shirt, a hydraulic wrench slung over one shoulder. Hits hard,
-      fixes harder.
-    </div>
-    <button class="btn title-primary" style="width:100%;font-size:1.1rem" onclick="startFromTitle()">Start the Job</button>
+    <!-- 1T-3: minimal title — the lore + SPARKPLUG intro moved into the briefing slides -->
+    <div class="title-spacer" aria-hidden="true"></div>
+    <button class="btn title-primary" style="width:100%;font-size:1.15rem" onclick="startFromTitle()">▶ Start the Job</button>
     <button class="btn title-secondary" id="continueBtn" style="width:100%;margin-top:10px;display:none" onclick="continueGame()">Resume</button>
   </div>
 </div>
@@ -1342,6 +1361,8 @@
   </div>
 </div>
 <div id="br-flash"></div>
+<!-- Phase 1T-3: world->battle transition veil (flash -> mosaic -> black -> pop-in) -->
+<div id="veil" aria-hidden="true"><div class="v-mosaic"></div><div class="v-flash"></div><div class="v-black"></div></div>
 
 <!-- ========================== OVERWORLD ========================== -->
 <div id="overworld" class="screen">
@@ -1933,7 +1954,7 @@ function patrolTick(){
       p.x = nx; p.y = ny;
       needRender = true;
       stopPatrolTimer();
-      startBattle(p.ch, ny, nx);
+      startBattleWithVeil(p.ch, ny, nx);
       return;
     }
     if(occupant in ENEMIES || occupant === 'N' || occupant === 'D' || occupant === 'R'){
@@ -2274,37 +2295,99 @@ function desiredTrack(){
      mode === 'victory' || mode === 'gameover' || mode === 'ending-briefing') return 'title';
   return 'explore';               // overworld, dialogue, salvage, reward, travel
 }
-/* ~500ms equal-fade to `name` (null = fade everything out) */
-function crossfadeTo(name){
+/* ---- 1T-3: per-track GainNode graph (equal-power scheduled crossfades) ----
+   Each track routes element -> MediaElementSource -> GainNode -> destination,
+   and fades are SCHEDULED cosine curves (never bare gain.value writes, which
+   click). On file:// pages MediaElementSource outputs silence (opaque-origin
+   rule), so local double-click play falls back to element-volume fades with
+   the same equal-power weights. */
+let musicNodes = {};            // name -> GainNode
+function musicWebAudio(){ return !!(audioCtx && typeof location !== 'undefined' && location.protocol !== 'file:'); }
+function musicNode(name){
+  if(!musicWebAudio()) return null;
+  const el = musicEl(name); if(!el) return null;
+  if(!musicNodes[name]){
+    try{
+      const src = audioCtx.createMediaElementSource(el);
+      const g = audioCtx.createGain(); g.gain.value = 0;
+      src.connect(g); g.connect(audioCtx.destination);
+      el.volume = 1;                       // the gain node governs loudness now
+      musicNodes[name] = g;
+    }catch(e){ return null; }
+  }
+  return musicNodes[name];
+}
+/* schedule a 33-point value curve on a gain param — click-free by construction */
+function scheduleFade(g, mk, durMs){
+  if(!g) return;
+  const t = audioCtx.currentTime, N = 33, c = new Float32Array(N);
+  for(let i=0;i<N;i++) c[i] = Math.max(0, Math.min(1, mk(i/(N-1))));
+  try{
+    g.gain.cancelScheduledValues(t);
+    g.gain.setValueCurveAtTime(c, t, Math.max(0.06, durMs/1000));
+  }catch(e){
+    g.gain.setValueAtTime(c[0], t);
+    g.gain.linearRampToValueAtTime(c[N-1], t + durMs/1000);
+  }
+}
+/* equal-power crossfade to `name` (null = fade all out). durMs varies by moment. */
+function crossfadeTo(name, durMs){
   if(typeof Audio === 'undefined') return;
-  if(musicCurrent === name){
-    const el = name && musicEls[name];
-    if(el) el.volume = musicTargetVol();            // live volume/mute sync
+  const DUR = durMs || 800;
+  const target = musicTargetVol();
+  if(musicCurrent === name){                      // live volume/mute sync, ramped
+    if(!name) return;
+    if(musicWebAudio()){
+      const g = musicNode(name);
+      if(g){ const v0=g.gain.value; scheduleFade(g, k=> v0+(target-v0)*k, 90); }
+    } else { const el=musicEls[name]; if(el) el.volume = target; }
     return;
   }
-  const from = musicCurrent ? musicEls[musicCurrent] : null;
-  const fromName = musicCurrent;
+  const fromName = musicCurrent, from = fromName ? musicEls[fromName] : null;
   const to = name ? musicEl(name) : null;
   musicCurrent = name;
+  if(musicWebAudio()){
+    const fg = fromName ? musicNode(fromName) : null;
+    const tg = name ? musicNode(name) : null;
+    if(to && tg){
+      const p = to.play(); if(p && p.catch) p.catch(()=>{});
+      const v0 = tg.gain.value;
+      scheduleFade(tg, k=> v0 + (target - v0) * Math.sin(k*Math.PI/2), DUR);   // equal-power in
+    }
+    if(fg){ const v = fg.gain.value; scheduleFade(fg, k=> v * Math.cos(k*Math.PI/2), DUR); }  // equal-power out
+    clearTimeout(crossfadeTo._t);
+    crossfadeTo._t = setTimeout(()=>{
+      if(from && from !== to && musicCurrent !== fromName){
+        from.pause();
+        if(fromName === 'battle') from.currentTime = 0;   // battle theme restarts fresh; explore resumes in place
+      }
+    }, DUR + 80);
+    return;
+  }
+  // ---- fallback (file:// local play): stepped element-volume fade, same cosine weights ----
   if(to){ to.volume = 0; const p = to.play(); if(p && p.catch) p.catch(()=>{}); }
   if(musicFadeTimer) clearInterval(musicFadeTimer);
-  const t0 = fxNow(), DUR = 500, fromV0 = from ? from.volume : 0;
+  const t0 = fxNow(), fromV0 = from ? from.volume : 0;
   musicFadeTimer = setInterval(()=>{
     const k = Math.min(1, (fxNow() - t0) / DUR);
-    if(from) from.volume = fromV0 * (1 - k);
-    if(to) to.volume = musicTargetVol() * k;
+    if(from) from.volume = fromV0 * Math.cos(k*Math.PI/2);
+    if(to) to.volume = musicTargetVol() * Math.sin(k*Math.PI/2);
     if(k >= 1){
       clearInterval(musicFadeTimer); musicFadeTimer = null;
       if(from && from !== to){
         from.pause();
-        if(fromName === 'battle') from.currentTime = 0;   // each fight starts its theme fresh; explore resumes in place
+        if(fromName === 'battle') from.currentTime = 0;
       }
     }
   }, 50);
 }
 function musicWatch(){
   if(!musicUnlocked || typeof Audio === 'undefined') return;
-  crossfadeTo((musicEnabled && !masterMuted) ? desiredTrack() : null);
+  const want = (musicEnabled && !masterMuted) ? desiredTrack() : null;
+  // moment-matched fade lengths: into battle fast (sting covers it), out of
+  // battle relaxed, scene-to-scene ambient slow (research Area 2 timings)
+  const dur = want === 'battle' ? 400 : (musicCurrent === 'battle' ? 800 : 1400);
+  crossfadeTo(want, dur);
 }
 function startMusic(){
   if(typeof Audio === 'undefined') return;
@@ -3110,7 +3193,7 @@ function closeTravelScreen(){
 }
 
 function triggerGolfer(){
-  startBattle('Q', 0, 0);
+  startBattleWithVeil('Q', 0, 0);
 }
 
 /* ----------------------- SCREEN ROUTING --------------------------- */
@@ -3126,7 +3209,15 @@ const BRIEFING_PAGES = [
     head:'PLANCK AGENCY DISPATCH',
     title:'MISSION BRIEFING',
     sub:'WEST PALM BEACH · FLORIDA · 1947',
-    body:"Sparkplug — Larry. You deploy ALONE: callsign GOLD, first boots on the flooded ground. Your three field contacts join you out there. West Palm Beach is 70% under and the city is fractured. A signal artifact of unknown origin surfaced on the coast. The docks are crooked and the law looks the other way. Find your contacts. Find the artifact. Don't get wet.",
+    body:"West Palm Beach is 70% under and the city is fractured. A signal artifact of unknown origin surfaced on the coast. Baron Castellane's syndicate runs the docks, the rail yards, and the cops who look the other way. Find your contacts. Find the artifact. Don't get wet.",
+    blur:false,
+  },
+  {
+    icon:'🕶️', stamp:'ACTIVE',
+    head:'FIELD OPERATIVE — CALLSIGN GOLD',
+    title:'LARRY "SPARKPLUG"',
+    sub:'TROUBLESHOOTER · DEPLOYS ALONE · FIRST BOOTS ON THE GROUND',
+    body:"Broad-shouldered, easygoing, short dark hair, and a grin that says he's already figured the angle. Never seen without his signature tinted goggles and a worn tan work shirt, a hydraulic wrench slung over one shoulder. Hits hard, fixes harder. Your three field contacts join him out there.",
     blur:false,
   },
   {
@@ -3553,7 +3644,7 @@ function move(dy, dx){
   if(ch==='G' && !recruited.silver)  { showBanner("Find Silver first — he knows this pier."); return; }
   if(ch==='X' && !recruited.platinum){ showBanner("Find Platinum first — he has the crowd."); return; }
   if(ch==='A' && !recruited.titanium){ showBanner("Rescue Titanium first — full crew for the Baron."); return; }
-  if(ch in ENEMIES){ startBattle(ch, ny, nx); return; }                  // fight; stay put
+  if(ch in ENEMIES){ startBattleWithVeil(ch, ny, nx); return; }          // fight; stay put
   if(ch==='k' || ch==='u' || ch==='o'){ takePickup(ch, ny, nx); }        // grab, then step on
 
   // plain walk (or onto a now-cleared pickup tile)
@@ -3685,7 +3776,7 @@ function openDialogue(ch){
         startDialogueSeq(RECRUITMENT_DIALOGUES.titanium_pre, () => {
           pendingTitaniumRescue = true;
           const ep = patrols.find(p => p.ch==='E' && p.sx===8 && p.sy===5);
-          startBattle('E', ep ? ep.y : 5, ep ? ep.x : 8);
+          startBattleWithVeil('E', ep ? ep.y : 5, ep ? ep.x : 8);
         });
       } else if(key === 'silver'){
         startDialogueSeq(RECRUITMENT_DIALOGUES.silver, () => {
@@ -3790,6 +3881,47 @@ function buildEnemies(ch){
   return out;
 }
 
+/* ============ PHASE 1T-3: WORLD -> BATTLE TRANSITION ============ */
+/* short synthesized whoosh-and-hit that masks the music switch (no audio file) */
+function battleSting(){
+  sfx(()=>{
+    noise(0.30, 0.20);                          // air rush
+    tone(392, 0.10, 'sawtooth', 0.15);          // rising bite
+    tone(523, 0.10, 'square',   0.11, 0.06);
+    tone(196, 0.42, 'triangle', 0.20, 0.14);    // body
+    tone( 98, 0.55, 'sawtooth', 0.15, 0.20);    // bass hit (~0.75s total)
+  });
+}
+/* ONE reusable deterministic transition: flash 150ms -> mosaic 410ms ->
+   black hold 120ms -> battle pops in 240ms (~920ms total). Under
+   prefers-reduced-motion: simple fade to black and back (~500ms). The sim
+   never routes through here (its drivers call startBattle directly), and the
+   vm's instant setTimeout stub would just run the chain synchronously. */
+let veilBusy = false;
+function startBattleWithVeil(ch, y, x){
+  const veil = document.getElementById('veil');
+  if(veilBusy || !veil){ startBattle(ch, y, x); return; }
+  veilBusy = true;
+  initAudio();
+  battleSting();                               // sting rides over the visual
+  const rm = (typeof matchMedia === 'function') && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const finish = ()=>{
+    startBattle(ch, y, x);
+    veil.className = 'on out';                 // veil clears over the new stage
+    const b = document.getElementById('battle');
+    if(b && b.classList){ b.classList.add('battle-in'); setTimeout(()=> b.classList.remove('battle-in'), 260); }
+    setTimeout(()=>{ veil.className = ''; veilBusy = false; }, 260);
+  };
+  if(rm){
+    veil.className = 'on rm';                  // plain fade to black...
+    setTimeout(finish, 240);                   // ...and back (finish fades out)
+  } else {
+    veil.className = 'on p1';                                    // white flash
+    setTimeout(()=>{ veil.className = 'on p1 p2'; }, 150);       // mosaic dissolve
+    setTimeout(()=>{ veil.className = 'on p1 p2 p3'; }, 560);    // black hold
+    setTimeout(finish, 680);
+  }
+}
 function startBattle(ch, y, x){
   stopPatrolTimer();
   battle = { ch, y, x, enemies:buildEnemies(ch), activeIdx:0, round:1, await:null, menu:null,
