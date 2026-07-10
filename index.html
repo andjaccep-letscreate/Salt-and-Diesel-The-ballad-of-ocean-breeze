@@ -1262,6 +1262,105 @@
     #veil.p1 .v-flash, #veil.p2 .v-mosaic{ animation:none; }   /* belt+braces: JS already picks the rm path */
     #battle.battle-in{ animation:none; }
   }
+
+  /* ============ PHASE 1B-3: THE FIGHT IS THE STAR (layout only, cascade-last) ============
+     The stage grows to ~80% of the phone; the combat log becomes a translucent
+     JRPG message strip overlaid on the stage's bottom edge; mute/gear tuck into
+     the stage's top corner; the HUD compacts into one status-chip row plus a
+     lean 4-command bar, all inside the bottom thumb zone. Zero rules change. */
+
+  /* battle screen owns the whole viewport so no dead band can appear below the HUD */
+  #battle.active{ min-height:100svh; }
+
+  /* stage: the viewport minus the compact HUD reserve (~170px). 844px phone →
+     ~674px stage ≈ 80%. Short phones cede toward the 50svh floor gracefully. */
+  #stage{ height:max(50svh, calc(100svh - 170px)); }
+
+  /* combatants: bigger bodies (growth is capped by the 390px WIDTH, not height,
+     so the two formations keep their face-off gap) */
+  #stage-hero, .ally{ height:33%; }
+  .foe{ width:120px; } .foe.boss{ width:156px; }
+  .foe-spr{ height:120px; } .foe.boss .foe-spr{ height:156px; }
+  .foe-nm{ max-width:140px; font-size:.64rem; } .foe.boss .foe-nm{ max-width:170px; }
+  .foe-emoji{ font-size:3.7rem; }
+  /* deeper ground plane + higher horizon so the taller canvas is battlefield,
+     not empty sky (the formations climb it via their raised slot bottoms) */
+  #stage .stage-floor{ height:33%; }
+  #stage .stage-far{ bottom:33%; }
+
+  /* combat log → slim translucent message strip riding the stage's bottom edge.
+     The negative top margin pulls it up INTO the stage; its band in the flow
+     collapses to zero, so the HUD sits flush under the stage. */
+  .log{ position:relative; z-index:6; height:56px; margin-top:-68px;
+    width:min(100% - 12px, 468px); padding:5px 10px;
+    font-size:.72rem; line-height:1.4; border-radius:8px;
+    border:1px solid rgba(63,200,240,.28);
+    background:linear-gradient(180deg, rgba(7,14,20,.82), rgba(4,7,10,.9));
+    box-shadow:0 2px 10px rgba(0,0,0,.45); }
+
+  /* mute/gear: tucked into the stage's top-right corner (44px targets held) */
+  .bbar{ position:absolute; top:16px; right:max(16px, calc(50% - 224px));
+    width:auto; max-width:none; z-index:12; gap:6px; }
+  .bbar .muteBtn, .bbar .gearBtn{ background:rgba(13,19,26,.72); opacity:.85; }
+
+  /* HUD column: status chips row (stretches to swallow any leftover) + command bar */
+  #combat-hud{ flex-direction:column; gap:6px; flex:1 1 auto; margin-top:6px; }
+  #status-window{ order:1; flex:1 1 auto; flex-direction:row; gap:4px; align-items:stretch; }
+  #actions.actions{ order:2; flex:0 0 auto; position:relative;
+    grid-template-columns:repeat(4,1fr); gap:5px; min-height:54px; }
+
+  /* party status: one slim row of chips — portrait + HP each; the ACTIVE
+     member's chip widens and expands to full HP/FUE/SPC meters */
+  #status-window .svc{ flex:1 1 0; min-width:0; display:flex; flex-direction:column;
+    justify-content:center; align-items:stretch; overflow:hidden; gap:1px; padding:3px 6px;
+    transition:border-color .2s, box-shadow .2s, opacity .2s, filter .2s, flex-grow .25s ease; }
+  #status-window .svc.active{ flex-grow:2.1; }
+  .svc-top{ display:flex; align-items:center; gap:3px; min-width:0; }
+  .svc-em{ font-size:1.05rem; width:auto; height:auto; background:none; box-shadow:none;
+    border-radius:0; display:inline-flex; }
+  .svc.active .svc-em{ box-shadow:none; }
+  .svc-nm{ flex:0 1 auto; font-size:.58rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .svc-badges{ flex:none; }
+  .svc-lv{ font-size:.5rem; }
+  .svc:not(.active) .svc-lv{ display:none; }
+  .svc:not(.active) .svc-nm{ display:none; }  /* waiting chips: the portrait IS the identity */
+  .svc:not(.active) .svc-em{ font-size:1.2rem; }
+  .badge{ font-size:.5rem; }
+  .svc .meter{ margin-top:1px; gap:3px; }
+  .svc .meter .mlbl{ width:auto; min-width:15px; font-size:.5rem; }
+  .svc .meter .mtrk{ height:5px; }
+  .svc .meter .mval{ width:auto; font-size:.5rem; }
+  .svc:not(.active) .meter .mval{ display:none; }          /* numbers only on the active chip */
+  .svc:not(.active) .meter:not([id^="hp"]){ display:none; } /* waiting chips: HP only */
+
+  /* command bar: FIGHT / SKILL / FUEL / ITEM as one lean 4-across row */
+  #actions .btn.cmd{ font-size:.76rem; padding:6px 2px; min-height:54px; letter-spacing:.03em; }
+  .cmd .cmd-sub{ font-size:.5rem; }
+  /* targeting state lives in the same bar: hint (2 cols) + Cancel (2 cols) */
+  #actions .act-hint{ grid-column:span 2; display:flex; align-items:center;
+    justify-content:center; font-size:.64rem; padding:2px; }
+  #actions > .btn:not(.cmd):not(.abil){ grid-column:span 2; font-size:.8rem; padding:6px; }
+
+  /* submenus (Skill / Fuel / Item / Payload lists) pop UP over the stage as a
+     classic JRPG window instead of stretching the HUD (bar height never moves) */
+  #actions .menu-pop{ position:absolute; left:0; right:0; bottom:0; z-index:30;
+    display:grid; grid-template-columns:1fr 1fr; gap:5px; padding:8px;
+    background:rgba(9,14,20,.96); border:2px solid var(--brass-d); border-radius:10px;
+    box-shadow:0 -6px 24px rgba(0,0,0,.55), inset 0 0 0 1px rgba(63,200,240,.08);
+    max-height:60svh; overflow-y:auto; }
+
+  /* desktop / wide: keep the classic compact column, no viewport stretching */
+  @media (min-width:600px){
+    #battle.active{ min-height:0; }
+    #stage{ height:min(72svh, 620px); }
+    #combat-hud{ flex:0 0 auto; }
+    #status-window{ min-height:96px; }
+  }
+
+  /* reduced-motion: the active-chip grow snaps instead of sliding */
+  @media (prefers-reduced-motion: reduce){
+    #status-window .svc{ transition:none; }
+  }
 </style>
 </head>
 <body>
@@ -3959,10 +4058,12 @@ function foeStatus(e){ let s=''; if(stHas(e,'mark'))s+='🎯'; if(stHas(e,'burn'
    front (research Area 1). Slots are keyed by the encounter's TOTAL size and
    indexed by the enemy's ORIGINAL index, so survivors never shuffle around. */
 const FOE_SLOTS = {
-  1: [[10,  9, 1.24, 5]],
-  2: [[ 5,  7, 1.10, 5], [24, 19, 0.92, 4]],
-  3: [[ 4,  6, 1.08, 5], [24, 13, 0.95, 4], [12, 27, 0.82, 3]],
-  4: [[ 2,  6, 1.05, 5], [22,  9, 0.94, 4], [ 8, 24, 0.84, 3], [26, 30, 0.76, 2]],
+  /* 1B-3: same ladder, bottoms raised so front-row nameplates clear the
+     message strip overlaid on the stage's bottom edge (~9% of stage height) */
+  1: [[10, 13, 1.24, 5]],
+  2: [[ 5, 12, 1.10, 5], [24, 23, 0.92, 4]],
+  3: [[ 4, 12, 1.08, 5], [24, 18, 0.95, 4], [12, 30, 0.82, 3]],
+  4: [[ 2, 12, 1.05, 5], [22, 15, 0.94, 4], [ 8, 27, 0.84, 3], [26, 33, 0.76, 2]],
 };
 function foeSlot(i){ const t=FOE_SLOTS[Math.min(battle.enemies.length,4)]||FOE_SLOTS[4]; return t[Math.min(i,t.length-1)]; }
 /* Dragon-Quest-style A/B/C/D suffix for duplicate enemy names (display only) */
@@ -4014,10 +4115,12 @@ const CREW_TINT={ gold:'#d9a441', silver:'#cfd6de', titanium:'#3fcf9e', platinum
 /* slot tables per party size: [leftPct, bottomPct, scale, z]. Fewer bodies =
    bigger + more spread (empty-stage guard). Index = position in `party`. */
 const ALLY_SLOTS = {
-  1: [[10, 10, 1.18, 5]],
-  2: [[13,  8, 1.08, 5], [4, 22, 0.94, 4]],
-  3: [[14,  7, 1.02, 5], [7, 18, 0.92, 4], [1, 29, 0.84, 3]],
-  4: [[15,  6, 1.00, 5], [9, 16, 0.92, 4], [4, 26, 0.85, 3], [0, 36, 0.78, 2]],
+  /* 1B-3: same ladder, bottoms raised in step with FOE_SLOTS so boots clear
+     the overlaid message strip and the crew climbs the taller canvas */
+  1: [[10, 14, 1.18, 5]],
+  2: [[13, 12, 1.08, 5], [4, 26, 0.94, 4]],
+  3: [[14, 11, 1.02, 5], [7, 22, 0.92, 4], [1, 33, 0.84, 3]],
+  4: [[15, 10, 1.00, 5], [9, 20, 0.92, 4], [4, 30, 0.85, 3], [0, 40, 0.78, 2]],
 };
 function allySlot(i){ const t=ALLY_SLOTS[party.length]||ALLY_SLOTS[4]; return t[Math.min(i,t.length-1)]; }
 function allyArt(m){
@@ -4124,8 +4227,9 @@ function renderActions(){
   const hasPayload = bucketAbils(m,'payload').length>0;
 
   if(battle.menu==='payload'){          // nested ammo selector (Back returns to Skill)
-    box.innerHTML = `<button class="btn" onclick="backTo('skill')">↩ Back</button>`
-      + bucketAbils(m,'payload').map(abilBtn).join('');
+    // 1B-3: submenus render inside a .menu-pop window that overlays the stage
+    box.innerHTML = `<div class="menu-pop"><button class="btn" onclick="backTo('skill')">↩ Back</button>`
+      + bucketAbils(m,'payload').map(abilBtn).join('') + `</div>`;
     return;
   }
   if(battle.menu){                       // a command is open → list its abilities
@@ -4133,7 +4237,7 @@ function renderActions(){
     if(battle.menu==='skill' && hasPayload)   // Payload Selector lives inside Skill
       html += `<button class="btn abil" onclick="backTo('payload')">🎯 Payload Selector<small>choose ammo</small></button>`;
     if(!html) html = `<div class="act-hint">No ${battle.menu} options.</div>`;
-    box.innerHTML = `<button class="btn" onclick="closeCmd()">↩ Back</button>`+html;
+    box.innerHTML = `<div class="menu-pop"><button class="btn" onclick="closeCmd()">↩ Back</button>`+html+`</div>`;
     return;
   }
   // top level: the four FF commands (disabled if the member has nothing in that bucket)
