@@ -1409,6 +1409,9 @@
   @keyframes ultStrobe{ from{ opacity:1; } to{ opacity:0; } }
   @keyframes ultRain  { from{ transform:translateY(-16%); opacity:.9; } to{ transform:translateY(12%); opacity:0; } }
   @keyframes ultRing  { from{ transform:scale(.5); opacity:1; } to{ transform:scale(1.9); opacity:0; } }
+  /* the always-visible ULTIMATE row costs ~50px of HUD: the stage cedes it
+     (still ~74% of a 390x844 screen — no overflow, commands stay in thumb zone) */
+  #stage{ height:max(50svh, calc(100svh - 220px)); }
   @media (prefers-reduced-motion: reduce){
     #actions .btn.ult.ready{ animation:none;
       box-shadow:0 0 10px rgba(63,200,240,.45), inset 0 0 12px rgba(63,200,240,.18); }
