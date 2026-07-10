@@ -1361,6 +1361,59 @@
   @media (prefers-reduced-motion: reduce){
     #status-window .svc{ transition:none; }
   }
+
+  /* ============ PHASE 5c: TEAM ULTIMATE ATTACKS (additive, cascade-last) ============
+     A slim full-width ULTIMATE button rides the top of the command bar (always
+     visible so players learn the trigger; lit + pulsing when the team is ready,
+     grayed with the blocking reason when not). #ult-fx is a clipped full-stage
+     flourish overlay — one distinct ~450ms animation per crew member, purely
+     presentational; reduced-motion removes it entirely. */
+  #actions .btn.ult{ grid-column:1/-1; min-height:44px; padding:4px 8px;   /* 44px tap floor */
+    font-size:.7rem; letter-spacing:.05em; border-color:#8a6b2f; color:#ffd479;
+    background:linear-gradient(180deg, rgba(40,30,13,.92), rgba(20,14,8,.95)); }
+  #actions .btn.ult small{ display:block; font-size:.52rem; letter-spacing:.02em;
+    opacity:.85; margin-top:1px; font-weight:400; }
+  #actions .btn.ult:disabled{ opacity:.5; filter:grayscale(.75); color:#9aa3ad; }
+  #actions .btn.ult.ready{ border-color:#3fc8f0; color:#eafcff;
+    background:linear-gradient(180deg, rgba(18,52,66,.95), rgba(9,24,34,.95));
+    animation:ultPulse 1.2s ease-in-out infinite; }
+  @keyframes ultPulse{
+    0%,100%{ box-shadow:0 0 6px rgba(63,200,240,.30), inset 0 0 8px rgba(63,200,240,.12); }
+    50%    { box-shadow:0 0 15px rgba(63,200,240,.65), inset 0 0 16px rgba(63,200,240,.26); } }
+
+  #ult-fx{ position:absolute; inset:0; z-index:8; pointer-events:none;
+    overflow:hidden; display:none; }
+  #ult-fx.go{ display:block; }
+  #ult-fx::before{ content:""; position:absolute; inset:-30%; }
+  /* GOLD — Anchor Cascade: three brass/cyan arcs sweep left-to-right */
+  #ult-fx.ult-gold::before{
+    background:repeating-linear-gradient(105deg, transparent 0 44px,
+      rgba(255,212,121,.55) 44px 52px, rgba(63,200,240,.35) 52px 57px, transparent 57px 120px);
+    animation:ultSweep .45s ease-out 1 forwards; }
+  /* SILVER — Harpoon Barrage: rapid pale tracer strobes */
+  #ult-fx.ult-silver::before{
+    background:repeating-linear-gradient(90deg, transparent 0 52px,
+      rgba(234,252,255,.7) 52px 55px, rgba(63,200,240,.30) 55px 58px, transparent 58px 110px);
+    animation:ultStrobe .4s steps(5) 1 forwards; }
+  /* TITANIUM — Drone Strike: green swarm streaks rain down */
+  #ult-fx.ult-titanium::before{
+    background:repeating-linear-gradient(75deg, transparent 0 34px,
+      rgba(63,207,158,.5) 34px 39px, transparent 39px 82px);
+    animation:ultRain .48s linear 1 forwards; }
+  /* PLATINUM — Overdrive Gauntlet: blue piston shock-ring from the crew side */
+  #ult-fx.ult-platinum::before{
+    background:radial-gradient(circle at 28% 62%, rgba(63,169,255,.75) 0 8%,
+      rgba(63,169,255,.28) 16%, transparent 44%);
+    animation:ultRing .42s ease-out 1 forwards; }
+  @keyframes ultSweep { from{ transform:translateX(-22%); opacity:.95; } to{ transform:translateX(22%); opacity:0; } }
+  @keyframes ultStrobe{ from{ opacity:1; } to{ opacity:0; } }
+  @keyframes ultRain  { from{ transform:translateY(-16%); opacity:.9; } to{ transform:translateY(12%); opacity:0; } }
+  @keyframes ultRing  { from{ transform:scale(.5); opacity:1; } to{ transform:scale(1.9); opacity:0; } }
+  @media (prefers-reduced-motion: reduce){
+    #actions .btn.ult.ready{ animation:none;
+      box-shadow:0 0 10px rgba(63,200,240,.45), inset 0 0 12px rgba(63,200,240,.18); }
+    #ult-fx{ display:none !important; }   /* belt+braces: JS already skips the flourish */
+  }
 </style>
 </head>
 <body>
@@ -1629,6 +1682,8 @@
     <div id="stage-enemies"></div>
     <!-- 1B-1: stable FX overlay for floating damage/heal numbers (never rebuilt) -->
     <div id="stage-fx" aria-hidden="true"></div>
+    <!-- 5c: full-stage Ultimate flourish overlay (presentation only; RM skips it) -->
+    <div id="ult-fx" aria-hidden="true"></div>
   </div>
   <!-- ally-zone: reserved slot for future party formation UI -->
   <div id="ally-zone" aria-hidden="true"></div>
@@ -2346,6 +2401,8 @@ const SFX = {
   gate(){ sfx(()=>{ tone(70,0.45,'sawtooth',0.18); noise(0.3,0.12); }); },
   level(){ sfx(()=> [523,659,784,1047].forEach((f,i)=> tone(f,0.18,'triangle',0.13,i*0.09))); },
   win(){ sfx(()=> [523,659,784,1047,1319].forEach((f,i)=> tone(f,0.32,'sine',0.15,i*0.13))); },
+  /* 5c: Ultimate cue — rising sawtooth stack over a deep triangle body + impact noise */
+  ultimate(){ sfx(()=>{ noise(0.26,0.20); [196,294,392,587].forEach((f,i)=> tone(f,0.20,'sawtooth',0.13,i*0.055)); tone(98,0.5,'triangle',0.20,0.22); }); },
   lose(){ sfx(()=> [440,330,247,165].forEach((f,i)=> tone(f,0.32,'sawtooth',0.15,i*0.15))); }
 };
 function toggleMute(){
@@ -4024,7 +4081,8 @@ function startBattleWithVeil(ch, y, x){
 function startBattle(ch, y, x){
   stopPatrolTimer();
   battle = { ch, y, x, enemies:buildEnemies(ch), activeIdx:0, round:1, await:null, menu:null,
-             over:false, kind:ENEMIES[ch].kind, opens:ENEMIES[ch].opens };
+             over:false, kind:ENEMIES[ch].kind, opens:ENEMIES[ch].opens,
+             ultLast:0 };   // 5c: round the last team Ultimate fired (0 = none yet this battle)
   svBuilt=0;   // force a fresh Status Window build for this fight's party
   { const ez=document.getElementById('stage-enemies'); if(ez && ez.dataset) ez.dataset.sig=''; }   // force a fresh foe build too
   // per-fight reset: statuses, cooldowns, drones, Platinum's Patch charges; revive KO'd to 1 HP
@@ -4241,7 +4299,12 @@ function renderActions(){
     return;
   }
   // top level: the four FF commands (disabled if the member has nothing in that bucket)
-  box.innerHTML = CMD_DEFS.map(([k,icon,label])=>{
+  // 5c: the team ULTIMATE button rides above them — always visible so players
+  // learn the trigger; lit when ready, grayed (with the reason) when not.
+  const u = ULTS[m.key];
+  const ultHtml = u ? (()=>{ const ready=ultReady();
+    return `<button class="btn cmd ult${ready?' ready':''}" ${ready?'':'disabled'} onclick="fireUltimate()">${u.icon} ULTIMATE · ${u.name}<small>${ready?u.desc:ultBlockReason()}</small></button>`; })() : '';
+  box.innerHTML = ultHtml + CMD_DEFS.map(([k,icon,label])=>{
     let has=bucketAbils(m,k).length>0;
     if(k==='skill' && hasPayload) has=true;   // Skill stays live to reach Payload
     return `<button class="btn cmd" ${has?'':'disabled'} onclick="openCmd('${k}')">${icon} ${label}<span class="cmd-sub">${has?'':'—'}</span></button>`;
@@ -4334,6 +4397,114 @@ function commitAbility(id, targetIdx){
   if(enemiesCleared()){ winBattle(); return; }
   advanceAlly();
 }
+
+/* =================== PHASE 5c: TEAM ULTIMATE ATTACKS ===================
+   One Ultimate per crew member — a rare team-level bonus move, never
+   required to win. The team is READY only when ALL of:
+     (a) every present crew member is alive,
+     (b) every present crew member is at >= 50% max HP,
+     (c) 3 full player rounds have passed since the last Ultimate
+         (or since battle start).
+   Firing one consumes the active member's turn slot and resets the shared
+   counter. Player-only — bosses never use these. State resolves instantly
+   and deterministically through the SAME dealTo()/RNG patterns as normal
+   abilities; the ~450ms stage flourish is presentation only and is skipped
+   under prefers-reduced-motion (numbers still paint). */
+const ULT_WAIT = 3;   // full rounds that must pass before the team is ready again
+const ULTS = {
+  gold:     {name:'Anchor Cascade',     icon:'⚓', desc:'3 anchor arcs rake ALL foes'},
+  silver:   {name:'Harpoon Barrage',    icon:'🎯', desc:'all 5 payloads · random targets'},
+  titanium: {name:'Drone Strike',       icon:'🪰', desc:'swarm hits ALL foes · crew +30% HP'},
+  platinum: {name:'Overdrive Gauntlet', icon:'🦾', desc:'crush ALL foes · crew +25% HP'},
+};
+function ultReady(){
+  if(!battle || battle.over || !party.length) return false;
+  if(!party.every(m=>m.alive)) return false;                 // (a) whole crew standing
+  if(!party.every(m=>m.hp*2 >= m.maxHp)) return false;       // (b) everyone at >=50% HP
+  return (battle.round - (battle.ultLast||0)) > ULT_WAIT;    // (c) 3 full rounds passed
+}
+/* why the button is gray right now (teaches the trigger) */
+function ultBlockReason(){
+  if(!battle) return '';
+  if(!party.every(m=>m.alive)) return 'need the whole crew standing';
+  if(!party.every(m=>m.hp*2 >= m.maxHp)) return 'crew must be above half HP';
+  const left = ULT_WAIT + 1 - (battle.round - (battle.ultLast||0));
+  return 'charging — '+left+' more turn'+(left===1?'':'s');
+}
+/* per-member stage flourish (~450ms, deterministic). RM: skip entirely. */
+function ultFlourish(key){
+  if(reducedMotion()) return;
+  const el = document.getElementById('ult-fx'); if(!el) return;
+  el.className = '';
+  void (el.offsetWidth||0);                 // restart cleanly if re-triggered
+  el.className = 'go ult-'+key;
+  setTimeout(()=>{ el.className=''; }, 500);
+}
+/* heal number painted over a crew member's lineup slot (same fx pool) */
+function floatHealAt(i, h){
+  const slot = allySlot(i);
+  spawnFx('stage-fx', { cls:'fx-float heal', text:'+'+h, ttl:1.05,
+    left:(slot[0]+9)+'%', top:'34%', y0:8, vy:-34, sc0:0.7, sc1:1.15 });
+}
+let ultFiring = false;   // re-entry guard: an Ultimate can never double-apply
+function fireUltimate(){
+  if(busy || beatBusy || menuOpen || !battle || battle.over || battle.await) return;
+  if(ultFiring || !ultReady()) return;
+  const m = party[battle.activeIdx]; if(!m || !m.alive) return;
+  const u = ULTS[m.key]; if(!u) return;
+  ultFiring = true;
+  battle.ultLast = battle.round;            // reset the shared counter BEFORE resolving
+  battle.menu = null; battle.await = null;
+  const perFoe = {};                        // enemy index -> summed damage (one number each)
+  const hitFoe = (f, base, cc, cm) => {     // exposedFoes() is re-read per wave, so a foe
+    const i = battle.enemies.indexOf(f);    // that dies mid-Ultimate is skipped from then on
+    const d = dealTo(f, base, cc, cm);
+    perFoe[i] = (perFoe[i]||0) + d; return d; };
+  const heals = [];
+  const healCrew = (frac) => aliveMembers().forEach(al=>{
+    const h = Math.floor(al.maxHp*frac); al.hp = Math.min(al.maxHp, al.hp+h);
+    heals.push({ i:party.indexOf(al), h }); });
+  let log = '';
+  if(m.key==='gold'){                       // ANCHOR CASCADE — 3 sweeps x ALL foes x 1.5x
+    for(let w=0; w<3; w++) exposedFoes().forEach(f=> hitFoe(f, Math.floor(m.atk*1.5), 0.15, 1.6));
+    log = `💥 ULTIMATE — ${m.name} unleashes ANCHOR CASCADE! Three sweeping arcs rake the field!`;
+  } else if(m.key==='silver'){              // HARPOON BARRAGE — 5 payloads x 1.2x, light stun chance
+    let tangled = 0;
+    for(let s=0; s<5; s++){
+      const foes = exposedFoes(); if(!foes.length) break;
+      const f = foes[(Math.random()*foes.length)|0];
+      const d = hitFoe(f, Math.floor(m.atk*1.2), m.crit, 1.5);
+      if(d>0 && f.alive && Math.random()<0.20){ stAdd(f,'stun',1); tangled++; }
+    }
+    log = `💥 ULTIMATE — ${m.name} empties HARPOON BARRAGE — all five payloads downrange!${tangled?' Foes tangled! 💫':''}`;
+  } else if(m.key==='titanium'){            // DRONE STRIKE — 4 passes x ALL foes x 1.0x + crew heal 30%
+    for(let w=0; w<4; w++) exposedFoes().forEach(f=> hitFoe(f, Math.floor(m.atk*1.0), 0.10, 1.5));
+    healCrew(0.30);
+    log = `💥 ULTIMATE — ${m.name} calls DRONE STRIKE! The swarm hammers the field and patches the crew!`;
+  } else if(m.key==='platinum'){            // OVERDRIVE GAUNTLET — ALL foes x 2.0x + crew heal 25%
+    exposedFoes().forEach(f=> hitFoe(f, Math.floor(m.atk*2.0), 0.12, 1.5));
+    healCrew(0.25);
+    log = `💥 ULTIMATE — ${m.name} redlines the OVERDRIVE GAUNTLET! A crushing shockwave — and the crew re-seals!`;
+  }
+  const total = Object.keys(perFoe).reduce((s,i)=>s+perFoe[i], 0);
+  if(battle.dmgBy && battle.dmgBy[m.key]!=null) battle.dmgBy[m.key] += total;   // 5b damage share
+  // ---- presentation (state above is already final; sim/RM lose nothing) ----
+  ultFlourish(m.key);
+  if(SFX.ultimate) SFX.ultimate();
+  pulse('stage-hero','swing',360);
+  Object.keys(perFoe).forEach(i=>{ if(perFoe[i]>0){
+    pulse('foe'+i,'struck',260); pulse('foe'+i,'knock',300);
+    floatDamage('foe'+i, perFoe[i], 'crit'); burst('foe'+i, 10, 'crit'); } });
+  heals.forEach(({i,h})=> floatHealAt(i, h));
+  shakeScreen(); flashScreen();
+  pushLog(log, 'crit');
+  ultFiring = false;
+  renderBattle();
+  startBeatLock();
+  if(enemiesCleared()){ winBattle(); return; }
+  advanceAlly();                            // consumes ONLY this member's turn slot
+}
+
 /* Build the round's ally turn order. Baseline = living members in array order
    (identical to firstLivingAlly walking). Phase 5b: Platinum's Initiative Core
    jumps him to the front — engaged ONLY when that legendary is unlocked, so the
