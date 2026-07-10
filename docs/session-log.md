@@ -281,3 +281,10 @@ Beginner-friendly on purpose — see `CLAUDE.md` for the format and rules.
 - Learned: When a phase intentionally changes combat numbers, the drift proof splits in two — a seeded never-fire A/B (byte-identical = base combat untouched) plus an unseeded fired-run comparison (win rates within noise = ultimates are bonus, not crutch).
 - Gotchas: The trigger audit's pooled "75% of Golfer fights had an opportunity" looked like a miss until split by policy: smart play = 400/400, careless play is exactly what the ≥50%-HP gate should lock out. Also: back-to-back fireUltimate tests must respect the 340ms beat lock or the second call silently no-ops.
 - Next:    Awaiting hub sign-off on the 5c preview. main stays at 8370f21 until then. After sign-off: feature-complete.
+
+## [2026-07-10] — 🎉 FEATURE-COMPLETE: Phase 5c merged — Volume 1 ships
+- Goal:    Merge the signed-off Phase 5c (Team Ultimate Attacks) to main and close out Episode 1.
+- Did:     main fast-forwarded 8370f21 → d5b62a7, zero conflicts; merged build verified zero console errors firing an Ultimate at 390×844. The full game is now on main: minimal title → case-file briefing → four WPB zones with the 3-track soundtrack → flash/mosaic battle transition → ~74% battle stage (full crew + all enemies) → team Ultimates (all alive + all ≥50% HP + 3-round charge) → salvage choices → Baron droid-wall → Golfer finale → legendary weapons → Shadow World.
+- Learned: "Fast-forward" merge = main's pointer just slides up the branch's commits because main had nothing new — no merge commit, no conflicts possible. It's why we always build on a branch cut FROM the latest main.
+- Gotchas: None — a straight merge of already-verified work is the boring kind of merge, which is the goal.
+- Next:    Nothing queued — Volume 1: Florida, Episode 1 is feature-complete. Future ideas stay banked in the Vault (elemental weakness, MP/TP, CTB order, isometric, county overworld, glow-pickup effects, episodic save plumbing) until explicitly called for. Good stopping point for /clear.
