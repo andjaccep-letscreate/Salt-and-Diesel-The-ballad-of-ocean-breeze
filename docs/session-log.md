@@ -302,3 +302,10 @@ Beginner-friendly on purpose — see `CLAUDE.md` for the format and rules.
 - Learned: All three views shared a byte-identical weapon group, so one replace-all swapped the sword into every view at once — drawing shared parts identically pays off later.
 - Gotchas: None; seeded A/B vs main byte-identical, zero console errors, battle column still fits.
 - Next:    Awaiting hub sign-off on ?v=gw1. No merge yet.
+
+## [2026-07-11] — Merge Gold's sword + Phase 1V-SILVER-EYES
+- Goal:    Fast-forward main with the approved Gold sword+anchor build, then give Silver visible eyes so he stops reading as blank under his pushed-up goggles.
+- Did:     main fast-forwarded 3a551e7 → 96da594 (Gold weapon), pushed. Then added simple round eyes (dark iris + small light catchlight) to Silver's face in both MEMBER_SVG (battle-stage size) and PORTRAIT_SVG (chip size), positioned between the forehead goggles and his smile. Goggles, light skin (#e7c39a), curls, weapon all untouched.
+- Learned: When a portrait is a smaller re-drawing of the same face (not a CSS scale of the same SVG), new features need their own hand-placed coordinates scaled to that portrait's face-circle radius, not copy-pasted.
+- Gotchas: None — seeded A/B vs the newly-merged main byte-identical, zero console errors.
+- Next:    Awaiting hub sign-off on ?v=se1. Not starting the enemy redesign or any other phase.
