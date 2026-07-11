@@ -316,3 +316,10 @@ Beginner-friendly on purpose — see `CLAUDE.md` for the format and rules.
 - Learned: `buildEnemies()` already reads `ENEMY_SVG[ch]` (and `ENEMY_SVG[a.svg||ak]` for adds) with no other wiring — adding/replacing entries in that one object is enough to reskin an enemy everywhere it fights, no other code touched.
 - Gotchas: None major — seeded A/B sim vs the merged main came back byte-identical on the first try, confirming the "art only" boundary held even across 11 rewritten SVGs.
 - Next:    Awaiting hub sign-off on ?v=enemies1 — iterate on individual enemies (Baron's coat silhouette is a candidate for a follow-up polish pass) once reviewed.
+
+## [2026-07-11] — Phase 1V-SYNC: audit, Golfer frown fix, merge all art to main
+- Goal:    Player reported the live game (main) still looked old — audit found the full enemy redraw was still stuck on the branch, never merged. Fix the Golfer's smile (should be grim/possessed), then sync everything to main.
+- Did:     Audit confirmed main already had the crew redraw + Gold's sword + Silver's eyes (merged in earlier sessions); only the enemy redesign commit was missing. Fixed the Golfer's mouth path — the old curve bulged toward its control point below the endpoints (a smile/"cup" shape); inverted it to bulge above the endpoints (a frown/"dome" shape) and darkened the stroke for a grimmer read. Fast-forward merged the branch to main.
+- Learned: for an SVG quadratic bezier mouth `M x1 y1 Q cx cy x2 y2`, whether it reads as a smile or frown depends only on whether the control point's y is larger (smile — curve dips below the corners) or smaller (frown — curve arches above the corners) than the endpoints' y.
+- Gotchas: This phase is a good reminder to always fast-forward main at the START of a new art phase once work is approved, rather than letting merges pile up unmerged across sessions — the player-visible drift is what triggered this whole sync phase.
+- Next:    Awaiting next direction. main and the feature branch are now in sync.
