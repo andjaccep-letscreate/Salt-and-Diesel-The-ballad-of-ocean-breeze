@@ -1426,6 +1426,34 @@
       box-shadow:0 0 10px rgba(63,200,240,.45), inset 0 0 12px rgba(63,200,240,.18); }
     #ult-fx{ display:none !important; }   /* belt+braces: JS already skips the flourish */
   }
+
+  /* ============ PHASE 1V-BRIEFING-SCENES: situation art above the dossier ============
+     The .room is a bottom-anchored flex column (case-tab/paper/dots/btns hug the
+     bottom); .br-scene is the ONE flex-grow child, so it fills whatever vertical
+     space is left above them — the space that used to just be empty black.
+     Figures reuse the EXISTING crew (#player / MEMBER_SVG) and enemy (ENEMY_SVG)
+     art verbatim via new, scene-scoped classes (.bs-*) so nothing here can leak
+     into or be affected by the battle stage's .foe/.ally styling. */
+  #briefing-intro .br-scene{ position:relative; z-index:1; flex:1 1 auto; min-height:88px;
+    width:100%; max-width:480px; overflow:hidden; }
+  #briefing-intro .br-scene::after{ content:""; position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(180deg, transparent 70%, rgba(6,3,10,.9) 100%); }
+  #briefing-intro .bs-bg{ position:absolute; inset:0; }
+  #briefing-intro .bs-ground{ position:absolute; left:0; right:0; bottom:0; height:26%; }
+  #briefing-intro .bs-fig{ position:absolute; bottom:8%; filter:drop-shadow(0 4px 5px rgba(0,0,0,.5)); }
+  #briefing-intro .bs-fig svg{ width:100%; height:100%; display:block; }
+  #briefing-intro .bs-larry{ aspect-ratio:32/48; }
+  #briefing-intro .bs-foe{ aspect-ratio:1/1; }
+  #briefing-intro .bs-foe svg{ transform:scaleX(-1); }         /* faces left, toward Gold/crew */
+  #briefing-intro .bs-foe.bs-face-r svg{ transform:none; }
+  #briefing-intro .bs-glow{ position:absolute; border-radius:50%; filter:blur(7px); pointer-events:none; }
+  #briefing-intro .bs-spot{ position:absolute; pointer-events:none; }   /* flat building-silhouette block */
+  #briefing-intro .bs-silhouette{ filter:brightness(0) saturate(100%); opacity:.55; }
+  @keyframes bsDrift{ 0%,100%{ opacity:.7; } 50%{ opacity:1; } }
+  #briefing-intro .bs-glow{ animation:bsDrift 3.2s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce){
+    #briefing-intro .bs-glow{ animation:none; opacity:.85; }
+  }
 </style>
 </head>
 <body>
@@ -1507,6 +1535,7 @@
 <div id="briefing-intro" class="screen">
   <div class="room">
     <div class="lamp-glow"></div>
+    <div class="br-scene" id="br-scene" aria-hidden="true"></div>
     <div class="door" id="br-door"></div>
     <div class="case-tab" aria-hidden="true">PLANCK AGENCY · CASE FILE WPB-47</div>
     <div class="paper" id="br-paper">
@@ -3587,7 +3616,7 @@ const BRIEFING_PAGES = [
     blur:false,
   },
   {
-    icon:'🕶️', pkey:'gold', stamp:'ACTIVE',
+    icon:'🕶️', pkey:'gold', scene:'gold', stamp:'ACTIVE',
     head:'FIELD OPERATIVE — CALLSIGN GOLD',
     title:'LARRY "SPARKPLUG"',
     sub:'TROUBLESHOOTER · DEPLOYS ALONE · FIRST BOOTS ON THE GROUND',
@@ -3595,7 +3624,7 @@ const BRIEFING_PAGES = [
     blur:false,
   },
   {
-    icon:'🎯', pkey:'silver', stamp:'CLEARED',
+    icon:'🎯', pkey:'silver', scene:'silver', stamp:'CLEARED',
     head:'FIELD CONTACT — ALPHA',
     title:'SILVER',
     sub:'Lake Worth Beach · ACTIVE · STANDING BY',
@@ -3603,7 +3632,7 @@ const BRIEFING_PAGES = [
     blur:false,
   },
   {
-    icon:'🦾', pkey:'platinum', stamp:'CLEARED',
+    icon:'🦾', pkey:'platinum', scene:'platinum', stamp:'CLEARED',
     head:'FIELD CONTACT — BETA',
     title:'PLATINUM',
     sub:'Wellington Estates · ACTIVE · MANAGING LOCAL SITUATION',
@@ -3611,7 +3640,7 @@ const BRIEFING_PAGES = [
     blur:false,
   },
   {
-    icon:'🪓', pkey:'titanium', stamp:'URGENT',
+    icon:'🪓', pkey:'titanium', scene:'titanium', stamp:'URGENT',
     head:'FIELD CONTACT — GAMMA',
     title:'TITANIUM',
     sub:'Downtown WPB — IN DISTRESS · AWAITING EXTRACTION',
@@ -3619,7 +3648,15 @@ const BRIEFING_PAGES = [
     blur:false,
   },
   {
-    icon:'❓', stamp:'SEALED',
+    icon:'🎩', scene:'baron', stamp:'INTEL',
+    head:'HOSTILE — SYNDICATE LEADERSHIP',
+    title:'BARON CASTELLANE',
+    sub:'Downtown WPB · PROTECTED · WALL OF CHROME',
+    body:"Runs the docks, the rail yards, and the cops who look the other way — from behind a rotating escort of Interceptor Droids. Nobody's gotten close enough to ask him to stop. That's the job.",
+    blur:false,
+  },
+  {
+    icon:'❓', scene:'delta', stamp:'SEALED',
     head:'CONTACT — DELTA',
     title:'[CLASSIFIED]',
     sub:'Location: UNKNOWN · Classification: ABOVE YOUR PAY GRADE',
@@ -3627,6 +3664,85 @@ const BRIEFING_PAGES = [
     blur:true,
   },
 ];
+/* ============ PHASE 1V-BRIEFING-SCENES: situation art, composed from the
+   EXISTING crew (#player / MEMBER_SVG) and enemy (ENEMY_SVG) figures — no new
+   characters, no new assets. Scene-scoped .bs-* classes never touch .foe/.ally,
+   so the battle stage is untouched. ============ */
+function bsGold(dir, style){
+  const pl = document.getElementById('player');
+  return `<div class="bs-fig bs-larry larry" data-dir="${dir||'down'}" style="${style}">${pl?pl.innerHTML:''}</div>`;
+}
+function bsMember(key, style){
+  return `<div class="bs-fig bs-larry" style="${style}">${MEMBER_SVG[key]||''}</div>`;
+}
+function bsFoe(ch, style, faceRight){
+  return `<div class="bs-fig bs-foe${faceRight?' bs-face-r':''}" style="${style}">${ENEMY_SVG[ch]||''}</div>`;
+}
+const BRIEFING_SCENES = {
+  /* GOLD — arriving alone on the flooded pier, dieselpunk skyline behind */
+  gold(){
+    return `<div class="bs-bg" style="background:linear-gradient(180deg,#0c1622 0%,#0a1420 55%,#060c14 100%);"></div>
+      <div class="bs-spot" style="left:10%; top:4%; width:16%; height:40%; background:rgba(20,26,34,.9);"></div>
+      <div class="bs-spot" style="left:44%; top:0%; width:13%; height:52%; background:rgba(16,22,30,.9);"></div>
+      <div class="bs-spot" style="right:8%; top:10%; width:15%; height:34%; background:rgba(20,26,34,.9);"></div>
+      <div class="bs-glow" style="left:30%; top:20%; width:44%; height:44%; background:radial-gradient(ellipse,rgba(63,200,240,.20),transparent 70%);"></div>
+      <div class="bs-ground" style="background:repeating-linear-gradient(90deg,#3a2c1a 0 14px,#2c2013 14px 16px);"></div>
+      ${bsGold('down','left:38%; height:64%; bottom:8%; z-index:3;')}`;
+  },
+  /* SILVER — facing the Angry Fisherman on the Lake Worth pier */
+  silver(){
+    return `<div class="bs-bg" style="background:linear-gradient(180deg,#0a1c26 0%,#0a2430 55%,#04141c 100%);"></div>
+      <div class="bs-glow" style="left:6%; top:14%; width:40%; height:40%; background:radial-gradient(ellipse,rgba(63,200,240,.16),transparent 70%);"></div>
+      <div class="bs-ground" style="background:repeating-linear-gradient(90deg,#4a3a24 0 14px,#3a2c1a 14px 16px);"></div>
+      ${bsMember('silver','left:10%; height:54%; bottom:8%; z-index:3;')}
+      ${bsFoe('G','right:6%; height:64%; bottom:6%; z-index:2;')}`;
+  },
+  /* PLATINUM — squaring off against the Cursed Boxer at the refinery */
+  platinum(){
+    return `<div class="bs-bg" style="background:linear-gradient(180deg,#131f0e 0%,#182611 55%,#0b120a 100%);"></div>
+      <div class="bs-glow" style="right:10%; top:12%; width:38%; height:38%; background:radial-gradient(ellipse,rgba(63,200,240,.14),transparent 70%);"></div>
+      <div class="bs-ground" style="background:linear-gradient(180deg,#233a19,#13200d);"></div>
+      ${bsMember('platinum','left:10%; height:54%; bottom:8%; z-index:3;')}
+      ${bsFoe('X','right:8%; height:54%; bottom:6%; z-index:2;')}`;
+  },
+  /* TITANIUM — swarmed by Interceptor Droids, downtown, in distress */
+  titanium(){
+    return `<div class="bs-bg" style="background:linear-gradient(180deg,#241207 0%,#150a05 55%,#0c0603 100%);"></div>
+      <div class="bs-glow" style="left:26%; top:6%; width:48%; height:36%; background:radial-gradient(ellipse,rgba(200,50,40,.18),transparent 72%);"></div>
+      <div class="bs-ground" style="background:linear-gradient(180deg,#241a12,#120c07);"></div>
+      ${bsFoe('I','left:6%; height:28%; bottom:34%; z-index:2;', true)}
+      ${bsFoe('I','right:10%; height:30%; bottom:36%; z-index:2;')}
+      ${bsFoe('I','left:34%; height:24%; bottom:54%; z-index:2;', true)}
+      ${bsMember('titanium','left:36%; height:58%; bottom:6%; z-index:3;')}`;
+  },
+  /* BARON — teaser: a dim silhouette behind two full-color droid escorts */
+  baron(){
+    return `<div class="bs-bg" style="background:linear-gradient(180deg,#0a0e16 0%,#0c1220 55%,#05070c 100%);"></div>
+      <div class="bs-glow" style="left:20%; top:10%; width:60%; height:50%; background:radial-gradient(ellipse,rgba(63,200,240,.10),transparent 75%);"></div>
+      <div class="bs-ground" style="background:linear-gradient(180deg,#151a22,#090b10);"></div>
+      ${bsFoe('I','left:8%; height:28%; bottom:8%; z-index:2;', true)}
+      ${bsFoe('I','right:4%; height:26%; bottom:30%; z-index:2;')}
+      <div class="bs-fig bs-foe" style="left:32%; height:66%; bottom:5%; z-index:3;">
+        <div class="bs-silhouette" style="position:absolute; inset:0;">${ENEMY_SVG.A}</div>
+      </div>`;
+  },
+  /* DELTA — sealed: an almost-total blackout, only the possession glow shows */
+  delta(){
+    return `<div class="bs-bg" style="background:#050308;"></div>
+      <div class="bs-glow" style="left:26%; top:8%; width:52%; height:60%; background:radial-gradient(ellipse,rgba(63,200,240,.08),transparent 75%);"></div>
+      <div class="bs-fig bs-foe bs-face-r" style="right:14%; height:70%; bottom:4%; z-index:2;">
+        <div class="bs-silhouette" style="position:absolute; inset:0;">${ENEMY_SVG.Q}</div>
+        <div class="bs-glow" style="left:40%; top:27%; width:11%; aspect-ratio:1/1; background:radial-gradient(circle,#3fc8f0,transparent 70%);"></div>
+        <div class="bs-glow" style="left:52%; top:27%; width:11%; aspect-ratio:1/1; background:radial-gradient(circle,#3fc8f0,transparent 70%);"></div>
+        <div class="bs-glow" style="left:86%; top:-2%; width:18%; aspect-ratio:1/1; background:radial-gradient(circle,#3fc8f0,transparent 65%); opacity:.8;"></div>
+      </div>`;
+  },
+};
+function renderBriefingScene(key){
+  const el = document.getElementById('br-scene'); if(!el) return;
+  const fn = key && BRIEFING_SCENES[key];
+  el.innerHTML = fn ? fn() : '';
+}
 let brIndex = 0;
 function startBriefingRoom(){
   brIndex = 0; mode = 'briefing-intro'; showScreen('briefing-intro'); renderBriefingPage();
@@ -3642,6 +3758,7 @@ function renderBriefingPage(){
   const bodyEl = document.getElementById('br-body');
   bodyEl.classList.toggle('blurred', p.blur);
   typeText(bodyEl, p.body);
+  renderBriefingScene(p.scene);
   const isLast = brIndex === BRIEFING_PAGES.length - 1;
   document.getElementById('br-btn').textContent = isLast ? 'Head Out' : 'Next';
   document.getElementById('br-dots').innerHTML =
