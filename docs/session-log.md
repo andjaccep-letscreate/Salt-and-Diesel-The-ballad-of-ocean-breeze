@@ -295,3 +295,10 @@ Beginner-friendly on purpose — see `CLAUDE.md` for the format and rules.
 - Learned: A shared crewFace(key) helper with emoji fallback means every small render site upgrades (or degrades) together — no site can drift to a stale face.
 - Gotchas: Two members previously shared the same skin fill (#c9966b) — exactly the canon violation this phase exists to fix. Also caught a self-inflicted broken hex mid-edit; node --check catches nothing inside template strings, only the browser render does.
 - Next:    Awaiting Andres' look-review on the ?v=crew1 preview — iterate until it's right. No merge yet.
+
+## [2026-07-11] — Phase 1V-GOLD-WEAPON: Larry gets his sword (anchor stays)
+- Goal:    Gold's primary weapon reads as a traditional long sword; the anchor stays as his signature off-hand (his legendary + ultimate reference it).
+- Did:     Art only. The anchor-staff in all three directional views became a proper long sword (straight blade with fuller, crossguard, wrapped grip, pommel) inside the same .bolt-arm/.bolt-arc animation groups, so swings and the cyan bolt arc still work untouched. The anchor moved to the off-hand per view: dangling on its chain from the left hand (front), slung across the back on a strap (back), at the back hip with the chain over the shoulder (side — the battle-stage view). Face/skin/hair/aviators untouched.
+- Learned: All three views shared a byte-identical weapon group, so one replace-all swapped the sword into every view at once — drawing shared parts identically pays off later.
+- Gotchas: None; seeded A/B vs main byte-identical, zero console errors, battle column still fits.
+- Next:    Awaiting hub sign-off on ?v=gw1. No merge yet.

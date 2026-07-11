@@ -1573,6 +1573,15 @@
             <rect x="15.4" y="26" width="1.2" height="7.5" fill="#2e4a6b"/>
             <rect x="4.6" y="16.6" width="4" height="7.5" rx="2" fill="#7a5230"/>
             <circle cx="6.6" cy="24.4" r="2" fill="#c98a5e"/>
+            <g><!-- off-hand: the signature anchor on its chain -->
+              <circle cx="6.4" cy="27.4" r="0.8" fill="none" stroke="#a9772b" stroke-width="0.7"/>
+              <circle cx="6.15" cy="29.1" r="0.8" fill="none" stroke="#a9772b" stroke-width="0.7"/>
+              <circle cx="5.9" cy="30.8" r="0.8" fill="none" stroke="#a9772b" stroke-width="0.7"/>
+              <circle cx="5.75" cy="32.4" r="0.85" fill="none" stroke="#9aa3ad" stroke-width="0.7"/>
+              <rect x="5.2" y="33" width="1.1" height="5" rx="0.5" fill="#c7ced6" stroke="#5b6772" stroke-width="0.3"/>
+              <rect x="3.6" y="34.2" width="4.3" height="0.9" rx="0.45" fill="#9aa3ad"/>
+              <path d="M3.2 36 Q3.9 39.2 5.75 39.5 Q7.6 39.2 8.3 36 L7.3 36.6 Q7 38.2 5.75 38.4 Q4.5 38.2 4.2 36.6 Z" fill="#c7ced6" stroke="#5b6772" stroke-width="0.4"/>
+            </g>
             <rect x="23.4" y="16.6" width="4" height="7.5" rx="2" fill="#7a5230"/>
             <circle cx="25.4" cy="24.4" r="2" fill="#c98a5e"/>
             <rect x="8" y="16" width="16" height="12" rx="3.5" fill="#7a5230"/>
@@ -1588,15 +1597,14 @@
             <path d="M9 10 Q8.6 4.4 12 3.3 Q13.4 2.1 16 2.5 Q18.6 2.1 20 3.3 Q23.4 4.4 23 10 Q22 7.4 20.2 7.2 Q19.2 5.7 16 5.9 Q12.8 5.7 11.8 7.2 Q10 7.4 9 10 Z" fill="#1c1410"/>
             <circle cx="9.6" cy="8.6" r="1" fill="#1c1410"/><circle cx="22.4" cy="8.6" r="1" fill="#1c1410"/>
             <!-- bolt sword: brass hilt + jagged lightning blade + electric arc -->
-            <g class="bolt-arm">
-              <rect x="24.6" y="23.5" width="2.8" height="6.5" rx="1" fill="#a9772b"/>          <!-- brass grip Larry holds -->
-              <circle cx="26" cy="4.8" r="2.1" fill="none" stroke="#9aa3ad" stroke-width="1.4"/>  <!-- crown ring -->
-              <rect x="25" y="6" width="2" height="17.6" rx="1" fill="#c7ced6" stroke="#5b6772" stroke-width="0.5"/>  <!-- shank -->
-              <rect x="21.8" y="8.4" width="8.4" height="1.7" rx="0.85" fill="#9aa3ad"/>          <!-- stock crossbar -->
-              <path d="M21.5 15 Q22.4 22.6 26 23 Q29.6 22.6 30.5 15 L29 15.8 Q28.4 20.4 26 20.6 Q23.6 20.4 23 15.8 Z" fill="#c7ced6" stroke="#5b6772" stroke-width="0.5"/>  <!-- fluke crescent -->
-              <path d="M21.5 15 L20.3 12.4 L23.2 15.3 Z" fill="#9aa3ad"/>                        <!-- left fluke barb -->
-              <path d="M30.5 15 L31.4 12.4 L28.8 15.3 Z" fill="#9aa3ad"/>                        <!-- right fluke barb -->
-              <polyline class="bolt-arc" points="26,6 24.8,11.5 27.2,11.5 26,20" fill="none" stroke="#3fa9ff" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round"/>
+            <g class="bolt-arm"><!-- 1V-GOLD-WEAPON: traditional long sword (main hand) -->
+              <rect x="25" y="23.2" width="2.6" height="6.2" rx="1" fill="#a9772b"/>            <!-- leather-wrapped grip -->
+              <path d="M25 25 h2.6 M25 26.8 h2.6" stroke="#7c5620" stroke-width="0.5"/>          <!-- grip wraps -->
+              <circle cx="26.3" cy="30" r="1.2" fill="#c9a86a" stroke="#7c5620" stroke-width="0.5"/> <!-- pommel -->
+              <rect x="22.3" y="21.4" width="8" height="1.9" rx="0.95" fill="#9aa3ad" stroke="#5b6772" stroke-width="0.4"/> <!-- crossguard -->
+              <path d="M25.2 21.2 L25.2 5 L26.3 2.4 L27.4 5 L27.4 21.2 Z" fill="#dfe2e6" stroke="#8a94a0" stroke-width="0.5"/> <!-- long straight blade -->
+              <path d="M26.3 4.8 V20.6" stroke="#aab4be" stroke-width="0.5"/>                    <!-- fuller -->
+              <polyline class="bolt-arc" points="26.3,5 25.4,11 27.2,11 26.3,19" fill="none" stroke="#3fa9ff" stroke-width="0.8" stroke-linejoin="round" stroke-linecap="round"/>
             </g>
           </g>
         </g>
@@ -1618,18 +1626,24 @@
             <rect x="23.4" y="16.6" width="4" height="7.5" rx="2" fill="#7a5230"/>
             <rect x="8" y="16" width="16" height="12" rx="3.5" fill="#6f4a2b"/>
             <rect x="12" y="15.2" width="8" height="2.2" rx="1" fill="#5e3f24"/>
+            <g><!-- signature anchor slung across the back -->
+              <path d="M9 17.5 L22 26" stroke="#53381f" stroke-width="1.2"/>
+              <circle cx="15.6" cy="17.6" r="1" fill="none" stroke="#9aa3ad" stroke-width="0.8"/>
+              <rect x="15" y="18.2" width="1.3" height="6.4" rx="0.6" fill="#c7ced6" stroke="#5b6772" stroke-width="0.35"/>
+              <rect x="13" y="19.6" width="5.3" height="1" rx="0.5" fill="#9aa3ad"/>
+              <path d="M12.4 22 Q13.3 25.6 15.65 25.9 Q18 25.6 18.9 22 L17.7 22.6 Q17.3 24.4 15.65 24.6 Q14 24.4 13.6 22.6 Z" fill="#c7ced6" stroke="#5b6772" stroke-width="0.4"/>
+            </g>
             <circle cx="16" cy="10" r="6.5" fill="#c98a5e"/>
             <path d="M9.2 11 Q8.8 4 12.2 3.2 Q13.6 2.2 16 2.5 Q18.4 2.2 19.8 3.2 Q23.2 4 22.8 11 Q22.6 12.6 16 12.6 Q9.4 12.6 9.2 11 Z" fill="#1c1410"/>
             <circle cx="10" cy="9.4" r="1" fill="#1c1410"/><circle cx="22" cy="9.4" r="1" fill="#1c1410"/>
-            <g class="bolt-arm">
-              <rect x="24.6" y="23.5" width="2.8" height="6.5" rx="1" fill="#a9772b"/>          <!-- brass grip Larry holds -->
-              <circle cx="26" cy="4.8" r="2.1" fill="none" stroke="#9aa3ad" stroke-width="1.4"/>  <!-- crown ring -->
-              <rect x="25" y="6" width="2" height="17.6" rx="1" fill="#c7ced6" stroke="#5b6772" stroke-width="0.5"/>  <!-- shank -->
-              <rect x="21.8" y="8.4" width="8.4" height="1.7" rx="0.85" fill="#9aa3ad"/>          <!-- stock crossbar -->
-              <path d="M21.5 15 Q22.4 22.6 26 23 Q29.6 22.6 30.5 15 L29 15.8 Q28.4 20.4 26 20.6 Q23.6 20.4 23 15.8 Z" fill="#c7ced6" stroke="#5b6772" stroke-width="0.5"/>  <!-- fluke crescent -->
-              <path d="M21.5 15 L20.3 12.4 L23.2 15.3 Z" fill="#9aa3ad"/>                        <!-- left fluke barb -->
-              <path d="M30.5 15 L31.4 12.4 L28.8 15.3 Z" fill="#9aa3ad"/>                        <!-- right fluke barb -->
-              <polyline class="bolt-arc" points="26,6 24.8,11.5 27.2,11.5 26,20" fill="none" stroke="#3fa9ff" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round"/>
+            <g class="bolt-arm"><!-- 1V-GOLD-WEAPON: traditional long sword (main hand) -->
+              <rect x="25" y="23.2" width="2.6" height="6.2" rx="1" fill="#a9772b"/>            <!-- leather-wrapped grip -->
+              <path d="M25 25 h2.6 M25 26.8 h2.6" stroke="#7c5620" stroke-width="0.5"/>          <!-- grip wraps -->
+              <circle cx="26.3" cy="30" r="1.2" fill="#c9a86a" stroke="#7c5620" stroke-width="0.5"/> <!-- pommel -->
+              <rect x="22.3" y="21.4" width="8" height="1.9" rx="0.95" fill="#9aa3ad" stroke="#5b6772" stroke-width="0.4"/> <!-- crossguard -->
+              <path d="M25.2 21.2 L25.2 5 L26.3 2.4 L27.4 5 L27.4 21.2 Z" fill="#dfe2e6" stroke="#8a94a0" stroke-width="0.5"/> <!-- long straight blade -->
+              <path d="M26.3 4.8 V20.6" stroke="#aab4be" stroke-width="0.5"/>                    <!-- fuller -->
+              <polyline class="bolt-arc" points="26.3,5 25.4,11 27.2,11 26.3,19" fill="none" stroke="#3fa9ff" stroke-width="0.8" stroke-linejoin="round" stroke-linecap="round"/>
             </g>
           </g>
         </g>
@@ -1650,6 +1664,13 @@
             <rect x="10.5" y="16" width="12.5" height="12" rx="3.5" fill="#7a5230"/>
             <rect x="16.8" y="16.6" width="4" height="10" rx="2" fill="#d8c7a8"/>
             <circle cx="18.8" cy="24.8" r="2" fill="#c98a5e"/>
+            <g><!-- signature anchor at his back hip, chain over the shoulder -->
+              <path d="M14.5 16.5 Q11 18 10.2 21" stroke="#a9772b" stroke-width="0.9" fill="none" stroke-dasharray="1.3 0.9"/>
+              <circle cx="10.4" cy="21.6" r="0.9" fill="none" stroke="#9aa3ad" stroke-width="0.7"/>
+              <rect x="9.9" y="22.3" width="1.2" height="5.6" rx="0.55" fill="#c7ced6" stroke="#5b6772" stroke-width="0.3"/>
+              <rect x="8.1" y="23.5" width="4.8" height="1" rx="0.5" fill="#9aa3ad"/>
+              <path d="M7.6 25.6 Q8.4 28.9 10.5 29.2 Q12.6 28.9 13.4 25.6 L12.3 26.2 Q12 27.8 10.5 28 Q9 27.8 8.7 26.2 Z" fill="#c7ced6" stroke="#5b6772" stroke-width="0.4"/>
+            </g>
             <circle cx="17" cy="10" r="6.5" fill="#c98a5e"/>
             <path d="M20.5 12.8 q1.4 1 2.2 0" stroke="#7a4f33" stroke-width="1" fill="none" stroke-linecap="round"/>
             <ellipse cx="20.6" cy="10" rx="2.9" ry="2.4" fill="#14171c" stroke="#a9772b" stroke-width="0.6"/>
@@ -1657,15 +1678,14 @@
             <path d="M11.4 10.3 Q11 3.6 15 3.2 Q16.4 2.1 18.4 2.6 Q21 2.6 22.2 4.6 Q23.2 6.2 22.8 9.2 Q21.8 6.6 18 6.5 Q13 6.7 11.4 10.3 Z" fill="#1c1410"/>
             <circle cx="11.9" cy="8.6" r="1" fill="#1c1410"/>
             <rect x="10.6" y="6.6" width="3.4" height="5" rx="1.6" fill="#1c1410"/>
-            <g class="bolt-arm">
-              <rect x="24.6" y="23.5" width="2.8" height="6.5" rx="1" fill="#a9772b"/>          <!-- brass grip Larry holds -->
-              <circle cx="26" cy="4.8" r="2.1" fill="none" stroke="#9aa3ad" stroke-width="1.4"/>  <!-- crown ring -->
-              <rect x="25" y="6" width="2" height="17.6" rx="1" fill="#c7ced6" stroke="#5b6772" stroke-width="0.5"/>  <!-- shank -->
-              <rect x="21.8" y="8.4" width="8.4" height="1.7" rx="0.85" fill="#9aa3ad"/>          <!-- stock crossbar -->
-              <path d="M21.5 15 Q22.4 22.6 26 23 Q29.6 22.6 30.5 15 L29 15.8 Q28.4 20.4 26 20.6 Q23.6 20.4 23 15.8 Z" fill="#c7ced6" stroke="#5b6772" stroke-width="0.5"/>  <!-- fluke crescent -->
-              <path d="M21.5 15 L20.3 12.4 L23.2 15.3 Z" fill="#9aa3ad"/>                        <!-- left fluke barb -->
-              <path d="M30.5 15 L31.4 12.4 L28.8 15.3 Z" fill="#9aa3ad"/>                        <!-- right fluke barb -->
-              <polyline class="bolt-arc" points="26,6 24.8,11.5 27.2,11.5 26,20" fill="none" stroke="#3fa9ff" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round"/>
+            <g class="bolt-arm"><!-- 1V-GOLD-WEAPON: traditional long sword (main hand) -->
+              <rect x="25" y="23.2" width="2.6" height="6.2" rx="1" fill="#a9772b"/>            <!-- leather-wrapped grip -->
+              <path d="M25 25 h2.6 M25 26.8 h2.6" stroke="#7c5620" stroke-width="0.5"/>          <!-- grip wraps -->
+              <circle cx="26.3" cy="30" r="1.2" fill="#c9a86a" stroke="#7c5620" stroke-width="0.5"/> <!-- pommel -->
+              <rect x="22.3" y="21.4" width="8" height="1.9" rx="0.95" fill="#9aa3ad" stroke="#5b6772" stroke-width="0.4"/> <!-- crossguard -->
+              <path d="M25.2 21.2 L25.2 5 L26.3 2.4 L27.4 5 L27.4 21.2 Z" fill="#dfe2e6" stroke="#8a94a0" stroke-width="0.5"/> <!-- long straight blade -->
+              <path d="M26.3 4.8 V20.6" stroke="#aab4be" stroke-width="0.5"/>                    <!-- fuller -->
+              <polyline class="bolt-arc" points="26.3,5 25.4,11 27.2,11 26.3,19" fill="none" stroke="#3fa9ff" stroke-width="0.8" stroke-linejoin="round" stroke-linecap="round"/>
             </g>
           </g>
         </g>
