@@ -1409,6 +1409,15 @@
   @keyframes ultStrobe{ from{ opacity:1; } to{ opacity:0; } }
   @keyframes ultRain  { from{ transform:translateY(-16%); opacity:.9; } to{ transform:translateY(12%); opacity:0; } }
   @keyframes ultRing  { from{ transform:scale(.5); opacity:1; } to{ transform:scale(1.9); opacity:0; } }
+  /* ============ PHASE 1V-CREW: portrait sizing (art only) ============
+     the hand-drawn head-and-shoulders portraits sit exactly where the
+     emoji used to be, sized off the container's font-size */
+  .svc-em svg{ width:1.4em; height:1.2em; display:block; }
+  .ps-em svg{ width:1.5em; height:1.3em; display:block; }
+  #d-face svg{ width:2.1rem; height:1.8rem; display:block; }
+  #briefing-intro .paper-icon svg{ width:2.9rem; height:2.4rem; display:inline-block; }
+  .sv-pick .sv-em svg{ width:1.7rem; height:1.45rem; display:block; }
+
   /* the always-visible ULTIMATE row costs ~50px of HUD: the stage cedes it
      (still ~74% of a 390x844 screen — no overflow, commands stay in thumb zone) */
   #stage{ height:max(50svh, calc(100svh - 220px)); }
@@ -1550,31 +1559,34 @@
         <!-- ============ FRONT (facing down / toward viewer) ============ -->
         <g class="view view-down">
           <g class="leg-a">
-            <rect x="10" y="31" width="4.6" height="8" rx="2" fill="#c98a5e"/>
-            <rect x="8.4" y="38.2" width="7.2" height="4" rx="2" fill="#eef0f2"/>
-            <rect x="8.4" y="41" width="7.2" height="1.6" rx="0.8" fill="#2a2d33"/>
+            <rect x="10" y="31" width="4.6" height="8" rx="2" fill="#3b5a80"/>
+            <rect x="8.4" y="38.2" width="7.2" height="4" rx="2" fill="#5a4127"/>
+            <rect x="8.4" y="41" width="7.2" height="1.6" rx="0.8" fill="#2a2016"/>
           </g>
           <g class="leg-b">
-            <rect x="17.4" y="31" width="4.6" height="8" rx="2" fill="#c98a5e"/>
-            <rect x="16.4" y="38.2" width="7.2" height="4" rx="2" fill="#eef0f2"/>
-            <rect x="16.4" y="41" width="7.2" height="1.6" rx="0.8" fill="#2a2d33"/>
+            <rect x="17.4" y="31" width="4.6" height="8" rx="2" fill="#33507a"/>
+            <rect x="16.4" y="38.2" width="7.2" height="4" rx="2" fill="#4f3921"/>
+            <rect x="16.4" y="41" width="7.2" height="1.6" rx="0.8" fill="#2a2016"/>
           </g>
           <g class="body-bob">
-            <rect x="9" y="26" width="14" height="7.5" rx="2.5" fill="#d3d6db"/>
-            <rect x="15.4" y="26" width="1.2" height="7.5" fill="#bcc0c6"/>
-            <rect x="4.6" y="16.6" width="4" height="7.5" rx="2" fill="#d8c7a8"/>
+            <rect x="9" y="26" width="14" height="7.5" rx="2.5" fill="#3b5a80"/>
+            <rect x="15.4" y="26" width="1.2" height="7.5" fill="#2e4a6b"/>
+            <rect x="4.6" y="16.6" width="4" height="7.5" rx="2" fill="#7a5230"/>
             <circle cx="6.6" cy="24.4" r="2" fill="#c98a5e"/>
-            <rect x="23.4" y="16.6" width="4" height="7.5" rx="2" fill="#d8c7a8"/>
+            <rect x="23.4" y="16.6" width="4" height="7.5" rx="2" fill="#7a5230"/>
             <circle cx="25.4" cy="24.4" r="2" fill="#c98a5e"/>
-            <rect x="8" y="16" width="16" height="12" rx="3.5" fill="#d8c7a8"/>
-            <rect x="15.2" y="16.4" width="1.6" height="7" fill="#bca87f"/>
+            <rect x="8" y="16" width="16" height="12" rx="3.5" fill="#7a5230"/>
+            <rect x="12.4" y="16.4" width="7.2" height="11" rx="1.6" fill="#d8c7a8"/>
+            <rect x="15.5" y="16.6" width="1" height="10.6" fill="#bca87f"/>
             <circle cx="16" cy="20" r="0.7" fill="#7a6a4a"/>
             <circle cx="16" cy="10" r="6.5" fill="#c98a5e"/>
             <path d="M13.4 13.6 Q16 15.8 18.6 13.6" stroke="#7a4f33" stroke-width="1" fill="none" stroke-linecap="round"/>
-            <rect x="9.6" y="8.4" width="12.8" height="3.2" rx="1.4" fill="#14171c"/>
-            <rect x="15.3" y="8.7" width="1.4" height="1.3" fill="#3a3f46"/>
-            <rect x="10.2" y="9" width="3" height="0.7" rx="0.35" fill="#454b54"/>
-            <path d="M9 10 Q9 3.4 16 3.1 Q23 3.4 23 10 Q21 6.7 16 6.4 Q11 6.7 9 10 Z" fill="#1c1410"/>
+            <path d="M9.8 9 H22.2" stroke="#a9772b" stroke-width="0.8"/>
+            <ellipse cx="13" cy="10.2" rx="2.7" ry="2.3" fill="#14171c" stroke="#a9772b" stroke-width="0.6"/>
+            <ellipse cx="19" cy="10.2" rx="2.7" ry="2.3" fill="#14171c" stroke="#a9772b" stroke-width="0.6"/>
+            <path d="M15.7 9.6 Q16 9.2 16.3 9.6" stroke="#a9772b" stroke-width="0.8" fill="none"/>
+            <path d="M9 10 Q8.6 4.4 12 3.3 Q13.4 2.1 16 2.5 Q18.6 2.1 20 3.3 Q23.4 4.4 23 10 Q22 7.4 20.2 7.2 Q19.2 5.7 16 5.9 Q12.8 5.7 11.8 7.2 Q10 7.4 9 10 Z" fill="#1c1410"/>
+            <circle cx="9.6" cy="8.6" r="1" fill="#1c1410"/><circle cx="22.4" cy="8.6" r="1" fill="#1c1410"/>
             <!-- bolt sword: brass hilt + jagged lightning blade + electric arc -->
             <g class="bolt-arm">
               <rect x="24.6" y="23.5" width="2.8" height="6.5" rx="1" fill="#a9772b"/>          <!-- brass grip Larry holds -->
@@ -1591,23 +1603,24 @@
         <!-- ============ BACK (facing up / away) ============ -->
         <g class="view view-up">
           <g class="leg-a">
-            <rect x="10" y="31" width="4.6" height="8" rx="2" fill="#c98a5e"/>
-            <rect x="8.4" y="38.2" width="7.2" height="4" rx="2" fill="#dfe2e6"/>
-            <rect x="8.4" y="38.2" width="7.2" height="1.4" rx="0.7" fill="#2a2d33"/>
+            <rect x="10" y="31" width="4.6" height="8" rx="2" fill="#3b5a80"/>
+            <rect x="8.4" y="38.2" width="7.2" height="4" rx="2" fill="#5a4127"/>
+            <rect x="8.4" y="38.2" width="7.2" height="1.4" rx="0.7" fill="#2a2016"/>
           </g>
           <g class="leg-b">
-            <rect x="17.4" y="31" width="4.6" height="8" rx="2" fill="#c98a5e"/>
-            <rect x="16.4" y="38.2" width="7.2" height="4" rx="2" fill="#dfe2e6"/>
-            <rect x="16.4" y="38.2" width="7.2" height="1.4" rx="0.7" fill="#2a2d33"/>
+            <rect x="17.4" y="31" width="4.6" height="8" rx="2" fill="#33507a"/>
+            <rect x="16.4" y="38.2" width="7.2" height="4" rx="2" fill="#4f3921"/>
+            <rect x="16.4" y="38.2" width="7.2" height="1.4" rx="0.7" fill="#2a2016"/>
           </g>
           <g class="body-bob">
-            <rect x="9" y="26" width="14" height="7.5" rx="2.5" fill="#d3d6db"/>
-            <rect x="4.6" y="16.6" width="4" height="7.5" rx="2" fill="#d8c7a8"/>
-            <rect x="23.4" y="16.6" width="4" height="7.5" rx="2" fill="#d8c7a8"/>
-            <rect x="8" y="16" width="16" height="12" rx="3.5" fill="#cdbb98"/>
-            <rect x="12" y="15.2" width="8" height="2.2" rx="1" fill="#b7a47b"/>
+            <rect x="9" y="26" width="14" height="7.5" rx="2.5" fill="#3b5a80"/>
+            <rect x="4.6" y="16.6" width="4" height="7.5" rx="2" fill="#7a5230"/>
+            <rect x="23.4" y="16.6" width="4" height="7.5" rx="2" fill="#7a5230"/>
+            <rect x="8" y="16" width="16" height="12" rx="3.5" fill="#6f4a2b"/>
+            <rect x="12" y="15.2" width="8" height="2.2" rx="1" fill="#5e3f24"/>
             <circle cx="16" cy="10" r="6.5" fill="#c98a5e"/>
-            <path d="M9.2 11 Q9 3.4 16 3.1 Q23 3.4 22.8 11 Q22.6 12.6 16 12.6 Q9.4 12.6 9.2 11 Z" fill="#1c1410"/>
+            <path d="M9.2 11 Q8.8 4 12.2 3.2 Q13.6 2.2 16 2.5 Q18.4 2.2 19.8 3.2 Q23.2 4 22.8 11 Q22.6 12.6 16 12.6 Q9.4 12.6 9.2 11 Z" fill="#1c1410"/>
+            <circle cx="10" cy="9.4" r="1" fill="#1c1410"/><circle cx="22" cy="9.4" r="1" fill="#1c1410"/>
             <g class="bolt-arm">
               <rect x="24.6" y="23.5" width="2.8" height="6.5" rx="1" fill="#a9772b"/>          <!-- brass grip Larry holds -->
               <circle cx="26" cy="4.8" r="2.1" fill="none" stroke="#9aa3ad" stroke-width="1.4"/>  <!-- crown ring -->
@@ -1623,26 +1636,26 @@
         <!-- ============ SIDE (facing right; left = mirrored) ============ -->
         <g class="view view-side">
           <g class="leg-a">
-            <rect x="12" y="31" width="4.4" height="8" rx="2" fill="#b3774d"/>
-            <rect x="10.5" y="38.2" width="8" height="4" rx="2" fill="#dfe2e6"/>
-            <rect x="10.5" y="41" width="8" height="1.5" rx="0.7" fill="#2a2d33"/>
+            <rect x="12" y="31" width="4.4" height="8" rx="2" fill="#33507a"/>
+            <rect x="10.5" y="38.2" width="8" height="4" rx="2" fill="#5a4127"/>
+            <rect x="10.5" y="41" width="8" height="1.5" rx="0.7" fill="#2a2016"/>
           </g>
           <g class="leg-b">
-            <rect x="15.6" y="31" width="4.6" height="8" rx="2" fill="#c98a5e"/>
-            <rect x="15" y="38.2" width="9" height="4" rx="2" fill="#eef0f2"/>
-            <rect x="15" y="41" width="9" height="1.6" rx="0.8" fill="#2a2d33"/>
+            <rect x="15.6" y="31" width="4.6" height="8" rx="2" fill="#3b5a80"/>
+            <rect x="15" y="38.2" width="9" height="4" rx="2" fill="#6b4e2a"/>
+            <rect x="15" y="41" width="9" height="1.6" rx="0.8" fill="#2a2016"/>
           </g>
           <g class="body-bob">
-            <rect x="11.5" y="26" width="11.5" height="7.5" rx="2.5" fill="#d3d6db"/>
-            <rect x="10.5" y="16" width="12.5" height="12" rx="3.5" fill="#d8c7a8"/>
-            <rect x="16.8" y="16.6" width="4" height="8" rx="2" fill="#cdbb98"/>
+            <rect x="11.5" y="26" width="11.5" height="7.5" rx="2.5" fill="#3b5a80"/>
+            <rect x="10.5" y="16" width="12.5" height="12" rx="3.5" fill="#7a5230"/>
+            <rect x="16.8" y="16.6" width="4" height="10" rx="2" fill="#d8c7a8"/>
             <circle cx="18.8" cy="24.8" r="2" fill="#c98a5e"/>
             <circle cx="17" cy="10" r="6.5" fill="#c98a5e"/>
             <path d="M20.5 12.8 q1.4 1 2.2 0" stroke="#7a4f33" stroke-width="1" fill="none" stroke-linecap="round"/>
-            <rect x="18" y="8.4" width="5.4" height="3.1" rx="1.4" fill="#14171c"/>
-            <rect x="12.5" y="9.1" width="6" height="1.1" rx="0.5" fill="#14171c"/>
-            <rect x="18.5" y="8.8" width="1.6" height="0.7" rx="0.35" fill="#454b54"/>
-            <path d="M11 10.5 Q11 3.4 18 3.2 Q23.2 3.6 22.8 9.4 Q22 6.6 18 6.5 Q13 6.7 11 10.5 Z" fill="#1c1410"/>
+            <ellipse cx="20.6" cy="10" rx="2.9" ry="2.4" fill="#14171c" stroke="#a9772b" stroke-width="0.6"/>
+            <path d="M12.5 9.6 H17.8" stroke="#a9772b" stroke-width="0.9"/>
+            <path d="M11.4 10.3 Q11 3.6 15 3.2 Q16.4 2.1 18.4 2.6 Q21 2.6 22.2 4.6 Q23.2 6.2 22.8 9.2 Q21.8 6.6 18 6.5 Q13 6.7 11.4 10.3 Z" fill="#1c1410"/>
+            <circle cx="11.9" cy="8.6" r="1" fill="#1c1410"/>
             <rect x="10.6" y="6.6" width="3.4" height="5" rx="1.6" fill="#1c1410"/>
             <g class="bolt-arm">
               <rect x="24.6" y="23.5" width="2.8" height="6.5" rx="1" fill="#a9772b"/>          <!-- brass grip Larry holds -->
@@ -3029,40 +3042,121 @@ const ENEMY_SVG = {
    intentionally NOT built here.
    ================================================================= */
 /* battle sprites for the three recruits (Larry reuses his overworld sprite) */
+/* PHASE 1V-CREW: hand-drawn to the locked canon (skin tones are HARD canon):
+   silver #e7c39a (lightest) · titanium #a06b42 (brown) · platinum #6d4a33
+   (dark brown) · gold keeps #c98a5e (light brown, in the #player sprite). */
 const MEMBER_SVG = {
   silver:`<svg class="sprite" viewBox="0 0 32 48" preserveAspectRatio="xMidYMax meet" aria-label="Silver">
     <ellipse cx="16" cy="45" rx="9" ry="2.6" fill="rgba(0,0,0,.28)"/>
-    <rect x="12" y="31" width="4.4" height="8" rx="2" fill="#2b3038"/><rect x="15.6" y="31" width="4.6" height="8" rx="2" fill="#343a44"/>
-    <rect x="10.5" y="38.2" width="8" height="4" rx="2" fill="#11151b"/><rect x="15" y="38.2" width="9" height="4" rx="2" fill="#11151b"/>
-    <rect x="11" y="20" width="12" height="13" rx="3" fill="#2f3742"/><rect x="11" y="20" width="12" height="6" rx="3" fill="#39424f"/>
-    <circle cx="17" cy="13" r="6" fill="#c9966b"/>
-    <rect x="11.5" y="7.5" width="10" height="3" rx="1.4" fill="#6f7886"/>
-    <circle cx="14" cy="9" r="1" fill="#3fa9ff"/><circle cx="18.6" cy="9" r="1" fill="#3fa9ff"/>
-    <rect x="20" y="22" width="11" height="2.4" rx="1" fill="#9aa3ad"/><rect x="29.4" y="21" width="2.3" height="4.6" rx="1" fill="#c7ced6"/>
-    <rect x="19" y="23.4" width="4" height="2.2" rx="1" fill="#5b6772"/></svg>`,
+    <rect x="10.6" y="30" width="4.6" height="9" rx="2" fill="#8a7048"/><rect x="16.8" y="30" width="4.6" height="9" rx="2" fill="#7d653f"/>
+    <rect x="9.2" y="38.2" width="7.4" height="4" rx="2" fill="#4a351f"/><rect x="15.6" y="38.2" width="7.4" height="4" rx="2" fill="#3f2c19"/>
+    <rect x="9" y="17.5" width="14" height="14" rx="3.5" fill="#77808d"/>
+    <rect x="10.6" y="17.8" width="10.8" height="13" rx="2.5" fill="#3b4552"/>
+    <rect x="15.4" y="18" width="1.2" height="12.4" fill="#2c343f"/>
+    <rect x="5.2" y="18" width="4" height="7.2" rx="2" fill="#77808d"/><circle cx="7.2" cy="25.6" r="1.9" fill="#e7c39a"/>
+    <rect x="22.8" y="18" width="4" height="7.2" rx="2" fill="#77808d"/><circle cx="24.8" cy="25.6" r="1.9" fill="#e7c39a"/>
+    <circle cx="16" cy="10.5" r="6" fill="#e7c39a"/>
+    <path d="M13.6 13.8 Q16 15.6 18.4 13.8" stroke="#8a5c39" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+    <path d="M10 10 Q9.4 4.4 13 3.2 Q14.4 2 16 2.4 Q17.6 2 19 3.2 Q22.6 4.4 22 10 Q21 6.6 18.6 6.2 Q16 5.6 13.4 6.2 Q11 6.6 10 10 Z" fill="#1a1410"/>
+    <rect x="10.8" y="5.9" width="10.4" height="2" rx="1" fill="#a9772b"/>
+    <circle cx="13.4" cy="6.9" r="1.5" fill="#2c343f" stroke="#c9a86a" stroke-width="0.7"/>
+    <circle cx="18.6" cy="6.9" r="1.5" fill="#2c343f" stroke="#c9a86a" stroke-width="0.7"/>
+    <g><rect x="18.5" y="24.4" width="11" height="1.8" rx="0.9" fill="#9aa3ad"/>
+    <rect x="18.5" y="26.4" width="11" height="1.8" rx="0.9" fill="#c7ced6"/>
+    <rect x="18.5" y="28.4" width="11" height="1.8" rx="0.9" fill="#9aa3ad"/>
+    <circle cx="20.4" cy="27.3" r="3" fill="#a9772b" stroke="#7c5620" stroke-width="0.7"/>
+    <circle cx="20.4" cy="27.3" r="1.2" fill="#7c5620"/>
+    <path d="M29.5 25.4 L32 27.3 L29.5 29.2 Z" fill="#c7ced6"/></g></svg>`,
   titanium:`<svg class="sprite" viewBox="0 0 32 48" preserveAspectRatio="xMidYMax meet" aria-label="Titanium">
     <ellipse cx="16" cy="45" rx="10" ry="2.8" fill="rgba(0,0,0,.28)"/>
-    <rect x="11" y="31" width="5" height="8" rx="2" fill="#3a3f47"/><rect x="16" y="31" width="5" height="8" rx="2" fill="#454b54"/>
-    <rect x="9.5" y="38.2" width="8" height="4" rx="2" fill="#14171c"/><rect x="15.5" y="38.2" width="9" height="4" rx="2" fill="#14171c"/>
-    <rect x="9" y="19" width="15" height="14" rx="3.5" fill="#4a4f57"/><rect x="9" y="19" width="15" height="5" rx="3" fill="#565c66"/>
-    <circle cx="16" cy="12" r="6.2" fill="#c9966b"/>
-    <path d="M10 13 Q16 19 22 13 Q21 16 16 16.5 Q11 16 10 13Z" fill="#2a211a"/>
-    <rect x="10.5" y="9" width="11" height="2.6" rx="1.2" fill="#1c2a1f"/>
-    <circle cx="13.5" cy="10.2" r="1" fill="#3fcf9e"/><circle cx="18.5" cy="10.2" r="1" fill="#3fcf9e"/>
-    <rect x="22" y="8" width="2.4" height="20" rx="1" fill="#6b4e2a"/>
-    <path d="M22 8 q8 1 8 8 q-8 1 -8 -2 Z" fill="#9aa3ad" stroke="#5b6772" stroke-width="0.6"/>
-    <circle cx="27.5" cy="30" r="1.7" fill="#3fcf9e"/></svg>`,
+    <rect x="10.4" y="30" width="5" height="9" rx="2" fill="#7d6a4a"/><rect x="16.6" y="30" width="5" height="9" rx="2" fill="#71603f"/>
+    <rect x="8.8" y="38.2" width="7.8" height="4" rx="2" fill="#2c2118"/><rect x="15.4" y="38.2" width="7.8" height="4" rx="2" fill="#241a12"/>
+    <rect x="8.4" y="17" width="15.2" height="14.5" rx="3.5" fill="#3f6b34"/>
+    <g stroke="#2c4d24" stroke-width="0.9"><path d="M11.4 17.2 V31"/><path d="M16 17.2 V31"/><path d="M20.6 17.2 V31"/><path d="M8.6 21 H23.4"/><path d="M8.6 26 H23.4"/></g>
+    <path d="M11 17.4 h10 v14 h-3.4 v-11 h-3.2 v11 H11 Z" fill="#53381f"/>
+    <rect x="4.6" y="17.6" width="4.2" height="7.4" rx="2" fill="#a06b42"/><circle cx="6.7" cy="25.4" r="2.1" fill="#a06b42"/>
+    <rect x="23.2" y="17.6" width="4.2" height="7.4" rx="2" fill="#a06b42"/><circle cx="25.3" cy="25.4" r="2.1" fill="#a06b42"/>
+    <circle cx="16" cy="10.8" r="6.4" fill="#a06b42"/>
+    <path d="M9.6 10.6 Q9.7 17 16 17.8 Q22.3 17 22.4 10.6 Q21.8 12.6 19.2 12.7 L12.8 12.7 Q10.2 12.6 9.6 10.6 Z" fill="#221a14"/>
+    <path d="M14.2 14.4 Q16 15.2 17.8 14.4" stroke="#453227" stroke-width="0.7" fill="none" stroke-linecap="round"/>
+    <path d="M9.6 9.6 Q9.6 3.8 16 3.6 Q22.4 3.8 22.4 9.6 Q20.8 6.8 16 6.7 Q11.2 6.8 9.6 9.6 Z" fill="#221a14"/>
+    <rect x="10.6" y="8.6" width="10.8" height="1.2" rx="0.6" fill="#3a2d1c"/>
+    <circle cx="13.2" cy="9.9" r="1.9" fill="#3fcf9e" opacity="0.9" stroke="#a9772b" stroke-width="0.7"/>
+    <circle cx="18.8" cy="9.9" r="1.9" fill="#3fcf9e" opacity="0.9" stroke="#a9772b" stroke-width="0.7"/>
+    <g transform="rotate(24 25 16)"><rect x="24" y="6" width="2.2" height="22" rx="1" fill="#6b4e2a"/>
+    <path d="M25 5 q6.5 1 7 7 q-4.5 1.5 -7 -1 Z" fill="#c7ced6" stroke="#5b6772" stroke-width="0.6"/>
+    <path d="M25 5 q-4.5 0.6 -5.4 4.6 q3 1 5.4 -0.6 Z" fill="#9aa3ad" stroke="#5b6772" stroke-width="0.5"/>
+    <circle cx="25.6" cy="8.4" r="1.5" fill="#a9772b"/></g>
+    <g><rect x="3" y="6" width="4.4" height="3" rx="1.2" fill="#a9772b"/>
+    <circle cx="6.4" cy="7.5" r="0.9" fill="#3fcf9e"/>
+    <path d="M3.6 9 l-1 1.6 M5.4 9 l0 1.8 M7 9 l1 1.6" stroke="#5b6772" stroke-width="0.6"/></g></svg>`,
   platinum:`<svg class="sprite" viewBox="0 0 32 48" preserveAspectRatio="xMidYMax meet" aria-label="Platinum">
     <ellipse cx="16" cy="45" rx="9" ry="2.6" fill="rgba(0,0,0,.28)"/>
-    <path d="M10 39 L13 22 L20 22 L23 39 Z" fill="#26406b"/><rect x="11" y="20" width="11" height="6" rx="3" fill="#2e4d80"/>
-    <circle cx="16.5" cy="13" r="6" fill="#6f5240"/>
-    <path d="M11 12 q1 -7 6 -7 q5 0 6 7 q-3 -3 -6 -3 q-3 0 -6 3Z" fill="#1c1410"/>
-    <rect x="12" y="11.5" width="9.4" height="2.2" rx="1" fill="#3a3f46"/>
-    <circle cx="14.6" cy="12.6" r="1.4" fill="none" stroke="#cfd6de" stroke-width="0.7"/>
-    <circle cx="18.8" cy="12.6" r="1.4" fill="none" stroke="#cfd6de" stroke-width="0.7"/>
-    <rect x="20" y="24" width="4" height="5" rx="1" fill="#c7ced6"/>
-    <g stroke="#cfd6de" stroke-width="1.2" stroke-linecap="round"><path d="M24 25 L30 23"/><path d="M24 26.5 L30 26.5"/><path d="M24 28 L30 30"/></g></svg>`
+    <rect x="10.8" y="29.5" width="4.6" height="9" rx="2" fill="#243447"/><rect x="16.6" y="29.5" width="4.6" height="9" rx="2" fill="#1e2c3d"/>
+    <rect x="9.4" y="37.6" width="7.4" height="4.6" rx="2" fill="#dfe2e6"/><rect x="9.4" y="41" width="7.4" height="1.4" rx="0.7" fill="#8a94a0"/>
+    <rect x="15.8" y="37.6" width="7.4" height="4.6" rx="2" fill="#cfd4da"/><rect x="15.8" y="41" width="7.4" height="1.4" rx="0.7" fill="#8a94a0"/>
+    <rect x="8.8" y="16.8" width="14.4" height="14" rx="3.5" fill="#33607f"/>
+    <rect x="13.4" y="17.2" width="5.2" height="13.2" rx="1.5" fill="#e8e2d2"/>
+    <path d="M13.4 17.2 L18.6 30" stroke="#6b4423" stroke-width="1.3"/>
+    <rect x="4.8" y="17.2" width="4.2" height="7.4" rx="2" fill="#33607f"/><circle cx="6.9" cy="25" r="1.9" fill="#6d4a33"/>
+    <circle cx="16" cy="10.6" r="6" fill="#6d4a33"/>
+    <path d="M13.8 13.9 Q16 15.4 18.2 13.9" stroke="#3d2a1d" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+    <path d="M10.2 9.4 Q10.2 3.6 16 3.4 Q21.8 3.6 21.8 9.4 Q20.4 6.4 16 6.3 Q11.6 6.4 10.2 9.4 Z" fill="#161210"/>
+    <g fill="#161210"><rect x="8.9" y="8" width="1.7" height="9.4" rx="0.85"/><rect x="11" y="9.8" width="1.6" height="9" rx="0.8"/>
+    <rect x="21.4" y="8" width="1.7" height="9.4" rx="0.85"/><rect x="19.4" y="9.8" width="1.6" height="9" rx="0.8"/>
+    <rect x="13" y="3.4" width="6" height="2.4" rx="1.2"/></g>
+    <circle cx="13.7" cy="10.9" r="1.7" fill="none" stroke="#dfe6ee" stroke-width="0.8"/>
+    <circle cx="18.3" cy="10.9" r="1.7" fill="none" stroke="#dfe6ee" stroke-width="0.8"/>
+    <path d="M15.4 10.9 H16.6" stroke="#dfe6ee" stroke-width="0.8"/>
+    <g><rect x="22.6" y="17.6" width="4.6" height="7" rx="2" fill="#c7ced6" stroke="#8a94a0" stroke-width="0.6"/>
+    <rect x="21.8" y="24" width="7.4" height="6.6" rx="2.4" fill="#dfe2e6" stroke="#8a94a0" stroke-width="0.7"/>
+    <g fill="#8a94a0"><rect x="23" y="24.9" width="1.3" height="2.2" rx="0.6"/><rect x="24.9" y="24.9" width="1.3" height="2.2" rx="0.6"/><rect x="26.8" y="24.9" width="1.3" height="2.2" rx="0.6"/></g>
+    <circle cx="24.9" cy="21" r="1" fill="#a9772b"/></g>
+    <g stroke="#6b4e2a" stroke-width="1.1" fill="none"><path d="M6.2 28.6 q3.4 -2.6 6.8 0"/><path d="M9.6 27.2 V31"/></g>
+    <path d="M6.2 28.6 L12.9 28.6" stroke="#cfd6de" stroke-width="0.5"/></svg>`
 };
+/* head-and-shoulders portraits — the SAME faces at chip/dialogue/briefing size */
+const PORTRAIT_SVG = {
+  gold:`<svg viewBox="0 0 20 16" preserveAspectRatio="xMidYMax meet" aria-label="Gold portrait">
+    <path d="M2 16 Q2 11.4 10 11.2 Q18 11.4 18 16 Z" fill="#7a5230"/>
+    <rect x="7.6" y="11.4" width="4.8" height="4.6" rx="1" fill="#d8c7a8"/>
+    <circle cx="10" cy="6.4" r="4.6" fill="#c98a5e"/>
+    <path d="M8.3 9 Q10 10.2 11.7 9" stroke="#7a4f33" stroke-width="0.7" fill="none" stroke-linecap="round"/>
+    <path d="M5.6 5.7 H14.4" stroke="#a9772b" stroke-width="0.6"/>
+    <ellipse cx="7.9" cy="6.5" rx="1.9" ry="1.6" fill="#14171c" stroke="#a9772b" stroke-width="0.45"/>
+    <ellipse cx="12.1" cy="6.5" rx="1.9" ry="1.6" fill="#14171c" stroke="#a9772b" stroke-width="0.45"/>
+    <path d="M5.2 6.4 Q4.9 2.4 7.4 1.6 Q8.4 0.8 10 1 Q11.6 0.8 12.6 1.6 Q15.1 2.4 14.8 6.4 Q14 4.5 12.8 4.4 Q12.1 3.3 10 3.4 Q7.9 3.3 7.2 4.4 Q6 4.5 5.2 6.4 Z" fill="#1c1410"/></svg>`,
+  silver:`<svg viewBox="0 0 20 16" preserveAspectRatio="xMidYMax meet" aria-label="Silver portrait">
+    <path d="M2 16 Q2 11.4 10 11.2 Q18 11.4 18 16 Z" fill="#3b4552"/>
+    <rect x="9.4" y="11.4" width="1.2" height="4.6" fill="#2c343f"/>
+    <circle cx="10" cy="6.4" r="4.6" fill="#e7c39a"/>
+    <path d="M8.3 9 Q10 10.2 11.7 9" stroke="#8a5c39" stroke-width="0.7" fill="none" stroke-linecap="round"/>
+    <path d="M5.4 6.2 Q5 2.2 7.6 1.4 Q8.6 0.6 10 0.9 Q11.4 0.6 12.4 1.4 Q15 2.2 14.6 6.2 Q13.8 3.9 12 3.7 Q10 3.2 8 3.7 Q6.2 3.9 5.4 6.2 Z" fill="#1a1410"/>
+    <rect x="6" y="2.9" width="8" height="1.5" rx="0.75" fill="#a9772b"/>
+    <circle cx="8" cy="3.7" r="1.1" fill="#2c343f" stroke="#c9a86a" stroke-width="0.5"/>
+    <circle cx="12" cy="3.7" r="1.1" fill="#2c343f" stroke="#c9a86a" stroke-width="0.5"/></svg>`,
+  titanium:`<svg viewBox="0 0 20 16" preserveAspectRatio="xMidYMax meet" aria-label="Titanium portrait">
+    <path d="M2 16 Q2 11.4 10 11.2 Q18 11.4 18 16 Z" fill="#3f6b34"/>
+    <path d="M7.4 11.4 h5.2 v4.6 h-1.8 v-3.4 h-1.6 v3.4 H7.4 Z" fill="#53381f"/>
+    <circle cx="10" cy="6.6" r="4.8" fill="#a06b42"/>
+    <path d="M5.4 7 Q5.6 11 10 11.5 Q14.4 11 14.6 7 Q14.2 8.2 12.6 8.3 L7.4 8.3 Q5.8 8.2 5.4 7 Z" fill="#221a14"/>
+    <path d="M5.3 5.6 Q5.3 1.6 10 1.5 Q14.7 1.6 14.7 5.6 Q13.5 3.6 10 3.5 Q6.5 3.6 5.3 5.6 Z" fill="#221a14"/>
+    <circle cx="7.9" cy="5.9" r="1.4" fill="#3fcf9e" opacity="0.9" stroke="#a9772b" stroke-width="0.5"/>
+    <circle cx="12.1" cy="5.9" r="1.4" fill="#3fcf9e" opacity="0.9" stroke="#a9772b" stroke-width="0.5"/></svg>`,
+  platinum:`<svg viewBox="0 0 20 16" preserveAspectRatio="xMidYMax meet" aria-label="Platinum portrait">
+    <path d="M2 16 Q2 11.4 10 11.2 Q18 11.4 18 16 Z" fill="#33607f"/>
+    <rect x="8.2" y="11.4" width="3.6" height="4.6" rx="0.8" fill="#e8e2d2"/>
+    <circle cx="10" cy="6.4" r="4.5" fill="#6d4a33"/>
+    <path d="M8.4 9 Q10 10.1 11.6 9" stroke="#3d2a1d" stroke-width="0.65" fill="none" stroke-linecap="round"/>
+    <path d="M5.8 5.4 Q5.8 1.6 10 1.5 Q14.2 1.6 14.2 5.4 Q13.2 3.4 10 3.3 Q6.8 3.4 5.8 5.4 Z" fill="#161210"/>
+    <g fill="#161210"><rect x="4.9" y="4.4" width="1.3" height="7" rx="0.65"/><rect x="6.4" y="5.6" width="1.2" height="6.6" rx="0.6"/>
+    <rect x="13.8" y="4.4" width="1.3" height="7" rx="0.65"/><rect x="12.4" y="5.6" width="1.2" height="6.6" rx="0.6"/></g>
+    <circle cx="8.2" cy="6.6" r="1.3" fill="none" stroke="#dfe6ee" stroke-width="0.55"/>
+    <circle cx="11.8" cy="6.6" r="1.3" fill="none" stroke="#dfe6ee" stroke-width="0.55"/>
+    <path d="M9.5 6.6 H10.5" stroke="#dfe6ee" stroke-width="0.55"/></svg>`
+};
+/* everywhere a crew face renders small, use the portrait (emoji is the fallback) */
+function crewFace(key){ return PORTRAIT_SVG[key] || (MEMBER_DEFS[key] && MEMBER_DEFS[key].emoji) || '❓'; }
 
 /* the four crew members — stats per the locked numbers; growth per class.
    combatRole = archetype; weapon = canonical signature (cosmetic metadata). */
@@ -3372,7 +3466,7 @@ const BRIEFING_PAGES = [
     blur:false,
   },
   {
-    icon:'🕶️', stamp:'ACTIVE',
+    icon:'🕶️', pkey:'gold', stamp:'ACTIVE',
     head:'FIELD OPERATIVE — CALLSIGN GOLD',
     title:'LARRY "SPARKPLUG"',
     sub:'TROUBLESHOOTER · DEPLOYS ALONE · FIRST BOOTS ON THE GROUND',
@@ -3380,7 +3474,7 @@ const BRIEFING_PAGES = [
     blur:false,
   },
   {
-    icon:'🎯', stamp:'CLEARED',
+    icon:'🎯', pkey:'silver', stamp:'CLEARED',
     head:'FIELD CONTACT — ALPHA',
     title:'SILVER',
     sub:'Lake Worth Beach · ACTIVE · STANDING BY',
@@ -3388,7 +3482,7 @@ const BRIEFING_PAGES = [
     blur:false,
   },
   {
-    icon:'🦾', stamp:'CLEARED',
+    icon:'🦾', pkey:'platinum', stamp:'CLEARED',
     head:'FIELD CONTACT — BETA',
     title:'PLATINUM',
     sub:'Wellington Estates · ACTIVE · MANAGING LOCAL SITUATION',
@@ -3396,7 +3490,7 @@ const BRIEFING_PAGES = [
     blur:false,
   },
   {
-    icon:'🪓', stamp:'URGENT',
+    icon:'🪓', pkey:'titanium', stamp:'URGENT',
     head:'FIELD CONTACT — GAMMA',
     title:'TITANIUM',
     sub:'Downtown WPB — IN DISTRESS · AWAITING EXTRACTION',
@@ -3420,7 +3514,8 @@ function renderBriefingPage(){
   const p = BRIEFING_PAGES[brIndex];
   document.getElementById('br-stamp').textContent = p.stamp;
   document.getElementById('br-head').textContent  = p.head;
-  document.getElementById('br-icon').textContent  = p.icon;
+  const bi = document.getElementById('br-icon');
+  if(p.pkey) bi.innerHTML = crewFace(p.pkey); else bi.textContent = p.icon;
   document.getElementById('br-title').textContent = p.title;
   document.getElementById('br-sub').textContent   = p.sub;
   const bodyEl = document.getElementById('br-body');
@@ -3776,7 +3871,7 @@ function renderPartyStrip(){
     const m = party.find(p => p.key===key);
     const d = MEMBER_DEFS[key];
     const cls = !m ? 'ps-away' : m.hp<=0 ? 'ps-dead' : '';
-    return '<div class="ps-slot'+(cls?' '+cls:'')+'"><span class="ps-em">'+d.emoji+'</span><span class="ps-name">'+d.codename+'</span></div>';
+    return '<div class="ps-slot'+(cls?' '+cls:'')+'"><span class="ps-em">'+crewFace(key)+'</span><span class="ps-name">'+d.codename+'</span></div>';
   }).join('');
 }
 
@@ -3922,7 +4017,9 @@ function startDialogueSeq(lines, onEnd){
 function renderDlgLine(){
   if(!activeDialogue) return;
   const line = activeDialogue.lines[activeDialogue.idx];
-  document.getElementById('d-face').textContent = SPEAKER_FACE[line.speaker] || '❓';
+  const dKey = { GOLD:'gold', SILVER:'silver', TITANIUM:'titanium', PLATINUM:'platinum' }[line.speaker];
+  if(dKey) document.getElementById('d-face').innerHTML = crewFace(dKey);
+  else document.getElementById('d-face').textContent = SPEAKER_FACE[line.speaker] || '❓';
   document.getElementById('d-name').textContent = line.speaker;
   typeText(document.getElementById('d-say'), line.text);
 }
@@ -4212,7 +4309,7 @@ function buildStatusWindow(){
         <div class="mtrk"><i class="mfill fuel" id="fuf${i}"></i></div><span class="mval" id="fuv${i}"></span></div>`;
     return `<div class="svc" id="sv${i}" onclick="pickAlly(${i})" role="button" tabindex="0"
       onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();pickAlly(${i});}">
-      <div class="svc-top"><span class="svc-em">${m.emoji}</span><span class="svc-nm">${m.name.split(' ')[0]}</span>
+      <div class="svc-top"><span class="svc-em">${crewFace(m.key)}</span><span class="svc-nm">${m.name.split(' ')[0]}</span>
         <span class="svc-badges" id="bg${i}"></span><span class="svc-lv" id="lv${i}">L${m.lv}</span></div>
       <div class="meter" id="hp${i}"><span class="mlbl">HP</span>
         <div class="mtrk"><i class="mfill" id="hpf${i}"></i></div><span class="mval" id="hpv${i}"></span></div>
@@ -4749,7 +4846,7 @@ function renderSalvage(sid){
   wrap.innerHTML = party.map(m => {
     const cur = m[stat] || 0;
     return `<button class="sv-pick" onclick="applySalvage('${m.key}')">
-      <span class="sv-em">${m.emoji}</span>
+      <span class="sv-em">${crewFace(m.key)}</span>
       <span class="sv-who">${m.name.split(' ')[0]}<small>${m.codename} · L${m.lv}</small></span>
       <span class="sv-boost">${dispLabel}: ${cur} → ${cur + sv.amount}</span></button>`;
   }).join('');
