@@ -156,6 +156,9 @@
   .cell .mk.near-warn{ animation: nearPulse .8s ease-in-out infinite; }
   @keyframes glowPulse{ 0%,100%{ opacity:1; text-shadow:0 0 8px #00d9ff,0 0 12px rgba(0,217,255,0.6); } 50%{ opacity:0.85; text-shadow:0 0 4px #00d9ff,0 0 8px rgba(0,217,255,0.4); } }
   .cell .mk.tile-glow{ animation:glowPulse 1.5s ease-in-out infinite; color:#00d9ff; font-weight:bold; }
+  /* 1W-TOKENS: SVG map tokens (crew, enemies, mini-bosses) sized to the tile —
+     em units track the cell font-size, so ~0.93 of a tile like Larry himself */
+  .cell .mk svg{ width:1.5em; height:1.5em; display:block; }
 
   /* ---- Phase 1D-3: smooth-glide movers (patrols + recruited crew) ----
      Same technique as #player: absolutely-positioned overlay sprites whose
@@ -166,6 +169,11 @@
     font-size:calc(var(--board)/11*0.62); line-height:1; text-shadow:0 1px 2px rgba(0,0,0,.55);
     transition:transform .55s ease-in-out; will-change:transform; }
   .mover.near-warn{ animation: nearPulse .8s ease-in-out infinite; }
+  .mover svg{ width:94%; height:94%; display:block; }
+  /* 1W-ALIVE: unrecruited crew movers keep the cyan "come talk to me" invite —
+     filter-based (a transform pulse would fight the mover's positioning) */
+  @keyframes crewInvite{ 0%,100%{ filter:drop-shadow(0 0 1px rgba(0,217,255,.2)); } 50%{ filter:drop-shadow(0 0 6px rgba(0,217,255,.7)); } }
+  .mover.crew-mark{ animation: crewInvite 1.8s ease-in-out infinite; }
 
   /* ---- BATTLE STAGE: side-view face-off (hero left faces right, enemy right faces left) ---- */
   #stage{ position:relative; width:100%; max-width:480px; height:min(40vw,160px);
@@ -325,6 +333,7 @@
   @media (prefers-reduced-motion: reduce){
     #player, .mover{ transition:none; }
     #player.walking .leg-a, #player.walking .leg-b, #player.walking .body-bob, .mover.near-warn,
+    .mover.crew-mark,   /* 1W-ALIVE: crew invite pulse goes static too */
     .larry:not(.walking) .body-bob, .cell .mk.marker, .cell .mk.near-warn, .larry .bolt-arc,
     .larry.atk, .larry.atk .bolt-arm, .larry.atk-od, .larry.atk-od .bolt-arm,
     .larry.atk .bolt-arc, .larry.atk-od .bolt-arc,
@@ -1413,7 +1422,7 @@
      the hand-drawn head-and-shoulders portraits sit exactly where the
      emoji used to be, sized off the container's font-size */
   .svc-em svg{ width:1.4em; height:1.2em; display:block; }
-  .ps-em svg{ width:1.5em; height:1.3em; display:block; }
+  .ps-em svg{ width:2.1em; height:1.7em; display:block; }   /* 1W-ALIVE: bigger head-and-shoulders chips */
   #d-face svg{ width:2.1rem; height:1.8rem; display:block; }
   #briefing-intro .paper-icon svg{ width:2.9rem; height:2.4rem; display:inline-block; }
   .sv-pick .sv-em svg{ width:1.7rem; height:1.45rem; display:block; }
@@ -2202,12 +2211,14 @@ function patrolTick(){
   if(needRender) renderMovers();
 }
 
-/* ======================== PHASE 1D-2: RECRUITED CREW AMBIENT PACING ==============
-   Once a crew member is recruited, their N/D/R recruit-tile stops sitting still and
-   paces a short back-and-forth loop in their home zone — same ping-pong movement
-   as hostile patrols, but no battle/dialogue trigger and no defeat tracking. Reuses
-   the same 2000ms patrolTimer tick, so it inherits all the same pause/resume rules
-   (battle, dialogue, menus, zone changes) for free. */
+/* ======================== PHASE 1D-2: CREW AMBIENT PACING ========================
+   Crew N/D/R recruit-tiles don't sit still: they pace a short back-and-forth loop
+   in their home zone — same ping-pong movement as hostile patrols, but no battle
+   trigger and no defeat tracking. 1W-ALIVE: they pace BEFORE recruitment too (the
+   map char moves with the pacer, so walking into them still opens the recruit
+   dialogue anywhere on their little loop). Reuses the same 2000ms patrolTimer
+   tick, so it inherits all the same pause/resume rules (battle, dialogue, menus,
+   zone changes) for free. */
 const CREW_PACE_DEFS = {
   silver:   { ch:'N', locId:'lake-worth', sx:14, sy:8, path:[[13,8],[14,8]] },
   titanium: { ch:'D', locId:'downtown',   sx:8, sy:9, path:[[6,9],[7,9],[8,9],[9,9]] },
@@ -2216,10 +2227,14 @@ const CREW_PACE_DEFS = {
 let crewPacers = [];
 
 function buildCrewPacers(locId){
+  // 1W-ALIVE: rebuilding mid-zone (recruitment does this) must not strand the
+  // old pacer's char on the map — restore each live pacer's tile first. Safe on
+  // zone changes too: crew chars are unique to their own zone's map.
+  if(map) for(const p of crewPacers){ if(map[p.y] && map[p.y][p.x] === p.ch) map[p.y][p.x] = p.under; }
   crewPacers = [];
   if(!map) return;
   for(const [key, d] of Object.entries(CREW_PACE_DEFS)){
-    if(d.locId !== locId || !recruited[key]) continue;   // only paces once recruited, only in their home zone
+    if(d.locId !== locId) continue;   // 1W-ALIVE: paces before AND after recruitment, home zone only
     let under = GROUND[d.ch] || '.';   // sample real path terrain, same as buildPatrols
     for(const pt of d.path){
       const t = map[pt[1]][pt[0]];
@@ -3318,6 +3333,18 @@ const PORTRAIT_SVG = {
 /* everywhere a crew face renders small, use the portrait (emoji is the fallback) */
 function crewFace(key){ return PORTRAIT_SVG[key] || (MEMBER_DEFS[key] && MEMBER_DEFS[key].emoji) || '❓'; }
 
+/* 1W-TOKENS: overworld map tokens — the SAME redrawn CSS/SVG battle art, shrunk
+   to tile size. Crew recruit-NPCs reuse their MEMBER_SVG sprites; enemies and
+   mini-bosses reuse ENEMY_SVG. Everything NOT listed here (player sprite,
+   scenery 🌴🦩-style flavor, salvage 🧰🛢️🔩, glow tiles) keeps its emoji. */
+const TOKEN_SVG = {
+  'N': MEMBER_SVG.silver, 'D': MEMBER_SVG.titanium, 'R': MEMBER_SVG.platinum,
+  'L': ENEMY_SVG['L'], 'H': ENEMY_SVG['H'], 'S': ENEMY_SVG['S'], 'K': ENEMY_SVG['K'],
+  'E': ENEMY_SVG['E'], 'J': ENEMY_SVG['J'],
+  'G': ENEMY_SVG['G'], 'X': ENEMY_SVG['X'], 'A': ENEMY_SVG['A'],
+  'Q': ENEMY_SVG['Q'], 'M': ENEMY_SVG['M'],
+};
+
 /* the four crew members — stats per the locked numbers; growth per class.
    combatRole = archetype; weapon = canonical signature (cosmetic metadata). */
 const MEMBER_DEFS = {
@@ -3488,7 +3515,7 @@ function recruitMember(key){
   const m = makeMember(key, party[0].lv);
   recruited[key] = true;
   party.push(m);
-  buildCrewPacers(currentLocation);   // start ambient pacing immediately if recruited in their home zone
+  buildCrewPacers(currentLocation);   // refresh pacers (1W-ALIVE: they were already pacing pre-recruit; this re-syncs cleanly)
 }
 /* Return to the title. NOTE: does NOT clear the save (so a page reload can
    still offer Continue). A fresh run is begun from "Start the Job". */
@@ -4049,6 +4076,7 @@ function renderOverworld(instant){
       if(my<0 || my>=MAP_H || mx<0 || mx>=MAP_W){       // overscan past the map edge
         t.cell.className = 'cell t-void';
         t.cell.style.filter = '';
+        if(t.span.dataset.tok) delete t.span.dataset.tok;
         if(t.span.textContent) t.span.textContent = '';
         t.span.className = 'mk';
         continue;
@@ -4061,7 +4089,15 @@ function renderOverworld(instant){
       t2.cell.className = 'cell ' + cls + tileDeco(ch, base, mx, my);
       if(glyph){
         t2.cell.style.filter = '';
-        if(t2.span.textContent !== glyph) t2.span.textContent = glyph;
+        // 1W-TOKENS: character/enemy markers mount their SVG token; everything
+        // else stays an emoji glyph. dataset.tok caches which SVG is mounted.
+        const art = TOKEN_SVG[ch];
+        if(art){
+          if(t2.span.dataset.tok !== ch){ t2.span.dataset.tok = ch; t2.span.innerHTML = art; }
+        } else {
+          if(t2.span.dataset.tok){ delete t2.span.dataset.tok; t2.span.textContent = ''; }
+          if(t2.span.textContent !== glyph) t2.span.textContent = glyph;
+        }
         const dist = Math.abs(mx-player.x)+Math.abs(my-player.y);
         const near = (ch in ENEMIES && ENEMIES[ch].kind==='patrol') && dist <= 2;
         const adj  = dist === 1 ? ' adj' : '';           // 1D-3M: intensity step when adjacent
@@ -4072,6 +4108,7 @@ function renderOverworld(instant){
         // deterministic tiny brightness jitter so open areas aren't one flat slab
         const v = (mx*7 + my*13) % 6;
         t2.cell.style.filter = `brightness(${(0.9 + v*0.035).toFixed(3)})`;
+        if(t2.span.dataset.tok) delete t2.span.dataset.tok;
         if(t2.span.textContent) t2.span.textContent = '';
         t2.span.className = 'mk';
       }
@@ -4150,7 +4187,7 @@ function renderMovers(forceInstant){
   const seen = new Set();
   const all = [];
   for(const p of patrols)    all.push({ id:'p:'+p.id,  ch:p.ch, x:p.x, y:p.y, hostile:true  });
-  for(const c of crewPacers) all.push({ id:'c:'+c.key, ch:c.ch, x:c.x, y:c.y, hostile:false });
+  for(const c of crewPacers) all.push({ id:'c:'+c.key, ch:c.ch, x:c.x, y:c.y, hostile:false, invite:!recruited[c.key] });
   for(const m of all){
     seen.add(m.id);
     let el = moverPool[m.id], isNew = false;
@@ -4161,7 +4198,13 @@ function renderMovers(forceInstant){
       moverPool[m.id] = el;
       isNew = true;
     }
-    if(el.textContent !== EMOJI[m.ch]) el.textContent = EMOJI[m.ch] || '';
+    // 1W-TOKENS: SVG token art when we have it, emoji otherwise. dataset.tok
+    // caches which art is mounted so innerHTML is only written on a change.
+    if(el.dataset.tok !== m.ch){
+      el.dataset.tok = m.ch;
+      const art = TOKEN_SVG[m.ch];
+      if(art) el.innerHTML = art; else el.textContent = EMOJI[m.ch] || '';
+    }
     const vx = m.x - camX, vy = m.y - camY;
     if(vx < -1 || vx > VIEW_W || vy < -1 || vy > VIEW_H){
       el.style.display = 'none';
@@ -4177,6 +4220,7 @@ function renderMovers(forceInstant){
     if(snap){ void el.offsetWidth; el.style.transition = ''; }   // restore tween
     // hostile 2-tile proximity warning rides the sprite (was on the grid cell pre-1D-3)
     el.classList.toggle('near-warn', m.hostile && Math.abs(m.x-player.x) + Math.abs(m.y-player.y) <= 2);
+    el.classList.toggle('crew-mark', !!m.invite);   // 1W-ALIVE: unrecruited crew invite pulse
   }
   for(const id in moverPool){
     if(!seen.has(id)){ moverPool[id].remove(); delete moverPool[id]; }

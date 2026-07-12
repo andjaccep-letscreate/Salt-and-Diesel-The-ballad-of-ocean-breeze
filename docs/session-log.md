@@ -330,3 +330,39 @@ Beginner-friendly on purpose — see `CLAUDE.md` for the format and rules.
 - Learned: for an absolutely-positioned child to size itself as a percentage of ITS OWN wrapper (not the whole scene) — needed for placing tiny glow dots exactly on a silhouette's eyes — the wrapper just needs `position:absolute` already set (which `.bs-fig` has), so nested `position:absolute` children automatically use that as their containing block.
 - Gotchas: My own verification script's slide-progression assertion was miscounted (it compares brIndex sequence but the loop's timing let a couple of extra polls past `openBriefingDoor()`'s 1200ms transition sneak in) — re-ran with exact single-tap timing and confirmed the real behavior (7 pages in order, 7th tap on the last page opens the door to the overworld) was correct all along; not a game bug, a test-harness miscount.
 - Next:    Awaiting hub sign-off on ?v=scenes1.
+
+## [2026-07-12] — Phase 1W-OVERWORLD-ALIVE: SVG map tokens + pre-recruit crew pacing
+- Goal:    Make the overworld match the redrawn battle art (roster chips + crew/enemy
+           map tokens as CSS/SVG) and let recruitable crew pace their little loops
+           BEFORE recruitment. Visual + ambient only — combat/balance/saves locked.
+- Did:     index.html only, on branch claude/dieselpunk-rpg-game-21nkt7. Added
+           TOKEN_SVG: every character/enemy map token (crew N/D/R, patrols S/K/L/H/E/J,
+           bosses G/X/A/Q/M) now mounts the SAME battle SVG art at tile size — crew via
+           MEMBER_SVG, enemies via ENEMY_SVG — in both the static grid (renderOverworld)
+           and the glide overlay (renderMovers), cached via dataset.tok so innerHTML is
+           only written on change. Scenery, salvage and glow emoji untouched; player
+           sprite untouched. Roster chips already used PORTRAIT_SVG (shipped in 1V) —
+           enlarged them (~2x) so the faces read at chip size; active/dashed-gray states
+           kept. Pre-recruit pacing: removed the recruited[] gate in buildCrewPacers
+           (recruitment still triggers on contact because the map char moves WITH the
+           pacer) and made rebuilds restore the old tile first so recruiting mid-pace
+           can't strand a ghost char. Unrecruited crew movers get a cyan "come talk to
+           me" glow pulse (filter-based; a scale pulse would fight the glide transform),
+           static under reduced motion.
+- Learned: "dataset" = per-element data-* storage; we use it as a tiny cache key so we
+           don't re-parse SVG strings every frame. A CSS transform animation REPLACES
+           the element's transform, so pulsing a glide-positioned sprite must use
+           filter/drop-shadow, not scale.
+- Gotchas: The 200-run seeded A/B first looked like the pacer "didn't move" — it was a
+           sampling alias (a 2-tile ping-pong is back home every even tick). Playwright's
+           npm package wanted a newer browser than the container ships; fixed by
+           launching with executablePath /opt/pw-browsers/chromium.
+- Verify:  Seeded 200-run full-loop sim (rebuilt Node vm harness, exposed-foe policy):
+           trace sha256 4f010618… IDENTICAL main vs branch (3388 lines, 0 stalls/errors)
+           — zero combat drift. Per-encounter: districts/mini-bosses/Baron 200/200,
+           Golfer 12/200 with the basic no-stun policy (drift check, not a balance run).
+           Playwright at 390px + 430px: no console errors; tokens + chips render; pacers
+           move pre-recruit, hold still under prefers-reduced-motion, and walking into a
+           pacing NPC still opens the recruit dialogue (PASS).
+- Next:    Awaiting Andres' sign-off on the ?v=alive1 preview. Do not merge; no new
+           phase until asked.
