@@ -1473,6 +1473,50 @@
     #briefing-intro .bs-glow{ animation:none; opacity:.85; }
     #briefing-intro .bs-pin-dot{ animation:none; opacity:.9; }
   }
+
+  /* ============ PHASE 7: CREW MANIFEST (read-only dossier overlay) ============
+     Same overlay pattern as #settings (fixed, menuOpen freeze) one layer below
+     it. Pure display: meters reuse the battle .meter classes with inline widths
+     (no ids, so the battle Status Window's setMeter can never touch these). */
+  .crewBtn{ background:var(--panel2); color:var(--brass); border:2px solid var(--brass-d);
+    border-radius:8px; min-height:30px; padding:2px 10px; font-size:.6rem; font-weight:700;
+    letter-spacing:.1em; white-space:nowrap; flex:none; cursor:pointer; }
+  .crewBtn:active{ transform:translateY(1px); }
+  #crew-screen{ position:fixed; inset:0; background:#000c; display:none;
+    align-items:center; justify-content:center; padding:14px; z-index:54; }
+  #crew-screen.active{ display:flex; }
+  #crew-screen .cw-box{ background:var(--panel); border:2px solid var(--brass);
+    border-radius:12px; padding:12px; max-width:440px; width:100%;
+    max-height:calc(100dvh - 28px); overflow-y:auto; overflow-x:hidden; }
+  #crew-screen .cw-head{ display:flex; align-items:center; justify-content:space-between;
+    gap:10px; margin:2px 2px 10px; letter-spacing:.08em; }
+  #crew-screen .cw-close{ flex:none; padding:6px 14px; }
+  .cwc{ border:2px solid var(--brass-d); border-radius:9px; padding:8px 9px; margin-bottom:10px;
+    background:linear-gradient(180deg,#131c28,#0d141d); }
+  .cwc.locked{ border-style:dashed; border-color:var(--rivet); opacity:.6; }
+  .cwc.locked .cw-port svg{ filter:grayscale(1) brightness(.4); }
+  .cw-top{ display:flex; align-items:center; gap:9px; }
+  .cw-port{ flex:none; width:52px; }
+  .cw-port svg{ width:52px; height:42px; display:block; }
+  .cw-id{ min-width:0; flex:1 1 auto; }
+  .cw-nm{ font-weight:700; font-size:.86rem; line-height:1.15; }
+  .cw-cn{ color:var(--brass); font-size:.62rem; letter-spacing:.12em; }
+  .cw-role{ font-size:.62rem; opacity:.72; }
+  .cw-lv{ flex:none; text-align:right; font-size:.6rem; opacity:.85; line-height:1.5; white-space:nowrap; }
+  .cw-meters{ margin-top:6px; }
+  .cw-stats{ display:flex; gap:6px; margin-top:7px; flex-wrap:wrap; }
+  .cw-chip{ flex:1 1 0; min-width:64px; text-align:center; background:#0a0c10;
+    border:1px solid var(--rivet); border-radius:6px; padding:3px 4px; }
+  .cw-chip b{ display:block; color:var(--brass); font-size:.8rem; }
+  .cw-chip span{ font-size:.54rem; letter-spacing:.08em; opacity:.75; }
+  .cw-sec{ margin-top:8px; border-top:1px dashed var(--rivet); padding-top:6px; font-size:.68rem; }
+  .cw-sec .cw-lbl{ font-size:.56rem; letter-spacing:.1em; color:var(--brass); opacity:.9; display:block; margin-bottom:2px; }
+  .cw-slot{ display:flex; align-items:flex-start; gap:6px; background:#0a0c10; border:1px solid var(--rivet);
+    border-radius:6px; padding:4px 7px; margin-top:4px; font-size:.66rem; }
+  .cw-slot .cw-slot-tag{ flex:none; color:var(--brass); font-size:.54rem; letter-spacing:.08em; padding-top:1px; }
+  .cw-slot.res{ opacity:.42; border-style:dashed; }
+  .cw-leg-off{ opacity:.55; }
+  .cw-locked-note{ font-size:.68rem; opacity:.8; padding:2px 0 0; }
 </style>
 </head>
 <body>
@@ -1587,6 +1631,7 @@
     <button class="gearBtn" onclick="openSettings()">⚙</button>
   </div>
   <div id="flood-bar-wrap">
+    <button class="crewBtn" onclick="openCrew()" aria-label="Open crew manifest">👥 CREW</button>
     <div id="flood-bar"><div id="flood-bar-fill"></div></div>
     <div id="flood-label">FLOOD 70%</div>
   </div>
@@ -1883,6 +1928,15 @@
       <button class="toggle off" id="set-noir" onclick="toggleNoir()">OFF</button></div>
     <div class="row" style="opacity:.7;font-size:.78rem"><span>Tip: the ⚙ and 🔊 buttons are always here.</span></div>
     <button class="btn" style="width:100%;margin-top:6px" onclick="closeSettings()">Close</button>
+  </div>
+</div>
+
+<!-- ============ PHASE 7: CREW MANIFEST (read-only dossier overlay) ============ -->
+<div id="crew-screen" role="dialog" aria-label="Crew manifest">
+  <div class="cw-box">
+    <div class="cw-head"><h3 class="deco" style="margin:0">Crew Manifest</h3>
+      <button class="btn cw-close" onclick="closeCrew()">Close</button></div>
+    <div id="cw-list"></div>
   </div>
 </div>
 
@@ -2691,6 +2745,83 @@ function openSettings(){
   document.getElementById('set-noir').classList.toggle('off', !noirOn);
 }
 function closeSettings(){ menuOpen = false; document.getElementById('settings').classList.remove('active'); }
+
+/* =================== PHASE 7: CREW MANIFEST (read-only) ===================
+   Display-only dossier: reads party / legendaries / claimedSalvages / ULTS
+   and renders them. Reuses the settings-menu freeze (menuOpen) so the world
+   holds still underneath and closing drops you exactly where you were. It
+   never writes game state, so combat/save behavior cannot change. */
+function cwMeter(lbl, cls, cur, max, txt){
+  const pct = max>0 ? Math.max(0, Math.min(100, cur/max*100)) : 0;
+  return `<div class="meter${max>0?'':' dim'}"><span class="mlbl">${lbl}</span>
+    <div class="mtrk"><i class="mfill ${cls}" style="width:${pct}%"></i></div>
+    <span class="mval">${txt!=null?txt:(max>0?(cur+'/'+max):'—')}</span></div>`;
+}
+const CW_STAT_LBL = { atk:'ATK', def:'DEF', maxHp:'MAX HP', crit:'CRIT' };
+function cwBoostText(stat, amount){
+  return stat==='crit' ? `+${Math.round(amount*100)}% CRIT` : `+${amount} ${CW_STAT_LBL[stat]||stat.toUpperCase()}`;
+}
+function renderCrewScreen(){
+  const host = document.getElementById('cw-list'); if(!host) return;
+  host.innerHTML = ['gold','silver','titanium','platinum'].map(k=>{
+    const d = MEMBER_DEFS[k];
+    const m = party.find(p=>p.key===k);
+    if(!m){
+      return `<div class="cwc locked"><div class="cw-top">
+        <span class="cw-port">${crewFace(k)}</span>
+        <span class="cw-id"><span class="cw-cn">${d.codename} — LOCKED</span>
+          <div class="cw-locked-note">Not yet recruited. Find them in the field.</div></span>
+      </div></div>`;
+    }
+    const hpPct = m.maxHp>0 ? m.hp/m.maxHp*100 : 0;
+    const hpCls = hpPct>50?'hp-hi':hpPct>25?'hp-mid':'hp-lo';
+    const boosts = Object.entries(claimedSalvages)
+      .filter(([,c])=>c && c.member===k)
+      .map(([id,c])=>{ const sv=SALVAGES[id]||{icon:'★',name:id};
+        return `${sv.icon} ${sv.name} · <b class="accent">${cwBoostText(c.stat,c.amount)}</b>`; });
+    const leg = LEGENDARY_DEFS[k];
+    const legHtml = legendaries[k]
+      ? `★ <b class="accent">${leg.name}</b> — ${leg.power}`
+      : `<span class="cw-leg-off">★ Legendary weapon: not yet earned</span>`;
+    const u = ULTS[m.key];
+    const extras = m.key==='gold' ? ` · 🧰 Repair Kits ×${m.kits}`
+                 : m.key==='platinum' ? ` · 🩹 Patch Charges ×${m.patchCharges}` : '';
+    return `<div class="cwc"><div class="cw-top">
+        <span class="cw-port">${crewFace(k)}</span>
+        <span class="cw-id"><span class="cw-cn">${d.codename}</span>
+          <div class="cw-nm">${m.name}</div>
+          <div class="cw-role">${m.role} · ${m.combatRole}</div></span>
+        <span class="cw-lv">LV <b class="accent">${m.lv}</b><br>XP ${m.xp}/${m.xpNext}</span>
+      </div>
+      <div class="cw-meters">
+        ${cwMeter('HP', hpCls, m.hp, m.maxHp)}
+        ${cwMeter('FUE','fuel', m.fuel, m.maxFuel)}
+        ${cwMeter('SPC','special', m.special, m.maxSpecial, Math.round(m.special)+'%')}
+      </div>
+      <div class="cw-stats">
+        <span class="cw-chip"><b>${m.atk}</b><span>ATTACK</span></span>
+        <span class="cw-chip"><b>${m.def}</b><span>DEFENSE</span></span>
+        <span class="cw-chip"><b>${Math.round(m.crit*100)}%</b><span>CRIT</span></span>
+      </div>
+      <div class="cw-sec"><span class="cw-lbl">WEAPON</span>
+        ${m.weapon.name}${extras}
+        <div class="cw-slot"><span class="cw-slot-tag">SLOT 1</span>
+          <span>${boosts.length?boosts.join('<br>'):'<span style="opacity:.55">Empty — no boost applied yet</span>'}</span></div>
+        <div class="cw-slot res"><span class="cw-slot-tag">SLOT 2</span><span>Reserved — Volume 2</span></div>
+        <div style="margin-top:5px">${legHtml}</div>
+      </div>
+      <div class="cw-sec"><span class="cw-lbl">ULTIMATE</span>
+        ${u?`${u.icon} <b class="accent">${u.name}</b> — ${u.desc}`:'—'}</div>
+    </div>`;
+  }).join('');
+}
+function openCrew(){
+  if(!party || !party.length) return;   // no run in progress — nothing to show
+  menuOpen = true;
+  renderCrewScreen();
+  document.getElementById('crew-screen').classList.add('active');
+}
+function closeCrew(){ menuOpen = false; document.getElementById('crew-screen').classList.remove('active'); }
 let noirOn = false;
 function toggleNoir(){
   noirOn = !noirOn;
