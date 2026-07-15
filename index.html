@@ -1482,6 +1482,9 @@
     border-radius:8px; min-height:30px; padding:2px 10px; font-size:.6rem; font-weight:700;
     letter-spacing:.1em; white-space:nowrap; flex:none; cursor:pointer; }
   .crewBtn:active{ transform:translateY(1px); }
+  /* 1X-WORLD-ALIVE: persistent zone label + decorative prop layer */
+  #zone-chip{ font-size:.56rem; letter-spacing:.08em; color:var(--brass); white-space:nowrap; flex:none; opacity:.9; }
+  #dressing{ position:absolute; left:0; top:0; pointer-events:none; opacity:.9; }
   #crew-screen{ position:fixed; inset:0; background:#000c; display:none;
     align-items:center; justify-content:center; padding:14px; z-index:54; }
   #crew-screen.active{ display:flex; }
@@ -1632,6 +1635,7 @@
   </div>
   <div id="flood-bar-wrap">
     <button class="crewBtn" onclick="openCrew()" aria-label="Open crew manifest">👥 CREW</button>
+    <span id="zone-chip">📍 LAKE WORTH</span>
     <div id="flood-bar"><div id="flood-bar-fill"></div></div>
     <div id="flood-label">FLOOD 70%</div>
   </div>
@@ -1641,6 +1645,8 @@
     <!-- 1D-3M: #world slides one tile on camera steps; grid + movers ride it together -->
     <div id="world">
       <div id="grid"></div>
+      <!-- 1X-WORLD-ALIVE: one static SVG of decorative props per zone (batched; non-interactive) -->
+      <svg id="dressing" aria-hidden="true"></svg>
       <!-- Phase 1D-3: overlay layer for gliding movers (patrols + recruited crew) -->
       <div id="movers" aria-hidden="true"></div>
     </div>
@@ -1963,20 +1969,20 @@ const LAKE_WORTH_MAP = [
   "BBBBBBBBBBBBBBBBBBBBBBBB",
   "B...........e.....WWWWWB",
   "B.5.5..T..........WWWWWB",
-  "B..8..............WWWWWB",
+  "B..8...f..........WWWWWB",
   "B.5...T...........WWWWWB",
   "B....S............WWWWWB",
   "B.T.......k.......WWWWWB",
-  "B................oWWWWWB",
+  "B...w............oWWWWWB",
   "B.............N=======GB",
   "B.................WWWWWB",
-  "B.5........T......WWWWWB",
+  "B.5........T..d...WWWWWB",
   "B.......K.........WWWWWB",
   "B..............WWWWWWWWB",
-  "B...............WWWWWWWB",
+  "B............s..WWWWWWWB",
   "B.T...8...........WWWWWB",
   "B..u..............WWWWWB",
-  "B.................WWWWWB",
+  "B.........y.......WWWWWB",
   "BBBBBBBBBBBBBBBBBBBBBBBB",
 ];
 
@@ -1988,15 +1994,15 @@ const WELLINGTON_MAP = [
   "BFFFFFFFFFFF.FFFFFFFFFFB",
   "B,,,,,,,,,,,.,,,,,,,,,,B",
   "B,,,,,,,,,,,.,,,,,,,T,,B",
-  "B,,,WWW=WW,,.,,,,,,,,,,B",
-  "B,,,,,,,,,,,.WW=WWW,,,,B",
-  "B,,,,,,,,,,,.,,,,,,,,,,B",
+  "B,,,WWW=WW,,.,,,,m,,,,,B",
+  "B,,,,,,,,,y,.WW=WWW,,,,B",
+  "B,,,,,,,,,,,.,,,n,,,,,,B",
   "B,,,,,,L,,,,.,,,,,,,,,,B",
   "B,,,,,,,,,,,.,k,,FFF,,,B",
   "B,,,,,X,,,,,.,,,,FFF,,,B",
   "B,,,,,,,,,,,.,,R,,,,,,,B",
-  "B,,,,,,,,,,,.,,,,,,WWW,B",
-  "B,,T,,,,,,,,.,,,,,,,,,,B",
+  "B,,,,,,,,,,,.,,,,t,WWW,B",
+  "B,,T,r,,,,,,.,,,,,,,,,,B",
   "B,,,,,,,,,,,.,,,,,,,,,,B",
   "B,,,o,,,,H,,,,,,,,,,,,,B",
   "BBBBBBBBBBBBBBBBBBBBBBBB",
@@ -2012,35 +2018,35 @@ const DOWNTOWN_MAP = [
   "B.......E..............B",
   "B.BB..BB.5BB.BB..66..W.B",
   "B.BB..BB..BB.BB..BB..W.B",
-  "B.....................WB",
+  "B................p....WB",
   "B.......D..........J..WB",
   "B.BB..BB.BBB.BB..BB..W.B",
   "B.BB.kBB.BBB.BB..BB..W.B",
-  "B.....................WB",
-  "B.....................WB",
+  "B...................O.WB",
+  "B..x..................WB",
   "B.BB..BB..5..BB..BB..W.B",
   "B.BB..BB.....BB..BB..W.B",
-  "B..u..................WB",
+  "B..u.....z.y..........WB",
   "BBBBBBBBBBBBBBBBBBBBBBBB",
 ];
 
 /* LOCATION 4 — Palm Island (luxury grind zone, 5% flooded; exit triggers Golfer) */
 const PALM_ISLAND_MAP = [
   "BBBBBBBBBBBBBBBBBBBBBBBB",
-  "BWWWWWq................B",
+  "BWWWWWq.......y........B",
   "BWWWWWq.55.66....55....B",
-  "BWWWWWq.T..........T...B",
+  "BWWWWWq.T.U........T...B",
   "BWWWWWq.55.66....55....B",
   "BWWWWWq....E...........B",
-  "BWWWWWq.T....,,......6.B",
+  "BWWWWWq.T....,,...l..6.B",
   "BWWWWWq..J.............B",
   "B======...........E....B",
-  "BWWWWWq.....,,.........B",
+  "BWWWWWq.....,,......Z..B",
   "BWWWWWq..E.............B",
   "BWWWWWq......,,,,,,,...B",
   "BWWWWWq......,,,,e,,...B",
   "BWWWWWq....J...........B",
-  "BWWWWWq................B",
+  "BWWWWWq.j..............B",
   "BBBBBBBBBBBBBBBBBBBBBBBB",
 ];
 
@@ -2091,6 +2097,11 @@ const GROUND = {
   'N':'.','D':'.','R':',','k':',','u':',','o':',','L':'.','H':',','S':'.','K':'.','G':'=','C':',','V':',','X':',',
   'E':'.','J':'.','A':'=','Q':'.','M':'.','e':'.',
   'g':'.','c':'.','b':'.','h':'.',   // 'b'/'c' are the GLOW tiles (boat/car) — the retired barricade chars must not shadow them
+  /* 1X-WORLD-ALIVE ambient NPCs (flavor only — never solid, never battle) */
+  'w':'.','f':'.','d':'.','s':'.','y':'.',
+  'm':',','r':',','n':',','t':',',
+  'p':'.','x':'.','z':'.','O':'.',
+  'U':'.','l':'.','j':'.','Z':'.',
 };
 /* emoji marker per tile (floors have none) */
 const EMOJI = {
@@ -2103,13 +2114,19 @@ const EMOJI = {
   'L':'🦩','H':'🦀','S':'🔧','K':'⏳','G':'🎣','C':'🛞','V':'🔥','X':'👊',
   'E':'💨','J':'⌚','A':'🎩','Q':'⛳','M':'🦈','e':'🌉',
   'g':'🌴','c':'🚗','b':'⛵','h':'🏠',
+  /* 1X-WORLD-ALIVE ambient NPCs (all single-codepoint) */
+  'w':'👵','f':'👒','d':'🧑','s':'🧒','y':'🚲',
+  'm':'👴','r':'🛠️','n':'👩','t':'👧',
+  'p':'🧓','x':'👦','z':'🙋','O':'🛎️',
+  'U':'🧹','l':'🧺','j':'🧢','Z':'🌂',
 };
 /* terrain CSS class per base char */
 const TCLASS = {'.':'t-road',',':'t-grass','=':'t-plank','P':'t-plaza','W':'t-water','B':'t-bldg','T':'t-grass','F':'t-bldg',
   '5':'t-bldg','6':'t-bldg','7':'t-road','8':'t-road','9':'t-road','i':'t-grass','v':'t-water','q':'t-road',
   'g':'t-grass','c':'t-road','b':'t-water','h':'t-bldg'};
 /* tiles whose emoji marker should gently pulse to invite interaction */
-const INTERACTIVE = new Set(['1','2','3','4','N','D','R','k','u','o','L','H','E','J','A','Q','M','e','g','c','b','h']);
+const INTERACTIVE = new Set(['1','2','3','4','N','D','R','k','u','o','L','H','E','J','A','Q','M','e','g','c','b','h',
+  'w','f','d','s','y','m','r','n','t','p','x','z','O','U','l','j','Z']);   // 1X: ambient NPCs pulse too
 
 /* ---- Phase 1V-1: render-only tile classification (roads, shore, props, facades) ----
    Purely visual: turns '.' tiles on these rows/cols into CONNECTED streets per
@@ -3085,6 +3102,138 @@ const NPC_LINES = {
   'R':{face:"🔮", say:"I see brass and fire in your future, Sparkplug... a tower, a Baron who won't bow, and a wrench that decides it all."}
 };
 
+/* =================== PHASE 1X-WORLD-ALIVE: AMBIENT NPCs ===================
+   Flavor-only townsfolk. Walk into one (or tap it when adjacent) to talk.
+   Never solid, never battle, never grant anything — zero balance impact.
+   STATE-AWARE: each has `pre` lines (zone boss still loose) and `post` lines
+   (boss beaten). Post-state reads EXISTING saved state only:
+   defeatedBosses[locId], except Palm Island whose finale sets legendaries. */
+function civFace(skin, style, c1, c2){
+  /* tiny dossier portrait in the PORTRAIT_SVG idiom: bust + head + hat variant */
+  const hats = {
+    cap:     `<path d="M5.6 5.6 Q6 2.6 10 2.5 Q14 2.6 14.4 5.6 Q10 4.2 5.6 5.6 Z" fill="${c1}"/><path d="M5.4 5.5 L2.6 6 L2.9 7 L5.9 6.6 Z" fill="${c1}"/>`,
+    straw:   `<ellipse cx="10" cy="4.9" rx="6.4" ry="1.4" fill="${c1}"/><path d="M6.9 4.9 Q7 1.8 10 1.7 Q13 1.8 13.1 4.9 Z" fill="${c1}"/><path d="M6.9 4.4 H13.1" stroke="${c2}" stroke-width="0.7"/>`,
+    cloche:  `<path d="M5.7 6.3 Q5.5 1.9 10 1.8 Q14.5 1.9 14.3 6.3 Q13.9 7.1 13 7 L7 7 Q6.1 7.1 5.7 6.3 Z" fill="${c1}"/><circle cx="12.9" cy="5.9" r="0.7" fill="${c2}"/>`,
+    kerchief:`<path d="M5.5 6 Q5.6 2.2 10 2.1 Q14.4 2.2 14.5 6 L13.5 8.6 Q13.9 4.4 10 4.3 Q6.1 4.4 6.5 8.6 Z" fill="${c1}"/>`,
+    hard:    `<path d="M5.8 5.8 Q6 2.2 10 2.1 Q14 2.2 14.2 5.8 Z" fill="${c1}"/><rect x="4.9" y="5.5" width="10.2" height="1.1" rx="0.55" fill="${c1}"/><rect x="9.4" y="2" width="1.2" height="2" fill="${c2}"/>`,
+    news:    `<path d="M5.5 5.9 Q5.7 2.4 10 2.3 Q14.3 2.4 14.5 5.9 Q10 4.6 5.5 5.9 Z" fill="${c1}"/><path d="M13.9 5.7 L15.6 6.3 L15.2 7.2 L13.5 6.6 Z" fill="${c1}"/>`,
+    hair:    `<path d="M5.5 6.6 Q5.4 2.2 10 2.1 Q14.6 2.2 14.5 6.6 Q13.6 4.2 10 4.1 Q6.4 4.2 5.5 6.6 Z" fill="${c1}"/>`,
+    bun:     `<path d="M5.6 6.4 Q5.5 2.4 10 2.3 Q14.5 2.4 14.4 6.4 Q13.5 4.4 10 4.3 Q6.5 4.4 5.6 6.4 Z" fill="${c1}"/><circle cx="14.6" cy="3.4" r="1.3" fill="${c1}"/>`,
+  };
+  return `<svg viewBox="0 0 20 16" preserveAspectRatio="xMidYMax meet">
+    <path d="M2 16 Q2 11.6 10 11.4 Q18 11.6 18 16 Z" fill="${c2}"/>
+    <circle cx="10" cy="6.6" r="4.4" fill="${skin}"/>
+    <circle cx="8.2" cy="6.6" r="0.7" fill="#1c1410"/><circle cx="11.8" cy="6.6" r="0.7" fill="#1c1410"/>
+    <path d="M8.5 8.9 Q10 9.9 11.5 8.9" stroke="#3d2a1d" stroke-width="0.6" fill="none" stroke-linecap="round"/>
+    ${hats[style]||hats.hair}</svg>`;
+}
+const AMBIENT_NPCS = {
+  /* ---- Lake Worth Beach ---- */
+  'w':{ name:'Mrs. Paloma', face:civFace('#c98a5e','kerchief','#b0483a','#7a5230'),
+    pre:["My husband's been out on that pier three days straight. That rod he swings — it hums. That ain't HIS rod.",
+         "The mechanic watching the planks — Silver — talk to him before you go anywhere near my Tomas."],
+    post:["You gave me my Tomas back. He's sleeping it off. Thank you, stranger.",
+          "He doesn't remember a thing past Tuesday. Maybe that's a mercy."] },
+  'f':{ name:'Rosa the Fruit Cart', face:civFace('#a06b42','straw','#c9a86a','#3f6b34'),
+    pre:["Mangoes, two for a nickel! Half the crop's underwater, so today they're a dime.",
+         "Storm seasons come and go, but this year the WATER glows. I don't sell to glowing customers."],
+    post:["Mangoes, two for a nickel — tide's calming, so prices are too!",
+          "First dry morning in weeks. Small mercies, eh?"] },
+  'd':{ name:'Half-Hitch', face:civFace('#6d4a33','cap','#2c343f','#3b4552'),
+    pre:["Tide tables have gone crazy. Boats hum at their moorings like they're dreaming something bad.",
+         "I don't work past the planks anymore. Not since the lights started."],
+    post:["Moorings sit quiet again. Whatever you did out there — the harbor thanks you."] },
+  's':{ name:'Pip', face:civFace('#d8a06a','news','#5a3a24','#8898a8'),
+    pre:["I found a shell that BUZZES! Wanna see? ...Okay, you can't. I hid it real good.",
+         "Teal lights dance on the water at night. Ma says don't look. I always look."],
+    post:["The lights went away and Ma finally sleeps. I kinda miss 'em. Don't tell her."] },
+  /* ---- Wellington ---- */
+  'm':{ name:'Old Caldero', face:civFace('#8a5a3b','straw','#a9772b','#53381f'),
+    pre:["The cane's growing WRONG. In spirals. Forty seasons and I never once saw spirals.",
+         "Something in the west rows keeps knocking down my scarecrows. They stay down."],
+    post:["Rows grew back straight. That was your doing? Then supper's on me, friend."] },
+  'r':{ name:'Tia Marisol', face:civFace('#a06b42','hard','#c9a86a','#8a3a2a'),
+    pre:["Refinery line's dead until someone clears the yard. The negotiator by the east shed — Platinum — he can settle the crowd.",
+         "Sugar train hasn't run in a week. Company says storm damage. Sure. 'Storm.'"],
+    post:["First train out this morning — you hear that whistle? Sweetest sound in the county."] },
+  'n':{ name:'Nurse Ada', face:civFace('#6d4a33','cloche','#e8e2d2','#c4bcae'),
+    pre:["Field hands come in rattled, going on about a boxer made of bad light.",
+         "I can patch cuts, not curses. Somebody else has to handle the second kind."],
+    post:["Empty cots all week. I could get used to boring."] },
+  't':{ name:'Lucía', face:civFace('#c98a5e','bun','#2a2118','#d8788a'),
+    pre:["My kite dove into the cane and came back SINGED. Papa says no more kites. Papa is no fun.",
+         "The stalks whisper when the wind's dead still. Nobody believes me."],
+    post:["Kite flies straight now. Boring-straight. Wanna race it?"] },
+  /* ---- Downtown WPB ---- */
+  'p':{ name:'Mr. Okafor', face:civFace('#6d4a33','hair','#b8b2a6','#33607f'),
+    pre:["Droids on every corner and the Baron up his tower. And that drone fella — the dockworker — still pinned mid-grid. Somebody ought to go get him.",
+         "I sell yesterday's paper half price. Lately nobody wants to read about tomorrow."],
+    post:["The Baron is OUT! Three editions sold out by noon. Want yours signed? Ha!"] },
+  'x':{ name:'Shoeshine Sam', face:civFace('#8a5a3b','news','#3b4552','#53381f'),
+    pre:["Shine, mister? Droids don't tip. NOBODY tips while the Baron's watching.",
+         "A nickel gets you a shine and everything I heard this morning. Deal?"],
+    post:["Shines are two cents off — call it a liberation sale!"] },
+  'z':{ name:'Dot', face:civFace('#e7c39a','bun','#8a5c39','#7a9a8a'),
+    pre:["Coffee's watery — syndicate taxes the beans. You didn't hear it from me.",
+         "Window booth's got a view of the tower. Nobody sits there anymore."],
+    post:["Real coffee's back on. First cup's on the house for you lot."] },
+  'O':{ name:'Mr. Beaumont', face:civFace('#6d4a33','cap','#1c1c22','#22303f'),
+    pre:["The Regal Pelican's lobby stands EMPTY, sir. Even the pigeons checked out.",
+         "A doorman sees everything and repeats nothing. ...The Baron pays for the second part."],
+    post:["Bookings doubled overnight. The Pelican remembers her friends, sir."] },
+  /* ---- Palm Island ---- */
+  'U':{ name:'Mr. Greens', face:civFace('#8a5a3b','straw','#8bc34a','#3f6b34'),
+    pre:["Seventeenth green's chewed to ribbons — cart tracks in spirals. If you must face the old member, steer him to the far green, away from the houses.",
+         "I rake the bunkers at dawn. Lately the bunkers rake back."],
+    post:["Greens will heal by spring. He was a decent member, before all this. Glad it ended as gentle as it could."] },
+  'l':{ name:'Miss Inés', face:civFace('#a06b42','kerchief','#dfe6ee','#33607f'),
+    pre:["The manor silver hums at night. I polish it, and it hums LOUDER.",
+         "The lady of the house left in June. The house... didn't notice, if you follow me."],
+    post:["The house is quiet. TOO quiet. No — I said that wrong. It's lovely."] },
+  'j':{ name:'Renard', face:civFace('#c98a5e','cap','#22303f','#3b4552'),
+    pre:["I drove the old man for twenty years. That golf cart of his? Never once needed diesel. I should have said something sooner.",
+         "Stay off the fairways after dusk. Chauffeur's honest advice, no charge."],
+    post:["Engine's silent, cart's parked for good. Maybe I'll learn to drive something honest."] },
+  'Z':{ name:'Widow Fontaine', face:civFace('#e7c39a','cloche','#2a2130','#4a3a5a'),
+    pre:["My late husband called this island 'the calm past the storm.' The storm evidently heard him.",
+         "Teal light through the hedges every evening. I mistook it for the aurora. Darling, we don't GET the aurora."],
+    post:["The hedges are simply hedges again. I rather owe you a lemonade."] },
+  /* ---- Scoop, the recurring courier (same kid, all four zones) ---- */
+  'y':{ name:'Scoop', face:civFace('#d8a06a','news','#a9772b','#8a3a2a'), courier:true,
+    byZone:{
+      'lake-worth':{
+        pre:["EXTRA! Fisherman gone feral on the south pier! ...Say, you look like trouble. The useful kind.",
+             "I pedal the whole county, mister. If you DO something about that pier, I'll know by lunch."],
+        post:["You're the wrench crew from the pier! Hold still — you're tomorrow's front page!"] },
+      'wellington':{
+        pre:["They're already whispering about you on the coast road — 'pier crew, wrench and goggles.'",
+             "Cane fields spook my bicycle. Fix whatever's in there and I'll ride the long way TWICE."],
+        post:["SUGAR LINE SAVED! I'm quoting you as 'the crew.' Sounds better in print."] },
+      'downtown':{
+        pre:["Word's out — the refinery crew, rolling into the Baron's own grid! Care to comment? No? Perfect, I'll invent something tasteful.",
+             "Between us: the droids can't read. I deliver RIGHT past them."],
+        post:["BARON FALLS! Biggest headline of my life, and YOU'RE in it!"] },
+      'palm-island':{
+        pre:["Snuck the bike over on the ferry! Whole county's betting on you against the old golfer. The odds are... improving!",
+             "After this one I'm out of superlatives. Try to wrap it up spectacular, will ya?"],
+        post:["FINAL EXTRA: CREW SAVES COUNTY! I'm framing this one. So long, heroes!"] },
+    } },
+};
+function zoneBossDown(){
+  /* Palm Island's finale (the Golfer) doesn't set defeatedBosses — its fall
+     unlocks the legendaries, so that flag IS the post-state there. */
+  if(currentLocation === 'palm-island') return !!(legendaries && legendaries.gold);
+  return !!defeatedBosses[currentLocation];
+}
+function openAmbientNpc(ch){
+  if(mode !== 'overworld') return;
+  const def = AMBIENT_NPCS[ch]; if(!def) return;
+  const set = def.courier ? (def.byZone[currentLocation] || def.byZone['lake-worth']) : def;
+  const texts = zoneBossDown() ? set.post : set.pre;
+  const lines = texts.map(t => ({ speaker:def.name.toUpperCase(), text:t, face:def.face }));
+  startDialogueSeq(lines, () => { mode = 'overworld'; });
+}
+
 /* purely cosmetic enemy barks, occasionally shown on the enemy's turn */
 const TAUNTS = {
   'L':["\"Three flashes means trouble. That's you.\"", "\"I see you — and now so does everyone.\"", "(the lamp swivels and locks on)"],
@@ -3728,14 +3877,59 @@ function loadLocation(locId){
   buildPatrols(locId);
   buildCrewPacers(locId);
   initGlows();
+  buildDressing(locId);   // 1X: one static prop layer per zone
 }
 
+/* =================== 1X-WORLD-ALIVE: MAP DRESSING ===================
+   Decorative props batched into ONE static SVG per zone (a single DOM node;
+   pointer-events:none; never touches map data, SOLID, or spawn logic).
+   Symbols are 16x16 tile-units; placements are <use> refs at tile coords. */
+const DRESS_DEFS = `
+  <g id="dz-crate"><rect x="3" y="5" width="10" height="9" rx="1" fill="#6b4a2a" stroke="#3d2a16" stroke-width="0.8"/><path d="M3 9.5 H13 M8 5 V14" stroke="#3d2a16" stroke-width="0.7"/></g>
+  <g id="dz-rope"><circle cx="8" cy="9" r="4" fill="none" stroke="#a98a5a" stroke-width="1.6"/><circle cx="8" cy="9" r="1.6" fill="none" stroke="#8a6a3a" stroke-width="1.2"/></g>
+  <g id="dz-gull"><path d="M4 6 Q6.5 4 8 6 Q9.5 4 12 6" fill="none" stroke="#e8ecf0" stroke-width="1.1" stroke-linecap="round"/><circle cx="8" cy="6.2" r="0.7" fill="#dfe4ea"/></g>
+  <g id="dz-net"><path d="M3 5 L13 13 M5 4 L14 11 M3 8 L11 14 M4 12 L12 4 M6 14 L14 7" stroke="#7a8a94" stroke-width="0.5" opacity="0.85"/></g>
+  <g id="dz-pool"><ellipse cx="8" cy="10" rx="5" ry="2.6" fill="#1b4a63" opacity="0.75"/><ellipse cx="8" cy="10" rx="3" ry="1.4" fill="none" stroke="#3fc8f0" stroke-width="0.4" opacity="0.5"/></g>
+  <g id="dz-slamp"><rect x="7.4" y="4" width="1.2" height="10" fill="#4a4038"/><rect x="5.8" y="2" width="4.4" height="3" rx="0.8" fill="#2a2420" stroke="#4a4038" stroke-width="0.6"/><circle cx="8" cy="3.5" r="1" fill="#ffb830" opacity="0.9"/></g>
+  <g id="dz-hay"><rect x="3" y="7" width="10" height="7" rx="3" fill="#b89b52"/><path d="M4.5 8.5 Q8 10 11.5 8.5 M4.5 11.5 Q8 13 11.5 11.5" stroke="#8a7238" stroke-width="0.6" fill="none"/></g>
+  <g id="dz-fence"><rect x="2.5" y="7" width="1.3" height="7" fill="#5a4630"/><rect x="12.2" y="7" width="1.3" height="7" fill="#5a4630"/><rect x="2" y="8.4" width="12" height="1.1" fill="#6b5238"/><rect x="2" y="11.2" width="12" height="1.1" fill="#6b5238"/></g>
+  <g id="dz-lamp"><rect x="7.4" y="3.5" width="1.2" height="10.5" fill="#2e3a44"/><circle cx="8" cy="3" r="1.6" fill="#ffcf70" opacity="0.95"/><circle cx="8" cy="3" r="2.8" fill="#ffcf70" opacity="0.22"/></g>
+  <g id="dz-awn"><rect x="2" y="5" width="12" height="1.2" fill="#5a4630"/><path d="M2 6 h3 v2.6 q-1.5 1 -3 0 Z M5 6 h3 v2.6 q-1.5 1 -3 0 Z M8 6 h3 v2.6 q-1.5 1 -3 0 Z M11 6 h3 v2.6 q-1.5 1 -3 0 Z" fill="#8a3a2a"/><path d="M5 6 h3 v2.6 q-1.5 1 -3 0 Z M11 6 h3 v2.6 q-1.5 1 -3 0 Z" fill="#d8cfc0"/></g>
+  <g id="dz-sign"><rect x="6.6" y="3" width="0.9" height="4" fill="#4a4038"/><rect x="3.5" y="6.6" width="9" height="4.4" rx="0.8" fill="#22303f" stroke="#c9a86a" stroke-width="0.7"/><path d="M5 8.4 H11 M5 9.8 H9" stroke="#c9a86a" stroke-width="0.6"/></g>
+  <g id="dz-car"><path d="M2.5 11 Q3 8.5 5 8.2 L6.2 6.4 Q6.6 5.8 7.4 5.8 L10.8 5.8 Q11.6 5.8 12 6.6 L12.8 8.2 Q14 8.5 13.6 11 Z" fill="#3a4a3a" stroke="#222c22" stroke-width="0.6"/><circle cx="5.2" cy="11.2" r="1.5" fill="#181c18"/><circle cx="11" cy="11.2" r="1.5" fill="#181c18"/></g>
+  <g id="dz-stand"><rect x="3" y="6" width="10" height="8" fill="#5a4630"/><rect x="2.4" y="4.8" width="11.2" height="1.6" fill="#8a3a2a"/><rect x="4.2" y="7.4" width="3" height="2" fill="#d8cfc0"/><rect x="8.4" y="7.4" width="3" height="2" fill="#d8cfc0"/></g>
+  <g id="dz-boxcar"><rect x="2" y="5.5" width="12" height="6.5" rx="0.8" fill="#6b3a2a" stroke="#3d2016" stroke-width="0.7"/><path d="M8 5.5 V12" stroke="#3d2016" stroke-width="0.6"/><circle cx="4.5" cy="13" r="1.1" fill="#222"/><circle cx="11.5" cy="13" r="1.1" fill="#222"/></g>
+  <g id="dz-frond"><path d="M3 12 Q7 7 13 5 M5.5 11 Q8 9 11 7.5 M4 9.5 Q7.5 8.6 10 6.6" stroke="#3f6b34" stroke-width="0.9" fill="none" stroke-linecap="round"/></g>
+  <g id="dz-fount"><ellipse cx="8" cy="10.5" rx="5.4" ry="2.6" fill="#8a8478" stroke="#5a564c" stroke-width="0.7"/><rect x="7" y="5.5" width="2" height="4" fill="#8a8478"/><path d="M5 10.5 L9.6 12.6" stroke="#4a463e" stroke-width="0.6"/><ellipse cx="8" cy="10.2" rx="3.4" ry="1.3" fill="#1b4a63" opacity="0.5"/></g>
+  <g id="dz-hedge"><path d="M2.5 13 Q2 8.5 5 8 Q5.5 5.5 8 6 Q10.5 5 11.5 7.5 Q14.5 8 13.5 13 Z" fill="#2e4a26" stroke="#1c3016" stroke-width="0.6"/><path d="M6 7.5 Q7 4.5 9.5 5.6" stroke="#3f6b34" stroke-width="0.7" fill="none"/></g>
+  <g id="dz-debris"><path d="M3 12 L12 10.5 L12.4 12 L3.4 13.4 Z" fill="#6b5a42"/><path d="M5 10 L13 11.8 L12.7 12.9 L4.7 11 Z" fill="#57452f"/><path d="M4 13.6 L10 13 L10.2 14 L4.2 14.5 Z" fill="#4a3a26"/></g>`;
+const DRESSING = {
+  'lake-worth':[ ['gull',3,1],['gull',16,1],['crate',9,2],['rope',15,2],['crate',3,4],['net',10,4],
+                 ['pool',15,6],['rope',6,9],['pool',13,12],['crate',12,14],['gull',17,14],['debris',4,16],['net',16,16] ],
+  'wellington':[ ['hay',15,5],['fence',2,8],['fence',3,8],['hay',8,10],['slamp',13,4],['slamp',13,11],
+                 ['boxcar',19,4],['boxcar',20,10],['hay',19,15],['fence',10,6] ],
+  'downtown':  [ ['lamp',4,4],['lamp',16,4],['awn',4,6],['awn',8,7],['sign',5,6],['stand',16,8],
+                 ['car',2,12],['car',19,14],['lamp',4,10],['lamp',16,10] ],
+  'palm-island':[ ['frond',9,1],['hedge',7,2],['fount',14,2],['hedge',13,3],['debris',19,4],['frond',21,6],
+                  ['frond',7,9],['hedge',18,11],['debris',11,14] ],
+};
+function buildDressing(locId){
+  const el = document.getElementById('dressing'); if(!el) return;
+  const props = DRESSING[locId] || [];
+  el.setAttribute('viewBox', `0 0 ${MAP_W*16} ${MAP_H*16}`);
+  el.innerHTML = `<defs>${DRESS_DEFS}</defs>` +
+    props.map(([id,x,y]) => `<use href="#dz-${id}" x="${x*16}" y="${y*16}" width="16" height="16"/>`).join('');
+}
+const ZONE_SHORT = { 'lake-worth':'LAKE WORTH', 'wellington':'WELLINGTON',
+                     'downtown':'DOWNTOWN WPB', 'palm-island':'PALM ISLAND' };
 function setFloodBar(){
   const loc = LOCATION_DEFS[currentLocation]; if(!loc) return;
   const fill = document.getElementById('flood-bar-fill');
   const lbl  = document.getElementById('flood-label');
   if(fill) fill.style.width = loc.flood + '%';
   if(lbl)  lbl.textContent  = 'FLOOD ' + loc.flood + '%';
+  const zc = document.getElementById('zone-chip');                 // 1X: persistent zone label
+  if(zc) zc.textContent = '📍 ' + (ZONE_SHORT[currentLocation] || loc.name.toUpperCase());
 }
 
 /* Called when the player steps on the 'e' exit tile */
@@ -4315,6 +4509,13 @@ function renderMovers(forceInstant){
   lastCamX = camX; lastCamY = camY;
   const board = document.getElementById('board');
   const tile = (board ? board.clientWidth : 0) / VIEW_W;   // 1D-3M: board width, not the overscanned grid
+  // 1X: the prop layer rides the same camera math (one node, 3 style writes)
+  const dz = document.getElementById('dressing');
+  if(dz){
+    dz.style.width  = (MAP_W*tile) + 'px';
+    dz.style.height = (MAP_H*tile) + 'px';
+    dz.style.transform = `translate(${(OVERSCAN-camX)*tile}px, ${(OVERSCAN-camY)*tile}px)`;
+  }
   const seen = new Set();
   const all = [];
   for(const p of patrols)    all.push({ id:'p:'+p.id,  ch:p.ch, x:p.x, y:p.y, hostile:true  });
@@ -4428,6 +4629,7 @@ function move(dy, dx){
 
   // Decide what walking onto this tile does, BEFORE committing the step.
   if(ch==='N' || ch==='D' || ch==='R'){ openDialogue(ch); return; }      // talk; stay put
+  if(AMBIENT_NPCS[ch]){ openAmbientNpc(ch); return; }                    // 1X: townsfolk; stay put
   if(ch==='e'){ tryTravel(); return; }                                    // exit tile → travel
   // Recruitment gates: must find ally before facing the area boss
   if(ch==='G' && !recruited.silver)  { showBanner("Find Silver first — he knows this pier."); return; }
@@ -4498,6 +4700,25 @@ function padPress(e, dy, dx){
 document.addEventListener('pointerup', padStop);
 document.addEventListener('pointercancel', padStop);
 
+/* 1X-WORLD-ALIVE: tap an adjacent townsfolk tile to talk (same effect as
+   walking into them). One delegated listener; coordinates are derived from
+   the board rect + camera origin, so the pooled tile nodes stay untouched. */
+document.getElementById('board').addEventListener('click', (e)=>{
+  if(mode !== 'overworld' || busy || menuOpen) return;
+  const board = document.getElementById('board');
+  const r = board.getBoundingClientRect();
+  const tile = r.width / VIEW_W;
+  if(!tile) return;
+  const {camX, camY} = cameraOrigin();
+  const mx = camX + Math.floor((e.clientX - r.left) / tile);
+  const my = camY + Math.floor((e.clientY - r.top) / tile);
+  if(my<0 || my>=MAP_H || mx<0 || mx>=MAP_W) return;
+  const ch = map[my][mx];
+  if(AMBIENT_NPCS[ch] && Math.max(Math.abs(mx-player.x), Math.abs(my-player.y)) <= 1){
+    openAmbientNpc(ch);
+  }
+});
+
 /* ----------------------- PICKUPS & NPCS --------------------------- */
 function takePickup(ch, y, x){
   if(ch==='k'){ hero.kits += 1; toastHint("Found a REPAIR KIT 🧰  (+1 kit)"); }
@@ -4554,6 +4775,7 @@ function renderDlgLine(){
   const line = activeDialogue.lines[activeDialogue.idx];
   const dKey = { GOLD:'gold', SILVER:'silver', TITANIUM:'titanium', PLATINUM:'platinum' }[line.speaker];
   if(dKey) document.getElementById('d-face').innerHTML = crewFace(dKey);
+  else if(line.face) document.getElementById('d-face').innerHTML = line.face;   // 1X: ambient-NPC portrait
   else document.getElementById('d-face').textContent = SPEAKER_FACE[line.speaker] || '❓';
   document.getElementById('d-name').textContent = line.speaker;
   typeText(document.getElementById('d-say'), line.text);
