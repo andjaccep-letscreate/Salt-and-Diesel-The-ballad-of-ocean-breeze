@@ -1485,6 +1485,33 @@
   /* 1X-WORLD-ALIVE: persistent zone label + decorative prop layer */
   #zone-chip{ font-size:.56rem; letter-spacing:.08em; color:var(--brass); white-space:nowrap; flex:none; opacity:.9; }
   #dressing{ position:absolute; left:0; top:0; pointer-events:none; opacity:.9; }
+
+  /* ============ PHASE 1Y-ARTIFACTS ============ */
+  .cell.art-glim .mk{ opacity:.30; filter:saturate(.5); animation:none; }   /* hidden shimmer: dim, no pulse */
+  #glints{ position:absolute; left:0; top:0; pointer-events:none; }
+  #glints .glint{ position:absolute; display:flex; align-items:center; justify-content:center;
+    color:#7fe3ff; font-size:1.05rem; text-shadow:0 0 8px #3fc8f0, 0 0 3px #eafcff;
+    animation:glintPulse 1.1s ease-in-out infinite; }
+  @keyframes glintPulse{ 0%,100%{ opacity:.5; transform:scale(.9); } 50%{ opacity:1; transform:scale(1.15); } }
+  .art-ic{ width:22px; height:22px; display:block; flex:none; }
+  .cw-slot .art-ic{ width:16px; height:16px; }
+  #art-picker{ position:fixed; inset:0; background:#000c; display:none;
+    align-items:center; justify-content:center; padding:16px; z-index:56; }
+  #art-picker.active{ display:flex; }
+  #art-picker .ap-box{ background:var(--panel); border:2px solid var(--brass); border-radius:12px;
+    padding:12px; max-width:420px; width:100%; max-height:calc(100dvh - 32px); overflow-y:auto; }
+  #art-picker h3{ color:var(--brass); margin:.1em 0 .5em; }
+  .ap-row{ display:flex; align-items:center; gap:9px; width:100%; text-align:left; cursor:pointer;
+    background:#0a0c10; border:1px solid var(--rivet); border-radius:7px; padding:7px 9px; margin-top:6px;
+    color:inherit; font:inherit; }
+  .ap-row:hover,.ap-row:focus{ border-color:var(--brass); outline:none; }
+  .ap-row .ap-nm{ font-weight:700; font-size:.74rem; }
+  .ap-row .ap-fx{ font-size:.62rem; opacity:.75; display:block; }
+  .ap-row .ap-who{ margin-left:auto; flex:none; font-size:.56rem; letter-spacing:.06em; color:var(--brass); white-space:nowrap; }
+  .ap-row.ap-none .ap-nm{ opacity:.7; font-weight:400; }
+  @media (prefers-reduced-motion: reduce){
+    #glints .glint{ animation:none; opacity:.9; }
+  }
   #crew-screen{ position:fixed; inset:0; background:#000c; display:none;
     align-items:center; justify-content:center; padding:14px; z-index:54; }
   #crew-screen.active{ display:flex; }
@@ -1647,6 +1674,8 @@
       <div id="grid"></div>
       <!-- 1X-WORLD-ALIVE: one static SVG of decorative props per zone (batched; non-interactive) -->
       <svg id="dressing" aria-hidden="true"></svg>
+      <!-- 1Y: Brass Compass glints over nearby hidden artifacts -->
+      <div id="glints" aria-hidden="true"></div>
       <!-- Phase 1D-3: overlay layer for gliding movers (patrols + recruited crew) -->
       <div id="movers" aria-hidden="true"></div>
     </div>
@@ -1946,6 +1975,15 @@
   </div>
 </div>
 
+<!-- 1Y: artifact picker (opens from a Crew Manifest ARTIFACT slot) -->
+<div id="art-picker" role="dialog" aria-label="Equip artifact">
+  <div class="ap-box">
+    <h3 class="deco" id="ap-title">Artifact</h3>
+    <div id="ap-list"></div>
+    <button class="btn" style="width:100%;margin-top:8px" onclick="closeArtPicker()">Cancel</button>
+  </div>
+</div>
+
 <!-- crit / impact flash -->
 <div id="flash"></div>
 
@@ -2102,6 +2140,7 @@ const GROUND = {
   'm':',','r':',','n':',','t':',',
   'p':'.','x':'.','z':'.','O':'.',
   'U':'.','l':'.','j':'.','Z':'.',
+  '*':'.',   // 1Y: artifact shimmer tile (true restore base comes from ARTIFACT_SPOTS)
 };
 /* emoji marker per tile (floors have none) */
 const EMOJI = {
@@ -2119,6 +2158,7 @@ const EMOJI = {
   'm':'👴','r':'🛠️','n':'👩','t':'👧',
   'p':'🧓','x':'👦','z':'🙋','O':'🛎️',
   'U':'🧹','l':'🧺','j':'🧢','Z':'🌂',
+  '*':'✨',   // 1Y: artifact shimmer (rendered dim via .art-glim)
 };
 /* terrain CSS class per base char */
 const TCLASS = {'.':'t-road',',':'t-grass','=':'t-plank','P':'t-plaza','W':'t-water','B':'t-bldg','T':'t-grass','F':'t-bldg',
@@ -2139,6 +2179,7 @@ const ROAD_NET = {
 };
 const NO_GLYPH = new Set(['B','W']);   // drawn as pure-CSS facade / animated water instead of emoji
 function tileDeco(ch, base, mx, my){
+  if(ch === '*') return ' art-glim';                    // 1Y: dim artifact shimmer
   if(ch === 'B') return ' v-b' + ((mx*5 + my*3) % 4);   // rotating building facades
   if(base !== '.' && base !== ',') return '';
   let d = '';
@@ -2825,6 +2866,12 @@ function renderCrewScreen(){
         <div class="cw-slot"><span class="cw-slot-tag">SLOT 1</span>
           <span>${boosts.length?boosts.join('<br>'):'<span style="opacity:.55">Empty — no boost applied yet</span>'}</span></div>
         <div class="cw-slot res"><span class="cw-slot-tag">SLOT 2</span><span>Reserved — Volume 2</span></div>
+        ${(()=>{ const aid=artifacts.equipped[k]; const ad=aid&&ARTIFACT_DEFS[aid];   // 1Y: one Artifact slot
+          return `<div class="cw-slot" role="button" tabindex="0" onclick="openArtPicker('${k}')"
+            onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openArtPicker('${k}');}">
+            <span class="cw-slot-tag">ARTIFACT</span>
+            ${ad?`${ad.icon}<span><b class="accent">${ad.name}</b> — ${ad.desc}</span>`
+                :`<span style="opacity:.55">Empty — tap to equip (${artifacts.collected.filter(id=>ARTIFACT_DEFS[id]).length} found)</span>`}</div>`; })()}
         <div style="margin-top:5px">${legHtml}</div>
       </div>
       <div class="cw-sec"><span class="cw-lbl">ULTIMATE</span>
@@ -2838,7 +2885,38 @@ function openCrew(){
   renderCrewScreen();
   document.getElementById('crew-screen').classList.add('active');
 }
-function closeCrew(){ menuOpen = false; document.getElementById('crew-screen').classList.remove('active'); }
+function closeCrew(){ menuOpen = false; document.getElementById('crew-screen').classList.remove('active'); closeArtPicker(); }
+
+/* ---- 1Y: Artifact picker (the collected list IS the inventory) ---- */
+let artPickFor = null;   // crew key the picker is equipping for
+function openArtPicker(k){
+  if(mode === 'battle') return;                       // swap outside battle only
+  if(!party.find(p=>p.key===k)) return;               // locked member: no slot
+  artPickFor = k;
+  const host = document.getElementById('ap-list'); if(!host) return;
+  const known = artifacts.collected.filter(id => ARTIFACT_DEFS[id]);
+  const wornBy = (id)=>{ for(const ck of Object.keys(artifacts.equipped)) if(artifacts.equipped[ck]===id) return ck; return null; };
+  host.innerHTML = (known.length ? '' : '<div style="opacity:.6;font-size:.7rem;padding:6px 2px">Nothing found yet — hunt the shimmering tiles tucked around the county.</div>')
+    + known.map(id=>{ const d=ARTIFACT_DEFS[id]; const w=wornBy(id);
+        return `<button class="ap-row" onclick="equipArtifact('${id}')">${d.icon}
+          <span><span class="ap-nm">${d.name}</span><span class="ap-fx">${d.desc}</span></span>
+          ${w?`<span class="ap-who">${w===artPickFor?'WORN — TAP TO REMOVE':'WORN BY '+MEMBER_DEFS[w].codename}</span>`:''}</button>`; }).join('')
+    + (artifacts.equipped[k] ? `<button class="ap-row ap-none" onclick="equipArtifact(null)"><span class="ap-nm">✕ Unequip</span></button>` : '');
+  document.getElementById('ap-title').textContent = 'Artifact — ' + (MEMBER_DEFS[k] ? MEMBER_DEFS[k].codename : k);
+  document.getElementById('art-picker').classList.add('active');
+}
+function equipArtifact(id){
+  if(!artPickFor) return;
+  if(id && !ARTIFACT_DEFS[id]) return;
+  if(id && !artifacts.collected.includes(id)) return;
+  if(id && artifacts.equipped[artPickFor] === id) id = null;          // tap what you wear = remove
+  if(id) for(const ck of Object.keys(artifacts.equipped)) if(artifacts.equipped[ck]===id) artifacts.equipped[ck]=null;   // one wearer at a time
+  artifacts.equipped[artPickFor] = id;
+  saveGame();
+  closeArtPicker();
+  renderCrewScreen();
+}
+function closeArtPicker(){ artPickFor = null; const el=document.getElementById('art-picker'); if(el) el.classList.remove('active'); }
 let noirOn = false;
 function toggleNoir(){
   noirOn = !noirOn;
@@ -3665,6 +3743,13 @@ function dealTo(tgt, base, critCh, critMul, opts){
   if(tgt.evade && Math.random()<tgt.evade){ lastCrit=false; lastDodge=true; return 0; }   // scoped evasion (Cursed Boxer only)
   let def=(tgt.def||0)-((tgt.st&&tgt.st.defDown)||0);
   let b=base-Math.floor(Math.max(0,def)*(opts.pierce?0.5:1));
+  // 1Y artifacts (ally attacks only — atkBy is set around ability/drone resolution;
+  // strict no-ops when nothing is equipped, and no extra RNG draws either way)
+  if(atkBy){
+    if(hasArt(atkBy,'stevedores-belt') && atkBy.hp===atkBy.maxHp) b=Math.floor(b*1.1);
+    if(hasArt(atkBy,'mako-tooth') && worldState==='SHADOW_WORLD' && tgt.boss) b=Math.floor(b*1.1);
+    if(hasArt(atkBy,'lucky-bottlecap')) critCh=(critCh||0)+0.05;
+  }
   let dmg=critRoll(b, critCh, critMul);
   if(stHas(tgt,'mark')) dmg=Math.floor(dmg*1.25);
   tgt.hp=Math.max(0,tgt.hp-dmg); if(tgt.hp<=0) tgt.alive=false;
@@ -3774,7 +3859,73 @@ function renderLegendaryReveal(){
   host.innerHTML = '<div class="legend-panel"><div class="deco accent legend-hd">★ LEGENDARY WEAPONS UNLOCKED ★</div>'+rows+'</div>';
 }
 
+/* =================== PHASE 1Y-ARTIFACTS: findable accessories ===================
+   Episode-exclusive tools (never big flat stat inflation). One Artifact slot per
+   crew member; each artifact wearable by ONE member at a time; swap only outside
+   battle (the Crew Manifest is only reachable from the overworld). All effects
+   are deterministic and are STRICT NO-OPS while nothing is equipped, so the
+   locked zero-artifact combat baseline stays byte-identical. */
+function artIcon(inner){ return `<svg viewBox="0 0 16 16" class="art-ic">${inner}</svg>`; }
+const ARTIFACT_DEFS = {
+  'tide-watch':{ name:'Tide Watch', desc:'Wearer acts first on turn 1 of every battle.',
+    icon: artIcon(`<circle cx="8" cy="8.5" r="5.2" fill="none" stroke="#c9a86a" stroke-width="1.2"/><rect x="6.8" y="1.4" width="2.4" height="2" rx="0.6" fill="#c9a86a"/><path d="M8 8.5 L8 5.4 M8 8.5 L10.4 9.6" stroke="#3fc8f0" stroke-width="1" stroke-linecap="round"/>`) },
+  'barnacle-charm':{ name:'Barnacle Charm', desc:'Once per battle, survive a lethal hit at 1 HP.',
+    icon: artIcon(`<path d="M8 2.2 Q13.6 4 13 9 Q12.4 13.4 8 13.8 Q3.6 13.4 3 9 Q2.4 4 8 2.2 Z" fill="none" stroke="#3fc8f0" stroke-width="1.1"/><circle cx="8" cy="8.4" r="2.2" fill="none" stroke="#c9a86a" stroke-width="0.9"/><circle cx="8" cy="8.4" r="0.7" fill="#3fc8f0"/>`) },
+  'conductors-gloves':{ name:"Conductor's Gloves", desc:'Team Ultimate recharges one round sooner.',
+    icon: artIcon(`<path d="M4.5 13.5 L4.5 7 Q4.5 3.5 7 3.5 L9 3.5 Q11.5 3.5 11.5 7 L11.5 13.5 Z" fill="none" stroke="#c9a86a" stroke-width="1.1"/><path d="M6.2 3.6 V1.8 M8 3.5 V1.4 M9.8 3.6 V1.8" stroke="#c9a86a" stroke-width="0.9"/><path d="M6 9 L8 11 L10 8" stroke="#3fc8f0" stroke-width="1" fill="none" stroke-linecap="round"/>`) },
+  'brass-compass':{ name:'Brass Compass', desc:'Hidden artifacts within 4 tiles emit a visible glint.',
+    icon: artIcon(`<circle cx="8" cy="8" r="5.6" fill="none" stroke="#c9a86a" stroke-width="1.2"/><path d="M8 3.6 L9.4 8 L8 12.4 L6.6 8 Z" fill="#3fc8f0"/><circle cx="8" cy="8" r="0.8" fill="#c9a86a"/>`) },
+  'stevedores-belt':{ name:"Stevedore's Belt", desc:'+10% damage while wearer is at full HP.',
+    icon: artIcon(`<rect x="1.5" y="6.4" width="13" height="3.4" rx="1" fill="none" stroke="#c9a86a" stroke-width="1.1"/><rect x="6" y="5.4" width="4" height="5.4" rx="0.8" fill="none" stroke="#3fc8f0" stroke-width="1"/><path d="M7.4 8.1 H8.6" stroke="#3fc8f0" stroke-width="1"/>`) },
+  'lucky-bottlecap':{ name:'Lucky Bottlecap', desc:'+5% critical-hit chance for the wearer.',
+    icon: artIcon(`<circle cx="8" cy="8" r="5.4" fill="none" stroke="#c9a86a" stroke-width="1.1" stroke-dasharray="1.6 1.1"/><circle cx="8" cy="8" r="3.6" fill="none" stroke="#3fc8f0" stroke-width="0.9"/><path d="M8 6.2 L8.6 7.6 L10 7.7 L8.9 8.7 L9.3 10 L8 9.2 L6.7 10 L7.1 8.7 L6 7.7 L7.4 7.6 Z" fill="#3fc8f0"/>`) },
+  'patch-kit-pin':{ name:'Patch Kit Pin', desc:'Platinum: +1 Patch charge. Others: one small auto-patch when hurt.',
+    icon: artIcon(`<circle cx="8" cy="8" r="5.4" fill="none" stroke="#c9a86a" stroke-width="1.1"/><path d="M8 4.8 V11.2 M4.8 8 H11.2" stroke="#3fc8f0" stroke-width="1.6" stroke-linecap="round"/>`) },
+  'fog-lens':{ name:'Fog Lens', desc:'Party takes 10% less damage on turn 1.',
+    icon: artIcon(`<circle cx="7" cy="7" r="4.6" fill="none" stroke="#c9a86a" stroke-width="1.2"/><circle cx="7" cy="7" r="2.4" fill="#3fc8f0" opacity="0.5"/><path d="M10.4 10.4 L14 14" stroke="#c9a86a" stroke-width="1.5" stroke-linecap="round"/>`) },
+  'mako-tooth':{ name:'Mako Tooth', desc:'Shadow World only: wearer deals +10% damage to bosses.',
+    icon: artIcon(`<path d="M8 1.8 Q11.4 5.6 10.6 10 Q10 13.2 8 14.2 Q6 13.2 5.4 10 Q4.6 5.6 8 1.8 Z" fill="none" stroke="#eafcff" stroke-width="1.1"/><path d="M8 4.5 Q9.4 7.5 8.8 11" stroke="#3fc8f0" stroke-width="0.8" fill="none"/>`) },
+};
+/* where each artifact hides: off the golden path, never blocking anything.
+   `base` = the terrain char restored when picked up. Mako Tooth appears only
+   once the Shadow World is open. Tile char on the map: '*' (dim shimmer). */
+const ARTIFACT_SPOTS = [
+  { id:'tide-watch',        loc:'lake-worth',  x:1,  y:2,  base:'.' },
+  { id:'barnacle-charm',    loc:'lake-worth',  x:17, y:16, base:'.' },
+  { id:'conductors-gloves', loc:'wellington',  x:21, y:5,  base:',' },
+  { id:'brass-compass',     loc:'wellington',  x:2,  y:16, base:',' },
+  { id:'stevedores-belt',   loc:'downtown',    x:1,  y:8,  base:'.' },
+  { id:'lucky-bottlecap',   loc:'downtown',    x:21, y:16, base:'.' },
+  { id:'patch-kit-pin',     loc:'palm-island', x:7,  y:11, base:'.' },
+  { id:'fog-lens',          loc:'palm-island', x:22, y:14, base:'.' },
+  { id:'mako-tooth',        loc:'lake-worth',  x:2,  y:9,  base:'.', shadow:true },
+];
+let artifacts = { collected:[], equipped:{ gold:null, silver:null, titanium:null, platinum:null } };
+let atkBy = null;          // the acting party member while an ability/drone resolves
+function hasArt(m, id){ return !!m && artifacts.equipped[m.key] === id; }
+function partyWears(id){ return party && party.some(m => m.alive && artifacts.equipped[m.key] === id); }
+function placeArtifactTiles(locId){
+  for(const s of ARTIFACT_SPOTS){
+    if(s.loc !== locId) continue;
+    if(s.shadow && worldState !== 'SHADOW_WORLD') continue;
+    if(artifacts.collected.includes(s.id)) continue;
+    if(map[s.y] && map[s.y][s.x] === s.base) map[s.y][s.x] = '*';
+  }
+}
+function collectArtifact(y, x){
+  const s = ARTIFACT_SPOTS.find(t => t.loc === currentLocation && t.x === x && t.y === y);
+  map[y][x] = s ? s.base : '.';
+  if(!s || artifacts.collected.includes(s.id)) return;
+  artifacts.collected.push(s.id);
+  const d = ARTIFACT_DEFS[s.id];
+  showBanner('★ Artifact found: ' + d.name + '!');
+  toastHint('✨ ' + d.name + ' — ' + d.desc + ' (equip it in 👥 CREW)');
+  if(SFX.pickup) SFX.pickup();
+  saveGame();
+}
+
 function resetState(){
+  artifacts = { collected:[], equipped:{ gold:null, silver:null, titanium:null, platinum:null } };
   party = [ makeMember('gold', 1) ];
   recruited = { silver:false, titanium:false, platinum:false };
   hero = party[0];
@@ -3877,7 +4028,8 @@ function loadLocation(locId){
   buildPatrols(locId);
   buildCrewPacers(locId);
   initGlows();
-  buildDressing(locId);   // 1X: one static prop layer per zone
+  buildDressing(locId);      // 1X: one static prop layer per zone
+  placeArtifactTiles(locId); // 1Y: uncollected artifact shimmer tiles
 }
 
 /* =================== 1X-WORLD-ALIVE: MAP DRESSING ===================
@@ -4272,7 +4424,28 @@ function saveGame(){
     };
     for(const p of patrols)    strip(p.x, p.y, p.ch, p.under);
     for(const c of crewPacers) strip(c.x, c.y, c.ch, c.under);
-    const data = { v:3, party, recruited, player, facing,
+    /* ============================ CREW-SAVE SCHEMA v2 ============================
+       The PORTABLE part of the save — the contract future volumes implement so a
+       crew (and its artifacts) can travel across episodes:
+         crewSchema : 2                 — integer schema version of this contract
+         volume     : 'vol1'            — the episode that wrote the save
+         artifacts  : {
+           collected: ['tide-watch',…]  — STABLE STRING IDS, never array indexes.
+                                          Loaders MUST preserve ids they don't
+                                          recognize (a future volume's artifact
+                                          must survive a round-trip through an
+                                          older engine)…
+           equipped : { gold:'id'|null, silver:…, titanium:…, platinum:… }
+                                        — …but MUST null out equipped ids they
+                                          can't resolve (skip, never crash).
+         }
+       Everything OUTSIDE this block (map, party stats, bosses, …) is volume-
+       local and carries no cross-episode promise. An old save without these
+       fields MUST load cleanly as zero artifacts.
+       ============================================================================ */
+    const data = { v:3, crewSchema:2, volume:'vol1',
+      artifacts: { collected: artifacts.collected, equipped: artifacts.equipped },
+      party, recruited, player, facing,
       map: rows, seen: [...seenDistricts], salvaged: claimedSalvages, worldState,
       loc: currentLocation, bosses: defeatedBosses, legendaries,
       pendingSalvage, pendingSalvageStat, salvageReturn,   // reload on the salvage screen must not eat the reward
@@ -4323,6 +4496,16 @@ function continueGame(){
       const glowData = data.glows || {};
       for(const [k,g] of Object.entries(glowingUpgrades)){ if(glowData[k]){ glowingUpgrades[k].x = glowData[k].x; glowingUpgrades[k].y = glowData[k].y; glowingUpgrades[k].collected = glowData[k].collected; } }
       initGlows();
+      // 1Y — CREW-SAVE SCHEMA v2: old saves (no artifacts field) load as zero
+      // artifacts; unknown COLLECTED ids are preserved (future-volume data),
+      // unknown EQUIPPED ids are unequipped (skip, never crash).
+      const av = data.artifacts || {};
+      artifacts = { collected: Array.isArray(av.collected) ? av.collected.slice() : [],
+                    equipped: Object.assign({ gold:null, silver:null, titanium:null, platinum:null }, av.equipped || {}) };
+      for(const k of Object.keys(artifacts.equipped)){
+        if(artifacts.equipped[k] && !ARTIFACT_DEFS[artifacts.equipped[k]]) artifacts.equipped[k] = null;
+      }
+      placeArtifactTiles(currentLocation);   // restore shimmer tiles a pre-1Y map snapshot doesn't carry
       busy = false; battle = null;
       // a save written on the salvage screen re-opens it (one-time boss reward)
       if(data.pendingSalvage && SALVAGES[data.pendingSalvage] && !claimedSalvages[data.pendingSalvage]){
@@ -4516,6 +4699,20 @@ function renderMovers(forceInstant){
     dz.style.height = (MAP_H*tile) + 'px';
     dz.style.transform = `translate(${(OVERSCAN-camX)*tile}px, ${(OVERSCAN-camY)*tile}px)`;
   }
+  // 1Y — Brass Compass: glint over uncollected artifacts within 4 tiles of the party
+  const gl = document.getElementById('glints');
+  if(gl){
+    let html = '';
+    if(partyWears('brass-compass') && player){
+      for(const s of ARTIFACT_SPOTS){
+        if(s.loc !== currentLocation || artifacts.collected.includes(s.id)) continue;
+        if(s.shadow && worldState !== 'SHADOW_WORLD') continue;
+        if(Math.max(Math.abs(s.x-player.x), Math.abs(s.y-player.y)) > 4) continue;
+        html += `<div class="glint" style="left:${(s.x+OVERSCAN-camX)*tile}px; top:${(s.y+OVERSCAN-camY)*tile}px; width:${tile}px; height:${tile}px;">✦</div>`;
+      }
+    }
+    if(gl.dataset.sig !== html){ gl.dataset.sig = html; gl.innerHTML = html; }
+  }
   const seen = new Set();
   const all = [];
   for(const p of patrols)    all.push({ id:'p:'+p.id,  ch:p.ch, x:p.x, y:p.y, hostile:true  });
@@ -4637,6 +4834,7 @@ function move(dy, dx){
   if(ch==='A' && !recruited.titanium){ showBanner("Rescue Titanium first — full crew for the Baron."); return; }
   if(ch in ENEMIES){ startBattleWithVeil(ch, ny, nx); return; }          // fight; stay put
   if(ch==='k' || ch==='u' || ch==='o'){ takePickup(ch, ny, nx); }        // grab, then step on
+  if(ch==='*'){ collectArtifact(ny, nx); }                               // 1Y: artifact; grab, then step on
 
   // plain walk (or onto a now-cleared pickup tile)
   player.y = ny; player.x = nx;
@@ -4865,7 +5063,22 @@ function enemyHit(e, ally, base, critCh, critMul){           // enemy → ally (
   let b=base-Math.max(0, ally.def);
   let dmg=critRoll(b, critCh, critMul);
   if(stHas(ally,'guard')) dmg=Math.ceil(dmg/2);
-  ally.hp=Math.max(0,ally.hp-dmg); if(ally.hp<=0) ally.alive=false;
+  // 1Y — Fog Lens: the whole party takes 10% less damage on turn 1
+  if(battle && battle.round===1 && partyWears('fog-lens')) dmg=Math.max(1,Math.floor(dmg*0.9));
+  ally.hp=Math.max(0,ally.hp-dmg);
+  // 1Y — Barnacle Charm: once per battle, a lethal hit leaves the wearer at 1 HP
+  if(ally.hp<=0 && hasArt(ally,'barnacle-charm') && !ally._charmUsed){
+    ally._charmUsed=true; ally.hp=1;
+    pushLog(`${ally.name.split(' ')[0]}'s Barnacle Charm holds fast — survives at 1 HP! 🐚`,'sys');
+  }
+  if(ally.hp<=0) ally.alive=false;
+  // 1Y — Patch Kit Pin (non-Platinum wearer): one small auto-patch when first dropped under half HP
+  else if(ally._pinReady && ally.hp*2 < ally.maxHp){
+    ally._pinReady=false;
+    const h=Math.floor(ally.maxHp*0.2);
+    ally.hp=Math.min(ally.maxHp, ally.hp+h);
+    pushLog(`${ally.name.split(' ')[0]}'s Patch Kit Pin snaps open — auto-patch +${h} HP. 🩹`,'sys');
+  }
   return dmg;
 }
 function abilUsable(m,id){
@@ -4943,7 +5156,8 @@ function startBattle(ch, y, x){
   svBuilt=0;   // force a fresh Status Window build for this fight's party
   { const ez=document.getElementById('stage-enemies'); if(ez && ez.dataset) ez.dataset.sig=''; }   // force a fresh foe build too
   // per-fight reset: statuses, cooldowns, drones, Platinum's Patch charges; revive KO'd to 1 HP
-  party.forEach(m=>{ m.st={}; m.cd={}; m.drone=null; m.special=0; if(!m.maxSpecial) m.maxSpecial=100; if(m.key==='platinum') m.patchCharges=3; if(m.hp<=0) m.hp=1; m.alive=true; m._foresightReady=(m.key==='silver'); });
+  party.forEach(m=>{ m.st={}; m.cd={}; m.drone=null; m.special=0; if(!m.maxSpecial) m.maxSpecial=100; if(m.key==='platinum') m.patchCharges=3+(hasArt(m,'patch-kit-pin')?1:0); if(m.hp<=0) m.hp=1; m.alive=true; m._foresightReady=(m.key==='silver');
+    m._charmUsed=false; m._pinReady=(hasArt(m,'patch-kit-pin') && m.key!=='platinum'); });   // 1Y per-fight artifact state
   battle.dmgBy = { gold:0, silver:0, titanium:0, platinum:0 };   // Phase 5b: per-member damage share
   mode='battle'; busy=false; beatBusy=false; logLines=[];
   document.getElementById('stage').setAttribute('data-scene', SCENE_OF[ch]||'harbor');
@@ -5211,7 +5425,9 @@ function commitAbility(id, targetIdx){
   // cosmetic special-gauge gain (no ultimate logic yet — Phase 5c)
   m.special=Math.min(m.maxSpecial, (m.special||0) + (ab.tgt==='enemy'||ab.tgt==='allenemies'?14:8));
   const droids_before = battle.enemies.filter(f=>f.droid&&f.alive).length;
+  atkBy = m;                                   // 1Y: artifact hooks know the actor
   const r = ab.run(m, target) || {};
+  atkBy = null;
   if(lastDodge && r.kind==='hit' && target && !r.aoe){   // target wove away (Cursed Boxer evasion)
     r.log = `${target.name.split(' ')[0]} bobs and weaves — ${m.name.split(' ')[0]}'s blow MISSES!`; r.val=0; r.crit=false; r._dodged=true;
   }
@@ -5274,18 +5490,20 @@ const ULTS = {
   titanium: {name:'Drone Strike',       icon:'🪰', desc:'swarm hits ALL foes · crew +30% HP'},
   platinum: {name:'Overdrive Gauntlet', icon:'🦾', desc:'crush ALL foes · crew +25% HP'},
 };
+/* 1Y — Conductor's Gloves: a living wearer shortens the team-ult wait by one round */
+function ultWait(){ return ULT_WAIT - (partyWears('conductors-gloves') ? 1 : 0); }
 function ultReady(){
   if(!battle || battle.over || !party.length) return false;
   if(!party.every(m=>m.alive)) return false;                 // (a) whole crew standing
   if(!party.every(m=>m.hp*2 >= m.maxHp)) return false;       // (b) everyone at >=50% HP
-  return (battle.round - (battle.ultLast||0)) > ULT_WAIT;    // (c) 3 full rounds passed
+  return (battle.round - (battle.ultLast||0)) > ultWait();   // (c) 3 full rounds passed (2 with Gloves)
 }
 /* why the button is gray right now (teaches the trigger) */
 function ultBlockReason(){
   if(!battle) return '';
   if(!party.every(m=>m.alive)) return 'need the whole crew standing';
   if(!party.every(m=>m.hp*2 >= m.maxHp)) return 'crew must be above half HP';
-  const left = ULT_WAIT + 1 - (battle.round - (battle.ultLast||0));
+  const left = ultWait() + 1 - (battle.round - (battle.ultLast||0));
   return 'charging — '+left+' more turn'+(left===1?'':'s');
 }
 /* per-member stage flourish (~450ms, deterministic). RM: skip entirely. */
@@ -5368,6 +5586,12 @@ function fireUltimate(){
    locked pre-finale balance is untouched. */
 function beginAllyPhase(){
   const living = party.map((m,i)=>i).filter(i=>party[i].alive);
+  // 1Y — Tide Watch: the wearer acts first on turn 1 (Initiative Core, applied
+  // after, still wins the front spot post-finale — legendaries stay dominant)
+  if(battle.round===1){
+    const ti = party.findIndex(m=>m.alive && artifacts.equipped[m.key]==='tide-watch');
+    if(ti>=0) living.sort((a,b)=> a===ti?-1 : b===ti?1 : a-b);
+  }
   if(legendaries.platinum){
     const pi = party.findIndex(m=>m.key==='platinum' && m.alive);
     if(pi>=0) living.sort((a,b)=> a===pi?-1 : b===pi?1 : a-b);
@@ -5390,7 +5614,7 @@ function advanceAlly(){
 function allyPhaseDone(){
   busy=true; renderBattle();
   // drones act (ally side)
-  party.forEach(m=>{ if(m.drone && m.alive){ const f=exposedFoes()[0]; if(f){ const i=battle.enemies.indexOf(f); const d=dealTo(f,m.drone.dmg,0.10,1.5); pulse('foe'+i,'struck',200); floatDamage('foe'+i,d,'dmg'); pushLog(`🪰 ${m.name.split(' ')[0]}'s drone hits ${f.name} for ${d}.`,'sys'); } } });
+  party.forEach(m=>{ if(m.drone && m.alive){ const f=exposedFoes()[0]; if(f){ const i=battle.enemies.indexOf(f); atkBy=m; const d=dealTo(f,m.drone.dmg,0.10,1.5); atkBy=null; pulse('foe'+i,'struck',200); floatDamage('foe'+i,d,'dmg'); pushLog(`🪰 ${m.name.split(' ')[0]}'s drone hits ${f.name} for ${d}.`,'sys'); } } });
   renderBattle();
   if(enemiesCleared()){ winBattle(); return; }
   setTimeout(enemyPhase, 600);
