@@ -1482,6 +1482,27 @@
     border-radius:8px; min-height:30px; padding:2px 10px; font-size:.6rem; font-weight:700;
     letter-spacing:.1em; white-space:nowrap; flex:none; cursor:pointer; }
   .crewBtn:active{ transform:translateY(1px); }
+  /* 1Z-A5: boss intro card — zone-title-card voice, battle-start splash */
+  #boss-card{ position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+    z-index:48; pointer-events:none; }
+  #boss-card.show{ display:flex; }
+  #boss-card .bc-inner{ background:rgba(6,8,12,.92); border-top:2px solid var(--brass);
+    border-bottom:2px solid var(--brass); padding:14px 18px; width:100%; text-align:center;
+    animation:bcIn 1.7s ease forwards; }
+  #boss-card .bc-name{ font-family:inherit; color:var(--brass); font-weight:700; letter-spacing:.14em;
+    font-size:1.05rem; text-transform:uppercase; }
+  #boss-card .bc-line{ color:#cfe6f0; font-size:.72rem; letter-spacing:.08em; margin-top:4px; opacity:.85; }
+  @keyframes bcIn{ 0%{ opacity:0; transform:scale(1.04); } 12%,80%{ opacity:1; transform:scale(1); } 100%{ opacity:0; } }
+  @media (prefers-reduced-motion: reduce){
+    #boss-card .bc-inner{ animation:none; }   /* JS hides it after a static beat */
+  }
+
+  /* 1Z-A4: autosave chip (brief, RM-safe: opacity-only fade) */
+  #autosave-chip{ position:fixed; top:8px; right:8px; z-index:44; background:var(--panel2);
+    border:1px solid var(--brass-d); border-radius:6px; color:var(--brass); font-size:.56rem;
+    letter-spacing:.1em; padding:3px 8px; opacity:0; pointer-events:none; transition:opacity .3s ease; }
+  #autosave-chip.show{ opacity:.92; }
+  @media (prefers-reduced-motion: reduce){ #autosave-chip{ transition:none; } }
   /* 1X-WORLD-ALIVE: persistent zone label + decorative prop layer */
   #zone-chip{ font-size:.56rem; letter-spacing:.08em; color:var(--brass); white-space:nowrap; flex:none; opacity:.9; }
   #dressing{ position:absolute; left:0; top:0; pointer-events:none; opacity:.9; }
@@ -1660,6 +1681,7 @@
     <button class="muteBtn" onclick="toggleMute()">🔊</button>
     <button class="gearBtn" onclick="openSettings()">⚙</button>
   </div>
+  <div id="autosave-chip" aria-hidden="true">💾 AUTOSAVED</div>
   <div id="flood-bar-wrap">
     <button class="crewBtn" onclick="openCrew()" aria-label="Open crew manifest">👥 CREW</button>
     <span id="zone-chip">📍 LAKE WORTH</span>
@@ -1836,6 +1858,7 @@
 
 <!-- ============================ BATTLE ============================ -->
 <div id="battle" class="screen">
+  <div id="boss-card" aria-hidden="true"><div class="bc-inner"><div class="bc-name" id="bc-name"></div><div class="bc-line" id="bc-line"></div></div></div>
   <!-- side-view face-off stage: active ally (left, faces right) vs enemies (right) -->
   <div id="stage" data-scene="harbor">
     <div class="stage-far"></div>
@@ -1900,6 +1923,16 @@
   </div>
 </div>
 
+<!-- ============ 1Z-A3: REACTIVE EPILOGUE (Fallout-style, one slide per zone) ============ -->
+<div id="epilogue" class="screen">
+  <div class="card">
+    <h2 class="deco accent" id="ep-title">Epilogue</h2>
+    <div class="big" id="ep-icon">🌊</div>
+    <p class="blurb" id="ep-text" style="text-align:left"></p>
+    <button class="btn" style="width:100%" id="ep-btn" onclick="epilogueNext()">Next</button>
+  </div>
+</div>
+
 <!-- ============================ VICTORY ============================ -->
 <div id="victory" class="screen">
   <div class="card">
@@ -1961,6 +1994,10 @@
       <button class="toggle" id="set-music" onclick="toggleMusic()">ON</button></div>
     <div class="row"><span>Film-noir overlay</span>
       <button class="toggle off" id="set-noir" onclick="toggleNoir()">OFF</button></div>
+    <div class="row"><span>Battle speed</span>
+      <button class="toggle" id="set-speed" onclick="toggleSpeed()">1×</button></div>
+    <div class="row" id="leads-row" style="align-items:flex-start"><span style="color:var(--brass);letter-spacing:.08em;flex:none">LEADS</span>
+      <span id="leads-text" style="text-align:right;opacity:.85;font-size:.8rem"></span></div>
     <div class="row" style="opacity:.7;font-size:.78rem"><span>Tip: the ⚙ and 🔊 buttons are always here.</span></div>
     <button class="btn" style="width:100%;margin-top:6px" onclick="closeSettings()">Close</button>
   </div>
@@ -2128,11 +2165,11 @@ let defeatedBosses  = {};
 let pendingTravelDest = null;
 
 /* solid tiles block movement; gates are solid until "opened" (mutated to '.') */
-const SOLID = new Set(['B','W','T','F','a','b','c','5','6','7','8','9','i','v','q','g','h']);
+const SOLID = new Set(['B','W','T','F','b','c','5','6','8','q','g','h']);   // 1Z FIX-4: pruned orphaned tile chars (a,7,9,i,v)
 /* base terrain under each special marker (for color + what it reverts to) */
 const GROUND = {
-  '1':'.','2':'.','3':'=','4':'.','a':'.',
-  'N':'.','D':'.','R':',','k':',','u':',','o':',','L':'.','H':',','S':'.','K':'.','G':'=','C':',','V':',','X':',',
+  '1':'.','2':'.','3':'=','4':'.',
+  'N':'.','D':'.','R':',','k':',','u':',','o':',','L':'.','H':',','S':'.','K':'.','G':'=','X':',',
   'E':'.','J':'.','A':'=','Q':'.','M':'.','e':'.',
   'g':'.','c':'.','b':'.','h':'.',   // 'b'/'c' are the GLOW tiles (boat/car) — the retired barricade chars must not shadow them
   /* 1X-WORLD-ALIVE ambient NPCs (flavor only — never solid, never battle) */
@@ -2146,11 +2183,10 @@ const GROUND = {
 const EMOJI = {
   'B':'🏢','W':'🌊','T':'🌴','F':'🧱',
   '1':'🥊','2':'🛤️','3':'⚓','4':'🗼',
-  'a':'🚧',   // 'b'/'c' belong to the glow tiles below — the retired barricades must not shadow them
   'N':'📰','D':'👷','R':'🔮',
   'k':'🧰','u':'🛢️','o':'🔩',
-  '5':'🏠','6':'🏛️','7':'⛲','8':'📦','9':'🪨','i':'🌿','v':'⛵','q':'🗿',
-  'L':'🦩','H':'🦀','S':'🔧','K':'⏳','G':'🎣','C':'🛞','V':'🔥','X':'👊',
+  '5':'🏠','6':'🏛️','8':'📦','q':'🗿',
+  'L':'🦩','H':'🦀','S':'🔧','K':'⏳','G':'🎣','X':'👊',
   'E':'💨','J':'⌚','A':'🎩','Q':'⛳','M':'🦈','e':'🌉',
   'g':'🌴','c':'🚗','b':'⛵','h':'🏠',
   /* 1X-WORLD-ALIVE ambient NPCs (all single-codepoint) */
@@ -2162,7 +2198,7 @@ const EMOJI = {
 };
 /* terrain CSS class per base char */
 const TCLASS = {'.':'t-road',',':'t-grass','=':'t-plank','P':'t-plaza','W':'t-water','B':'t-bldg','T':'t-grass','F':'t-bldg',
-  '5':'t-bldg','6':'t-bldg','7':'t-road','8':'t-road','9':'t-road','i':'t-grass','v':'t-water','q':'t-road',
+  '5':'t-bldg','6':'t-bldg','8':'t-road','q':'t-road',
   'g':'t-grass','c':'t-road','b':'t-water','h':'t-bldg'};
 /* tiles whose emoji marker should gently pulse to invite interaction */
 const INTERACTIVE = new Set(['1','2','3','4','N','D','R','k','u','o','L','H','E','J','A','Q','M','e','g','c','b','h',
@@ -2650,7 +2686,7 @@ function musicEl(name){
 function desiredTrack(){
   if(mode === 'battle') return 'battle';
   if(mode === 'title' || mode === 'briefing-intro' ||
-     mode === 'victory' || mode === 'gameover' || mode === 'ending-briefing') return 'title';
+     mode === 'victory' || mode === 'gameover' || mode === 'ending-briefing' || mode === 'epilogue') return 'title';
   return 'explore';               // overworld, dialogue, salvage, reward, travel
 }
 /* ---- 1T-3: per-track GainNode graph (equal-power scheduled crossfades) ----
@@ -2790,7 +2826,17 @@ let menuOpen = false;
    drives combat through commitAbility directly and never reads this flag, so
    combat resolution stays exactly synchronous. */
 let beatBusy = false;
-function startBeatLock(){ beatBusy = true; setTimeout(()=>{ beatBusy = false; renderBattle(); }, 340); }
+/* 1Z-A4: battle speed. 2x halves PRESENTATION delays only — combat math, turn
+   order, and RNG are untouched (the sim stubs timers, so it can't diverge). */
+let battleSpeed = 1;
+try{ battleSpeed = parseInt(localStorage.getItem('sd_speed'),10)===2 ? 2 : 1; }catch(e){}
+function bt(ms){ return battleSpeed===2 ? Math.ceil(ms/2) : ms; }
+function toggleSpeed(){
+  battleSpeed = battleSpeed===2 ? 1 : 2;
+  try{ localStorage.setItem('sd_speed', String(battleSpeed)); }catch(e){}
+  const b=document.getElementById('set-speed'); if(b) b.textContent = battleSpeed+'\u00d7';
+}
+function startBeatLock(){ beatBusy = true; setTimeout(()=>{ beatBusy = false; renderBattle(); }, bt(340)); }
 function openSettings(){
   menuOpen = true;
   document.getElementById('settings').classList.add('active');
@@ -2801,6 +2847,33 @@ function openSettings(){
   document.getElementById('set-music').classList.toggle('off', !musicEnabled);
   document.getElementById('set-noir').textContent = noirOn ? 'ON' : 'OFF';
   document.getElementById('set-noir').classList.toggle('off', !noirOn);
+  const sp=document.getElementById('set-speed'); if(sp) sp.textContent = battleSpeed+'×';   // 1Z-A4
+  const lt=document.getElementById('leads-text'); if(lt) lt.textContent = leadsText();           // 1Z-A4
+}
+
+/* 1Z-A4: the current objective, detective-flavor, derived live from existing
+   progress flags (no save field). Shown in the settings menu. */
+function leadsText(){
+  if(!party) return '…';
+  if(worldState === 'SHADOW_WORLD') return shadowCleared
+    ? "Job's done, Sparkplug. Even the bay's secrets sleep."
+    : "Darker waters. Find what answered the beacon.";
+  if(currentLocation === 'lake-worth'){
+    if(!recruited.silver) return "Find the mechanic watching the pier — Silver knows this coast.";
+    if(!defeatedBosses['lake-worth']) return "Something wears the fisherman on the south pier. Clear him.";
+    return "Pier's clear. Take the north road to Wellington.";
+  }
+  if(currentLocation === 'wellington'){
+    if(!recruited.platinum) return "The negotiator by the east shed can settle the refinery.";
+    if(!defeatedBosses['wellington']) return "Something's swinging in the west cane rows.";
+    return "Cane's clear. The rail line runs to Downtown.";
+  }
+  if(currentLocation === 'downtown'){
+    if(!recruited.titanium) return "A dockworker's pinned mid-grid. Get him out.";
+    if(!defeatedBosses['downtown']) return "Peel the droid wall; the Baron folds after.";
+    return "Tower's dark. Palm Island's signal is still burning.";
+  }
+  return "The signal's on the last green. Follow it.";
 }
 function closeSettings(){ menuOpen = false; document.getElementById('settings').classList.remove('active'); }
 
@@ -3162,6 +3235,7 @@ let salvageReturn      = null; // where applySalvage returns: 'overworld' | 'end
 let activeDialogue     = null; // {lines, idx, onEnd} for multi-line dialogue sequences
 let pendingTitaniumRescue = false;
 let worldState      = null; // null | 'SHADOW_WORLD' — persists across save/load
+let shadowCleared   = false; // 1Z: Mako down in the Shadow World (additive save field; old saves default false)
 
 /* small add enemies for district fights (so targeting/rows matter) */
 const ADD_DEFS = {
@@ -3174,11 +3248,9 @@ const ADD_DEFS = {
   'J':{name:"Chrono-Diver Brute", face:"⌚", hp:40, atk:11, def:2, xp:13, svg:'J'},
   'I':{name:"Interceptor Droid", face:"🤖", hp:50, atk:9,  def:2, xp:10, svg:'I'},
 };
-const NPC_LINES = {
-  'N':{face:"📰", say:"EXTRA! EXTRA! Castellane's dirigibles choke the skyline — and the mayor calls it 'progress'! Read all about it, mister!"},
-  'D':{face:"👷", say:"Diesel fumes thick as gravy down here, pal. Mind the planks — slick as a politician's promise."},
-  'R':{face:"🔮", say:"I see brass and fire in your future, Sparkplug... a tower, a Baron who won't bow, and a wrench that decides it all."}
-};
+/* 1Z FIX-2: the old NPC_LINES table was unreachable (openDialogue's recruit map
+   catches N/D/R first) and has been removed. Its one great line — the fortune —
+   was rescued verbatim into Dot the waitress's pre-Baron set below. */
 
 /* =================== PHASE 1X-WORLD-ALIVE: AMBIENT NPCs ===================
    Flavor-only townsfolk. Walk into one (or tap it when adjacent) to talk.
@@ -3253,7 +3325,8 @@ const AMBIENT_NPCS = {
     post:["Shines are two cents off — call it a liberation sale!"] },
   'z':{ name:'Dot', face:civFace('#e7c39a','bun','#8a5c39','#7a9a8a'),
     pre:["Coffee's watery — syndicate taxes the beans. You didn't hear it from me.",
-         "Window booth's got a view of the tower. Nobody sits there anymore."],
+         "Window booth's got a view of the tower. Nobody sits there anymore.",
+         "Grounds at the bottom of your cup, hon... I read 'em sometimes. I see brass and fire in your future, Sparkplug... a tower, a Baron who won't bow, and a wrench that decides it all."],
     post:["Real coffee's back on. First cup's on the house for you lot."] },
   'O':{ name:'Mr. Beaumont', face:civFace('#6d4a33','cap','#1c1c22','#22303f'),
     pre:["The Regal Pelican's lobby stands EMPTY, sir. Even the pigeons checked out.",
@@ -3898,7 +3971,7 @@ const ARTIFACT_SPOTS = [
   { id:'lucky-bottlecap',   loc:'downtown',    x:21, y:16, base:'.' },
   { id:'patch-kit-pin',     loc:'palm-island', x:7,  y:11, base:'.' },
   { id:'fog-lens',          loc:'palm-island', x:22, y:14, base:'.' },
-  { id:'mako-tooth',        loc:'lake-worth',  x:2,  y:9,  base:'.', shadow:true },
+  { id:'mako-tooth',        loc:'palm-island', x:20, y:14, base:'.', shadow:true },   // 1Z FIX: Shadow World is Palm-Island-locked; the old Shadow Lake Worth spot was unreachable
 ];
 let artifacts = { collected:[], equipped:{ gold:null, silver:null, titanium:null, platinum:null } };
 let atkBy = null;          // the acting party member while an ability/drone resolves
@@ -3933,7 +4006,7 @@ function resetState(){
   facing = 'down'; seenDistricts = new Set();
   claimedSalvages = {}; pendingSalvage = null; pendingSalvageStat = null; salvageReturn = null;
   legendaries = { gold:false, silver:false, titanium:false, platinum:false };
-  worldState = null;
+  worldState = null; shadowCleared = false;
   defeatedBosses = {}; pendingTravelDest = null;
   activeDialogue = null; pendingTitaniumRescue = false;
   defeatedPatrols = new Set();
@@ -3957,19 +4030,78 @@ function newGame(){
 }
 /* ---- Briefing Room endings ---- */
 function sealEpisode(){
-  clearSave();
-  resetState();
-  showScreen('victory');
-  refreshContinueBtn();
+  showEpilogue('seal', () => {   // 1Z-A3: read run state BEFORE the reset wipes it
+    clearSave();
+    resetState();
+    mode='victory';
+    showScreen('victory');
+    refreshContinueBtn();
+  });
+}
+
+/* =================== 1Z-A3: REACTIVE EPILOGUE ===================
+   One slide per zone + a coda; text reacts to the actual run (artifacts
+   found, salvages claimed, Shadow World cleared, ending chosen). High-
+   completion variant = both of a zone's artifacts + its salvage claimed. */
+const EPILOGUE_ZONES = [
+  { loc:'lake-worth',  icon:'🌊', title:'Lake Worth Beach',  arts:['tide-watch','barnacle-charm'],        salv:'corruptedPole',
+    base:"The tide tables settle. Tomas fishes at dawn again, and nobody asks where his rod went.",
+    high:"The tide tables settle. Tomas fishes at dawn again — and the pier crews tell it different now: the crew that came through didn't just clear the water, they combed every plank and left nothing haunted behind." },
+  { loc:'wellington',  icon:'🚂', title:'Wellington',        arts:['conductors-gloves','brass-compass'],  salv:'cursedGloves',
+    base:"The sugar train runs on time. The cane grows straight, and the scarecrows stay standing.",
+    high:"The sugar train runs on time. The cane grows straight — and Marisol keeps the first repaired signal lamp lit over the yard. 'For the crew that checked every fence-post,' she says." },
+  { loc:'downtown',    icon:'🏛️', title:'Downtown WPB',      arts:['stevedores-belt','lucky-bottlecap'],  salv:'baronWatch',
+    base:"New colors over the docks. The Pelican's lobby is loud again, and coffee tastes like coffee.",
+    high:"New colors over the docks. The Pelican's lobby is loud again — and Okafor prints a Sunday special: EVERY CORNER CLEAN. He sells out by eight." },
+  { loc:'palm-island', icon:'⛳', title:'Palm Island',       arts:['patch-kit-pin','fog-lens'],           salv:'primeArtifact',
+    base:"The seventeenth green heals. An old man practices his putt at sunset, unhaunted.",
+    high:"The seventeenth green heals. An old man practices his putt at sunset, unhaunted — Groundskeeper Greens swears the bunkers rake themselves kindly now, and Renard finally drives something honest." },
+];
+let epilogueSlides = [], epilogueIdx = 0, epilogueDone = null;
+function showEpilogue(ending, onDone){
+  const A = artifacts.collected.filter(id=>ARTIFACT_DEFS[id]).length;
+  const S = Object.keys(claimedSalvages).length;
+  epilogueSlides = EPILOGUE_ZONES.map(z=>{
+    const high = z.arts.every(id=>artifacts.collected.includes(id)) && !!claimedSalvages[z.salv];
+    return { icon:z.icon, title:z.title, text: high ? z.high : z.base };
+  });
+  const coda = ending==='seal'
+    ? `Volume 1 closes: ${A}/9 artifacts recovered, ${S}/4 salvages claimed. The Shadow Artifact waits beneath the bay — for another day, another ballad.`
+    : (shadowCleared
+        ? `The crew follows the signal into darker waters. ${A}/9 artifacts, ${S}/4 salvages — and even the Mako sleeps. The bay keeps no more secrets from Sparkplug's crew.`
+        : `The crew follows the signal into darker waters. ${A}/9 artifacts, ${S}/4 salvages — and the hunt isn't over.`);
+  epilogueSlides.push({ icon: ending==='seal' ? '📖' : '🌑', title: ending==='seal' ? 'End of Volume 1' : 'Darker Waters', text: coda });
+  epilogueIdx = 0; epilogueDone = onDone || null;
+  mode = 'epilogue';
+  showScreen('epilogue');
+  renderEpilogueSlide();
+}
+function renderEpilogueSlide(){
+  const s = epilogueSlides[epilogueIdx]; if(!s) return;
+  document.getElementById('ep-title').textContent = s.title;
+  document.getElementById('ep-icon').textContent  = s.icon;
+  typeText(document.getElementById('ep-text'), s.text);
+  document.getElementById('ep-btn').textContent = (epilogueIdx === epilogueSlides.length-1) ? 'Continue' : 'Next';
+}
+function epilogueNext(){
+  if(!twDone){ typeFinish(); return; }
+  epilogueIdx++;
+  if(epilogueIdx < epilogueSlides.length){ renderEpilogueSlide(); return; }
+  const done = epilogueDone; epilogueDone = null;
+  if(done) done();
 }
 function chaseShadow(){
-  worldState = 'SHADOW_WORLD';
-  respawnShadowWorld();
-  saveGame();
-  mode = 'overworld';
-  showScreen('overworld');
-  renderOverworld(true);
-  startPatrolTimer();   // timer was stopped by the boss fight — without this, Shadow World patrols freeze
+  showEpilogue('shadow', () => {   // 1Z-A3: reactive epilogue plays before the hunt begins
+    worldState = 'SHADOW_WORLD';
+    respawnShadowWorld();
+    placeArtifactTiles(currentLocation);   // 1Z FIX-1: Mako Tooth shimmer appears on Shadow Palm Island
+    saveGame();
+    mode = 'overworld';
+    showScreen('overworld');
+    renderOverworld(true);
+    startPatrolTimer();   // timer was stopped by the boss fight — without this, Shadow World patrols freeze
+    playBanter('shadow'); // 1Z-A2: entering darker waters
+  });
 }
 function respawnShadowWorld(){
   // Phase 1M-1: shadow-patrol encounters on the new Palm Island layout (open ground)
@@ -4006,6 +4138,13 @@ function enterWorld(welcome){
   setFloodBar();
   startPatrolTimer();
   saveGame();
+  autosaveChip();   // 1Z-A4: every zone entry autosaves — say so, quietly
+}
+function autosaveChip(){
+  const el=document.getElementById('autosave-chip'); if(!el || !el.classList) return;
+  el.classList.add('show');
+  clearTimeout(autosaveChip._t);
+  autosaveChip._t = setTimeout(()=>{ el.classList.remove('show'); }, 1200);
 }
 /* kept for test harnesses / programmatic entry */
 function startGame(){ enterWorld(true); }
@@ -4110,11 +4249,12 @@ function closeTravelScreen(){
 }
 
 function triggerGolfer(){
+  if(!banterShown.has('b-Q')){ playBanter('b-Q', () => { mode='overworld'; startBattleWithVeil('Q', 0, 0); }); return; }
   startBattleWithVeil('Q', 0, 0);
 }
 
 /* ----------------------- SCREEN ROUTING --------------------------- */
-const SCREENS = ['title','briefing-intro','overworld','battle','reward','salvage','victory','gameover','ending-briefing','travel'];
+const SCREENS = ['title','briefing-intro','overworld','battle','reward','salvage','victory','gameover','ending-briefing','travel','epilogue'];
 function showScreen(id){
   SCREENS.forEach(s => document.getElementById(s).classList.toggle('active', s===id));
 }
@@ -4446,7 +4586,7 @@ function saveGame(){
     const data = { v:3, crewSchema:2, volume:'vol1',
       artifacts: { collected: artifacts.collected, equipped: artifacts.equipped },
       party, recruited, player, facing,
-      map: rows, seen: [...seenDistricts], salvaged: claimedSalvages, worldState,
+      map: rows, seen: [...seenDistricts], salvaged: claimedSalvages, worldState, shadowCleared,
       loc: currentLocation, bosses: defeatedBosses, legendaries,
       pendingSalvage, pendingSalvageStat, salvageReturn,   // reload on the salvage screen must not eat the reward
       defeatedPatrols: Array.from(defeatedPatrols), glows: glowData };
@@ -4485,6 +4625,7 @@ function continueGame(){
       claimedSalvages = data.salvaged || {};
       legendaries = Object.assign({ gold:false, silver:false, titanium:false, platinum:false }, data.legendaries || {});
       worldState = data.worldState || null;
+      shadowCleared = !!data.shadowCleared;   // 1Z additive field: old saves -> false
       currentLocation = data.loc || 'lake-worth';
       defeatedBosses  = data.bosses || {};
       defeatedPatrols = new Set(data.defeatedPatrols || []);
@@ -4590,7 +4731,8 @@ function renderOverworld(instant){
         continue;
       }
       const ch = map[my][mx];
-      const base = (ch in GROUND) ? GROUND[ch] : ch;     // floor under markers
+      // floor under markers (1Z FIX-3: Scoop stands on grass in Wellington)
+      const base = (ch==='y' && currentLocation==='wellington') ? ',' : ((ch in GROUND) ? GROUND[ch] : ch);
       const cls  = TCLASS[base] || 't-road';
       const glyph = (moverAt.has(my*MAP_W + mx) || NO_GLYPH.has(ch)) ? '' : (EMOJI[ch] || '');
       const t2 = t;
@@ -4832,6 +4974,11 @@ function move(dy, dx){
   if(ch==='G' && !recruited.silver)  { showBanner("Find Silver first — he knows this pier."); return; }
   if(ch==='X' && !recruited.platinum){ showBanner("Find Platinum first — he has the crowd."); return; }
   if(ch==='A' && !recruited.titanium){ showBanner("Rescue Titanium first — full crew for the Baron."); return; }
+  // 1Z-A2: pre-boss banter fires once per session, then chains into the fight
+  if((ch==='G'||ch==='X'||ch==='A') && BANTER['b-'+ch] && !banterShown.has('b-'+ch)){
+    playBanter('b-'+ch, () => { mode='overworld'; startBattleWithVeil(ch, ny, nx); });
+    return;
+  }
   if(ch in ENEMIES){ startBattleWithVeil(ch, ny, nx); return; }          // fight; stay put
   if(ch==='k' || ch==='u' || ch==='o'){ takePickup(ch, ny, nx); }        // grab, then step on
   if(ch==='*'){ collectArtifact(ny, nx); }                               // 1Y: artifact; grab, then step on
@@ -4955,6 +5102,44 @@ const RECRUITMENT_DIALOGUES = {
     { speaker:'PLATINUM', text:"The Baron's machines have the Palm Island bridge locked down tight. The full squad crosses together, or the city remains a cage." },
   ],
 };
+/* =================== 1Z-A2: CREW BANTER ===================
+   Short 2-line beats in the existing dialogue style. Event-driven and tracked
+   in a session-scoped Set — no new save fields. Tap to advance, tap to close;
+   never blocks: every beat chains straight into whatever came next. */
+const BANTER = {
+  'r-silver':   [['SILVER',"Still wearing those goggles indoors, Gold?"],
+                 ['GOLD',"Still counting my blinks, Silver? Good. Missed that."]],
+  'r-platinum': [['PLATINUM',"The crowd's calm. Your shoulders aren't. Breathe, boss."],
+                 ['GOLD',"That's why you're here, Doc. Wrenches can't fix everything."]],
+  'r-titanium': [['TITANIUM',"Three of you to pull one dockworker out. Slow day?"],
+                 ['SILVER',"Next cave-in, we'll schedule ahead."]],
+  'b-G': [['SILVER',"He's anchored the rift to that harpoon rig. One clean break does it."],
+          ['GOLD',"Then let's un-fish him. Gently as we can."]],
+  'b-X': [['PLATINUM',"He was a champion once. The corruption only borrowed the fists."],
+          ['GOLD',"Then we return them. Ten rounds or one — his choice."]],
+  'b-A': [['TITANIUM',"Droid wall. Standard syndicate spiral. Break the escorts, the man folds."],
+          ['GOLD',"Heard that, crew? Peel the chrome. Leave the Baron to me."]],
+  'b-Q': [['SILVER',"Readings are off the dial. That's not a retiree anymore, Gold."],
+          ['GOLD',"It's still somebody's neighbor. We end the thing wearing him — nothing more."]],
+  'p-G': [['GOLD',"Pier's breathing again. Wellington's cane fields next."],
+          ['SILVER',"I'll pack the mosquito oil."]],
+  'p-X': [['PLATINUM',"He'll wake up sore and free. Best patch I've done all year."],
+          ['GOLD',"Downtown, crew. Titanium's holding a wall up with spite alone."]],
+  'p-A': [['TITANIUM',"Tower's dark. Syndicate's a headline now."],
+          ['GOLD',"One light left burning — that signal on Palm Island. Let's answer it."]],
+  'p-Q': [['SILVER',"Quietest green in the county. You good, boss?"],
+          ['GOLD',"Somebody get that old man a blanket. ...Yeah. I'm good."]],
+  'shadow': [['PLATINUM',"Every reading just inverted. Whatever's down there heard us win."],
+             ['GOLD',"Then it knows we're coming. Lights on, crew — darker waters."]],
+};
+const banterShown = new Set();
+function playBanter(key, onEnd){
+  const lines = BANTER[key];
+  if(!lines || banterShown.has(key)){ if(onEnd) onEnd(); return; }
+  banterShown.add(key);
+  startDialogueSeq(lines.map(l=>({speaker:l[0], text:l[1]})), onEnd || (()=>{ mode='overworld'; }));
+}
+
 /* after-lines shown to already-recruited crew members */
 const AFTER_LINES = {
   silver:  [{ speaker:'SILVER',   text:"Silver adjusts his goggles. \"On your six, Gold.\"" }],
@@ -4993,13 +5178,13 @@ function openDialogue(ch){
         startDialogueSeq(RECRUITMENT_DIALOGUES.silver, () => {
           recruitMember('silver'); SFX.level();
           showBanner('★ Silver 🎯 joined the crew!'); saveGame();
-          mode='overworld'; startPatrolTimer(); renderOverworld(true);
+          playBanter('r-silver', () => { mode='overworld'; startPatrolTimer(); renderOverworld(true); });
         });
       } else {
         startDialogueSeq(RECRUITMENT_DIALOGUES.platinum, () => {
           recruitMember('platinum'); SFX.level();
           showBanner('★ Platinum 🦾 joined the crew!'); saveGame();
-          mode='overworld'; startPatrolTimer(); renderOverworld(true);
+          playBanter('r-platinum', () => { mode='overworld'; startPatrolTimer(); renderOverworld(true); });
         });
       }
       return;
@@ -5007,13 +5192,7 @@ function openDialogue(ch){
     startDialogueSeq(AFTER_LINES[key], () => { mode='overworld'; });
     return;
   }
-  // Non-recruit NPC (newspaper NPC_LINES etc.)
-  const d = NPC_LINES[ch] || { face:'❓', say:'…' };
-  document.getElementById('d-face').textContent = d.face;
-  document.getElementById('d-name').textContent = '';
-  document.getElementById('dialogue').classList.add('active');
-  mode = 'dialogue';
-  typeText(document.getElementById('d-say'), d.say);
+  // 1Z FIX-2: no other chars route here (ambient townsfolk use openAmbientNpc)
 }
 function closeDialogue(){
   if(!twDone){ typeFinish(); return; }
@@ -5166,6 +5345,27 @@ function startBattle(ch, y, x){
   showScreen('battle');
   renderBattle();
   if(battle.kind==='boss'||battle.kind==='minib'){ flashScreen(); shakeScreen(); const rl=ENEMIES[ch].riseLog||'HOSTILE CONTACT'; pushLog('⚠ '+rl+' ⚠','crit'); }
+  showBossCard(ch);   // 1Z-A5: name splash for the five live bosses (DOM-only; sim-inert)
+}
+
+/* 1Z-A5: boss intro cards — five live bosses only (the Leviathan stays benched) */
+const BOSS_CARDS = {
+  'G': ['THE ANGRY FISHERMAN', 'something wears his face'],
+  'X': ['THE CURSED BOXER', "the gloves won't come off"],
+  'A': ['THE BARON', 'behind a wall of chrome'],
+  'Q': ['THE CORRUPTED RETIREE GOLFER', 'the nineteenth hole of hell'],
+  'M': ['THE MAKO SHARK', "the bay's last secret has teeth"],
+};
+function showBossCard(ch){
+  const c = BOSS_CARDS[ch]; if(!c) return;
+  const el = document.getElementById('boss-card'); if(!el || !el.classList) return;
+  const nm = document.getElementById('bc-name'), ln = document.getElementById('bc-line');
+  if(nm) nm.textContent = c[0];
+  if(ln) ln.textContent = '— ' + c[1] + ' —';
+  el.classList.remove('show'); void (el.offsetWidth||0); el.classList.add('show');
+  clearTimeout(showBossCard._t);
+  const rm = (typeof reducedMotion==='function') && reducedMotion();
+  showBossCard._t = setTimeout(()=>{ el.classList.remove('show'); }, rm ? 800 : 1700);
 }
 
 /* ----- rendering ----- */
@@ -5617,7 +5817,7 @@ function allyPhaseDone(){
   party.forEach(m=>{ if(m.drone && m.alive){ const f=exposedFoes()[0]; if(f){ const i=battle.enemies.indexOf(f); atkBy=m; const d=dealTo(f,m.drone.dmg,0.10,1.5); atkBy=null; pulse('foe'+i,'struck',200); floatDamage('foe'+i,d,'dmg'); pushLog(`🪰 ${m.name.split(' ')[0]}'s drone hits ${f.name} for ${d}.`,'sys'); } } });
   renderBattle();
   if(enemiesCleared()){ winBattle(); return; }
-  setTimeout(enemyPhase, 600);
+  setTimeout(enemyPhase, bt(600));
 }
 function enemyBark(e){ const t=TAUNTS[e.key]; if(t && Math.random()<0.25) pushLog(`${e.name}: ${t[(Math.random()*t.length)|0]}`,'sys'); }
 function enemyAIact(e){
@@ -5732,7 +5932,7 @@ function enemyPhase(){
     const e=foes[k++]; if(!e.alive){ step(); return; }
     enemyAIact(e); renderBattle();
     if(partyWiped()){ gameOver(); return; }
-    setTimeout(step, 480);
+    setTimeout(step, bt(480));
   })();
 }
 function endOfRound(){
@@ -5763,6 +5963,7 @@ function winBattle(){
   // PHASE 5b: felling the Golfer (Episode-1 finale) awakens every crew member's legendary
   const legendaryUnlock = (ch==='Q' && battle.kind==='boss' && !anyLegendary());
   if(legendaryUnlock) unlockLegendaries();
+  if(ch==='M' && worldState==='SHADOW_WORLD') shadowCleared = true;   // 1Z: epilogue hook
   // Track location gate-boss defeat
   const locDef = LOCATION_DEFS[currentLocation];
   if(locDef && locDef.bossKey === ch) defeatedBosses[currentLocation] = true;
@@ -5790,6 +5991,7 @@ function winBattle(){
       recruitMember('titanium'); SFX.level();
       showBanner('★ Titanium 🪓 joined the crew!');
       mode='overworld'; showScreen('overworld'); renderOverworld(true); startPatrolTimer(); saveGame();
+      playBanter('r-titanium', () => { mode='overworld'; });
     });
     return;
   }
@@ -5841,11 +6043,21 @@ function applySalvage(memberKey){
   const stat = pendingSalvageStat || sv.stats[0];
   if(stat === 'maxHp'){ m.maxHp += sv.amount; m.hp = Math.min(m.maxHp, m.hp + sv.amount); }
   else m[stat] = (m[stat]||0) + sv.amount;
+  const doneSid = pendingSalvage;   // 1Z-A2: which boss this reward came from
   claimedSalvages[pendingSalvage] = { member:memberKey, stat, amount:sv.amount };
   pendingSalvage = null; pendingSalvageStat = null;
   saveGame();
-  if(salvageReturn === 'overworld'){ salvageReturn=null; mode='overworld'; showScreen('overworld'); renderOverworld(true); startPatrolTimer(); }
-  else if(salvageReturn === 'ending-briefing'){ salvageReturn=null; mode='ending-briefing'; renderLegendaryReveal(); showScreen('ending-briefing'); }
+  const SALVAGE_BOSS = { corruptedPole:'G', cursedGloves:'X', baronWatch:'A', primeArtifact:'Q' };
+  const pKey = SALVAGE_BOSS[doneSid] ? 'p-'+SALVAGE_BOSS[doneSid] : null;
+  if(salvageReturn === 'overworld'){
+    salvageReturn=null; mode='overworld'; showScreen('overworld'); renderOverworld(true); startPatrolTimer();
+    if(pKey) playBanter(pKey);   // post-boss relief beat over the overworld
+  }
+  else if(salvageReturn === 'ending-briefing'){
+    salvageReturn=null;
+    const go = ()=>{ mode='ending-briefing'; renderLegendaryReveal(); showScreen('ending-briefing'); };
+    if(pKey && !banterShown.has(pKey)) playBanter(pKey, go); else go();
+  }
   else { salvageReturn=null; mode='victory'; showScreen('victory'); }
 }
 function openGate(gateChar){
