@@ -366,3 +366,59 @@ Beginner-friendly on purpose — see `CLAUDE.md` for the format and rules.
            pacing NPC still opens the recruit dialogue (PASS).
 - Next:    Awaiting Andres' sign-off on the ?v=alive1 preview. Do not merge; no new
            phase until asked.
+
+## [2026-07-16] — Bookends redo, crew screen, living world, artifacts, and the 10/10 pass
+- Goal:    A long run of phases: redo the two briefing bookend slides (map + golfer
+           silhouette), audit Gold's canon text, add a crew stats screen, make the
+           overworld feel alive (NPCs/props/zone labels), build the artifact system
+           with a portable save, then do a full audit + polish phase (banter,
+           reactive epilogue, QoL, boss intro cards). Everything merged to main.
+- Did:     All in index.html, one branch per phase, each merged after sign-off:
+           * 1V-BOOKENDS-2 — dispatch slide got a real 1947 Palm Beach County map
+             (rail yard → downtown grid → drawbridges → fractured barrier island →
+             Atlantic); Delta slide got a purpose-built angry-golfer silhouette
+             (flat cap, scowl eyes, raised driver). Merged (f6c1e9d).
+           * 1V-GOLD-CANON — merged the approved overworld-alive branch (4952d52),
+             then searched every string for veteran/inventor framing of Gold:
+             none found, zero text changes needed.
+           * Phase 7 — "👥 CREW" button (flood-bar row; the top HUD had no room at
+             390px without squeezing the gauges) opens a read-only Crew Manifest:
+             live HP/FUE/SPC meters, ATK/DEF/CRIT, weapon, upgrade slots,
+             legendary state, ultimate. Merged (8b3e174).
+           * 1X-WORLD-ALIVE — 17 talkable townsfolk (4 per zone + Scoop the
+             recurring courier), all with pre/post-boss dialogue sets and SVG
+             portraits; zone-name chip; one batched SVG prop layer per zone.
+             Merged (2df66f6).
+           * 1Y-ARTIFACTS — 9 hidden accessories with tool-like effects (act
+             first, survive lethal once, faster team ult, treasure glint, etc.),
+             one Artifact slot per member in the Crew Manifest, and the
+             documented CREW-SAVE SCHEMA v2 so artifacts survive into future
+             volumes. Merged (0625ac9).
+           * 1Z-TENOUTOFTEN — Part A audit found (and Part B fixed) a real bug:
+             the Mako Tooth was hidden in a zone you can never revisit. Also:
+             12 crew banter beats, a Fallout-style epilogue that reacts to your
+             run, battle speed 1×/2×, autosave chip, LEADS objective line, and
+             boss intro cards. Merged (e9ae7b0). File now ~378 KB.
+- Learned: "Fast-forward merge" = main just slides forward to the branch tip; no
+           merge commit, so history stays a straight line. "Additive save field" =
+           new keys old saves simply don't have — loaders default them, nothing
+           breaks. A seeded RNG makes two sim runs produce byte-identical output,
+           which is how we PROVE a change didn't touch combat. vm "lexical scope"
+           gotcha: top-level let/const in the loaded game script aren't visible as
+           sandbox properties — you reach them by evaluating code inside the
+           context instead.
+- Gotchas: The HUD wrapped at 390px when the crew button lived there (gauges
+           shrank 97px→72px) — moved it to the flood row instead. Glow divs
+           placed AFTER an SVG in the DOM painted over the clubhead (hollow-ring
+           bug) — order matters. "Head Out" looked broken in a test but was just
+           the 1200 ms door-glow delay. And the audit's best catch: content can
+           be unreachable without ever throwing an error (dead NPC_LINES,
+           unreachable Mako Tooth) — only tracing the actual player path finds it.
+- Verify:  Every phase: seeded 200-run sim byte-identical to main (1Z also proved
+           it at 2× speed), 6-7 regression suites green, Playwright at 390×844
+           (once also 430px) with zero console errors, reduced-motion audits, and
+           save round-trips incl. old-format and unknown-artifact-id saves.
+- Next:    Volume 1 is feature-complete and polished on main (e9ae7b0). Nothing
+           pending, no phase in flight. Good point for /clear. Ideas parked in
+           the Vault (elemental weakness, MP/TP, CTB order, county overworld)
+           still need explicit go-ahead before building.
