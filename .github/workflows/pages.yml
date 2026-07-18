@@ -1,8 +1,10 @@
 name: Deploy to GitHub Pages
 
-# Publishes the repository root (index.html) to GitHub Pages.
-# The first successful run auto-enables Pages (enablement: true), so no
-# manual Settings step is needed. Re-deploys on every push to main.
+# Publishes the game by mirroring main onto the gh-pages branch, which
+# GitHub Pages serves. The workflow token is allowed to push branches but
+# NOT to flip the Pages admin switch, which is why the previous version of
+# this workflow (actions/configure-pages with enablement) failed on every
+# run. The site itself was first enabled by creating the gh-pages branch.
 
 on:
   push:
@@ -10,35 +12,22 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
-# Allow one concurrent deployment; newer pushes supersede in-flight ones.
+# One publish at a time; a newer push supersedes an in-flight one.
 concurrency:
   group: pages
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  publish:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout
+      - name: Checkout main
         uses: actions/checkout@v4
 
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
-
-      - name: Upload site artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: '.'
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Mirror main to gh-pages
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git push --force origin HEAD:gh-pages
