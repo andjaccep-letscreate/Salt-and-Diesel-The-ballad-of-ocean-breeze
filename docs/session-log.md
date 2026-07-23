@@ -422,3 +422,53 @@ Beginner-friendly on purpose — see `CLAUDE.md` for the format and rules.
            pending, no phase in flight. Good point for /clear. Ideas parked in
            the Vault (elemental weakness, MP/TP, CTB order, county overworld)
            still need explicit go-ahead before building.
+
+## [2026-07-23] — Music rescue, GitHub Pages, and the lived-in world pass
+- Goal:    Get the shipped game playable WITH music from a real link; then an
+           ultracode visual pass — a more lived-in world (cars by houses, varied
+           trees, ambient life) without touching balance. Plus distribution
+           extras: README, share previews, home-screen install.
+- Did:     (1) Diagnosed "no music": the MP3s live in /audio beside index.html,
+           so the bare file and raw.githack (which throttles ~5 MB files) played
+           silent. Shipped a zip, then set up GitHub Pages: the old pages.yml
+           failed on every run (the workflow token can't flip the Pages admin
+           switch), so we pushed main to a branch named gh-pages — GitHub
+           auto-enables Pages for that name — and rewrote pages.yml to mirror
+           main→gh-pages on every merge. Site: andjaccep-letscreate.github.io/
+           Salt-and-Diesel-The-ballad-of-ocean-breeze. (2) 17-agent workflow
+           (recon → 5 design lenses → synthesis → 3 implementers → 4 verifiers →
+           fix round) added: 26 new SVG dressing props (1940s sedans/pickup,
+           wagons, mailboxes, laundry lines, refinery stacks, rowboats, benches),
+           ~90 placements across the 4 zones, per-zone tree variants (palms/
+           pines/oaks by coordinate hash), facade window-lighting variance,
+           water surf-lips, ground mottle, oil stains, RM-gated micro-motion
+           (gulls, smoke, fireflies, neon flicker, fountain spray), and emoji
+           fixes (⚔/🛡 gained VS16; tofu-risk 🛞 → ⚙️). (3) README refresh,
+           OG/Twitter share tags, PWA (manifest + sw.js + icons) for
+           "Add to Home Screen" + offline play.
+- Learned: "GitHub Pages" = free static hosting from a repo branch. A branch
+           literally named gh-pages auto-enables it — no admin click needed.
+           "Service worker" = a small script the browser installs that caches
+           files, so the game loads offline after the first visit. "Open Graph
+           tags" = metadata chat apps read to show a link preview card. An
+           adversarial-review agent caught the pass's one real bug: the surf-lip
+           CSS painted on the opposite edge from the tiles the JS tagged.
+- Gotchas: The big workflow died twice mid-run (session usage limit, then an
+           interrupt) — resumeFromRunId revived it from cache both times, zero
+           work lost. The permission system blocks remote branch deletion, so
+           the 12 stale merged branches are listed for manual cleanup (SHAs in
+           the log here: 89b3568 act1-content-swap, 883fbd4 act2-content-swap,
+           84e4b5b act3-plus-ui-fixes, 0625ac9 artifacts, f6c1e9d
+           briefing-bookends-2, 84e4b5b dpad-salvage-fix, 89b3568
+           phase-5b-salvage, 865c714 phase1-world-redesign, 8b3e174
+           phase7-crew-screen, b01bfd6 session-log-act2, e9ae7b0 tenoutoften,
+           2df66f6 world-alive).
+- Verify:  Seeded 200-run battery byte-identical vs HEAD (sha256 match on 1,400
+           battle traces) = zero combat drift; 200/200 on every boss + full
+           loop, 0 exceptions; emoji audit 0 ZWJ / 0 compounds; Playwright
+           before/after shots of all 4 zones at 390×844 with zero console
+           errors, before AND after the fix round.
+- Next:    Branch claude/dieselpunk-rpg-game-21nkt7 pushed, preview link sent.
+           Awaiting Andres: play the preview → "merge it" (auto-deploy then
+           updates the live site) or request changes. Optional manual chore:
+           delete the 12 stale branches on GitHub.

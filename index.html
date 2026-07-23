@@ -3,8 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" href="data:,"><!-- no favicon fetch: keeps hosted consoles clean -->
 <title>SALT &amp; DIESEL — The Ballad of Ocean Breeze</title>
+<meta name="description" content="A dieselpunk turn-based RPG set in 1947 West Palm Beach. Four flooded zones, Florida-grown enemies, an original soundtrack. Free to play in your browser.">
+<meta name="theme-color" content="#0a1220">
+<!-- Share previews (Open Graph + Twitter). Absolute URLs: chat apps resolve
+     these server-side, so relative paths would break in unfurls. -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Salt &amp; Diesel — The Ballad of Ocean Breeze">
+<meta property="og:description" content="A dieselpunk turn-based RPG set in 1947 West Palm Beach. Play free in your browser — no install, phones welcome.">
+<meta property="og:url" content="https://andjaccep-letscreate.github.io/Salt-and-Diesel-The-ballad-of-ocean-breeze/">
+<meta property="og:image" content="https://andjaccep-letscreate.github.io/Salt-and-Diesel-The-ballad-of-ocean-breeze/docs/media/cover.png">
+<meta name="twitter:card" content="summary_large_image">
+<!-- PWA: installable to the home screen; harmless 404s when played from a bare file copy -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <style>
   /* ============================ THEME ============================ */
   :root{
@@ -92,8 +105,10 @@
   .t-grass{ background:
     radial-gradient(circle at 25% 35%, rgba(150,200,120,.20) 0 1.2px, transparent 1.7px),
     radial-gradient(circle at 70% 62%, rgba(60,110,55,.45) 0 1.3px, transparent 1.8px),
+    radial-gradient(90% 70% at 70% 20%, rgba(120,160,80,.10), transparent 70%),
+    radial-gradient(80% 60% at 20% 85%, rgba(10,25,10,.25), transparent 70%),
     linear-gradient(160deg,#283d23,#1b2c17);
-    background-size:8px 8px, 11px 11px, 100% 100%; }
+    background-size:8px 8px, 11px 11px, 100% 100%, 100% 100%, 100% 100%; }
   /* Dock planks: warm wood with plank seams and grain. */
   .t-plank{ background:
     repeating-linear-gradient(0deg, rgba(255,255,255,.04) 0 2px, transparent 2px 5px),
@@ -580,10 +595,10 @@
      per-zone water-ripple pace. HUD/dialogue sit outside #grid, so text
      readability is unaffected. All motion here is already covered by the
      prefers-reduced-motion block (#fog, .t-water). */
-  body[data-loc="coastal"] #grid{ filter:saturate(1.06) hue-rotate(-8deg) brightness(.97); }
-  body[data-loc="cane"]    #grid{ filter:sepia(.14) saturate(1.05) brightness(1.02); }
-  body[data-loc="urban"]   #grid{ filter:contrast(1.06) saturate(.88); }
-  body[data-loc="luxury"]  #grid{ filter:saturate(1.12) contrast(1.03); }
+  body[data-loc="coastal"] #grid{ filter:saturate(1.10) hue-rotate(-9deg) brightness(.96) contrast(1.04); }
+  body[data-loc="cane"]    #grid{ filter:sepia(.18) saturate(1.08) brightness(1.03) contrast(1.03); }
+  body[data-loc="urban"]   #grid{ filter:contrast(1.10) saturate(.84) brightness(.97); }
+  body[data-loc="luxury"]  #grid{ filter:saturate(1.16) contrast(1.06) brightness(1.02); }
   /* Lake Worth: waterlogged — bluer sea-mist, slow drift, dragging ripple */
   body[data-loc="coastal"] #fog{ opacity:.14; animation-duration:34s;
     background: radial-gradient(55% 40% at 30% 30%, #9fd4f0 0%, transparent 60%),
@@ -607,11 +622,12 @@
     radial-gradient(65% 45% at 30% 30%, rgba(190,235,255,.10), transparent 70%),
     repeating-linear-gradient(90deg, rgba(140,215,240,.15) 0 3px, transparent 3px 9px),
     repeating-linear-gradient(0deg, rgba(255,255,255,.05) 0 1px, transparent 1px 6px),
+    repeating-linear-gradient(94deg, rgba(8,26,40,.30) 0 5px, transparent 5px 13px),
     linear-gradient(180deg,#1d5273,#123246);
-    background-size:200% 100%, 18px 100%, 100% 12px, 100% 100%;
+    background-size:200% 100%, 18px 100%, 100% 12px, 26px 100%, 100% 100%;
     animation:ripple 7s linear infinite; }
-  @keyframes ripple{ from{ background-position:0 0, 0 0, 0 0, 0 0; }
-    to{ background-position:200% 0, 18px 0, 0 12px, 0 0; } }
+  @keyframes ripple{ from{ background-position:0 0, 0 0, 0 0, 26px 0, 0 0; }
+    to{ background-position:200% 0, 18px 0, 0 12px, 0 0, 0 0; } }
   /* this .t-water rule sits AFTER the global reduced-motion block, so it must
      re-disable its own animation there (equal specificity, later cascade wins) */
   @media (prefers-reduced-motion: reduce){ .t-water{ animation:none; } }
@@ -664,25 +680,33 @@
     linear-gradient(140deg,#8a8578,#736e60); }
 
   /* -- seafoam edge where ground meets the seawall/water above -- */
-  .cell.v-shore{ box-shadow: inset 0 0 0 1px rgba(0,0,0,.22), inset 0 7px 9px -4px rgba(215,242,255,.55); }
+  .cell.v-shore{ box-shadow:
+    inset 0 2px 0 rgba(240,252,255,.55),
+    inset 0 5px 6px -2px rgba(215,242,255,.45),
+    inset 0 10px 12px -6px rgba(140,205,235,.28),
+    inset 0 0 0 1px rgba(0,0,0,.22); }
 
   /* -- building facades: 4 rotating pure-CSS fronts replace the repeated emoji -- */
   .cell.v-b0{ background:                              /* deco pilasters + dim windows */
     repeating-linear-gradient(90deg, rgba(0,0,0,.20) 0 2px, transparent 2px 8px),
     repeating-linear-gradient(0deg, rgba(217,164,65,.10) 0 2px, transparent 2px 7px),
-    linear-gradient(180deg,#2b3038,#191d23); border-top:2px solid rgba(156,111,31,.55); }
+    linear-gradient(180deg,#2b3038,#191d23); border-top:2px solid rgba(156,111,31,.55);
+    box-shadow: inset 0 1px 0 rgba(255,216,140,.26), inset 0 -5px 7px -4px rgba(0,0,0,.55), inset 0 0 0 1px rgba(0,0,0,.22); }
   .cell.v-b1{ background:                              /* teal storefront awning + lamp-lit door */
     linear-gradient(180deg,#175e5e 0 10%, #d9d2b8 10% 14%, #175e5e 14% 24%, transparent 24%),
     radial-gradient(24% 20% at 50% 62%, rgba(255,184,48,.45), transparent 70%),
-    linear-gradient(180deg,#33383f,#20242a); border-top:2px solid rgba(156,111,31,.55); }
+    linear-gradient(180deg,#33383f,#20242a); border-top:2px solid rgba(156,111,31,.55);
+    box-shadow: inset 0 1px 0 rgba(255,216,140,.26), inset 0 -5px 7px -4px rgba(0,0,0,.55), inset 0 0 0 1px rgba(0,0,0,.22); }
   .cell.v-b2{ background:                              /* warm lit window grid (evening) */
     repeating-linear-gradient(90deg, rgba(255,190,80,.26) 0 3px, transparent 3px 8px),
     repeating-linear-gradient(0deg, rgba(255,190,80,.20) 0 3px, transparent 3px 8px),
-    linear-gradient(180deg,#262b32,#15181d); border-top:2px solid rgba(156,111,31,.55); }
+    linear-gradient(180deg,#262b32,#15181d); border-top:2px solid rgba(156,111,31,.55);
+    box-shadow: inset 0 1px 0 rgba(255,216,140,.26), inset 0 -5px 7px -4px rgba(0,0,0,.55), inset 0 0 0 1px rgba(0,0,0,.22); }
   .cell.v-b3{ background:                              /* aged brick + heavy cornice */
     repeating-linear-gradient(0deg, rgba(126,62,42,.38) 0 3px, rgba(84,42,30,.38) 3px 6px),
     repeating-linear-gradient(90deg, rgba(0,0,0,.10) 0 1px, transparent 1px 7px),
-    linear-gradient(180deg,#2e2723,#1c1714); border-top:3px double rgba(156,111,31,.65); }
+    linear-gradient(180deg,#2e2723,#1c1714); border-top:3px double rgba(156,111,31,.65);
+    box-shadow: inset 0 1px 0 rgba(255,216,140,.30), inset 0 -5px 7px -4px rgba(0,0,0,.55), inset 0 0 0 1px rgba(0,0,0,.22); }
 
   /* -- sparse zone props on empty ground (deterministic; pure decoration) -- */
   .cell.v-prop1::before, .cell.v-prop2::before{ content:""; position:absolute; inset:0; pointer-events:none; }
@@ -720,25 +744,163 @@
     radial-gradient(circle at 70% 56%, rgba(240,140,180,.7) 0 6%, transparent 10%),
     radial-gradient(circle at 46% 50%, rgba(255,220,120,.7) 0 5%, transparent 9%); }
 
+  /* -- 1V-2: sparse ambient wildlife on empty ground (deterministic via tileDeco
+     hash; STATIC — no animation, so reduced-motion safe by construction). Zone
+     emoji are all single-codepoint (+VS16 for the dove). ::after is the free
+     per-cell slot (::before belongs to v-prop1/2). -- */
+  .cell.v-wild::after{ position:absolute; inset:0; pointer-events:none;
+    display:flex; align-items:flex-end; justify-content:flex-end;
+    padding:0 8% 6% 0; font-size:.55em; line-height:1; opacity:.6; filter:saturate(.85); }
+  body[data-loc="coastal"] .cell.v-wild::after{ content:"🐚"; }
+  body[data-loc="cane"]    .cell.v-wild::after{ content:"🦎"; }
+  body[data-loc="urban"]   .cell.v-wild::after{ content:"🕊️"; }
+  body[data-loc="luxury"]  .cell.v-wild::after{ content:"🦚"; }
+
   /* -- 1947 dusk vignette over the board (static: reduced-motion safe) -- */
   #board::after{ content:""; position:absolute; inset:0; z-index:6; pointer-events:none;
     background:
-      radial-gradient(125% 96% at 50% 42%, transparent 56%, rgba(8,6,16,.40) 100%),
+      radial-gradient(60% 34% at 50% 0%, rgba(255,170,70,.07), transparent 72%),
+      radial-gradient(125% 96% at 50% 42%, transparent 52%, rgba(8,6,16,.46) 100%),
       linear-gradient(180deg, rgba(255,150,60,.05), transparent 28% 72%, rgba(18,10,38,.14)); }
   body[data-loc="coastal"] #board::after{ background:
-    radial-gradient(125% 96% at 50% 42%, transparent 56%, rgba(4,10,20,.42) 100%),
+    radial-gradient(60% 34% at 50% 0%, rgba(120,200,255,.07), transparent 72%),
+    radial-gradient(125% 96% at 50% 42%, transparent 52%, rgba(4,10,20,.48) 100%),
     linear-gradient(180deg, rgba(120,200,255,.05), transparent 28% 72%, rgba(8,18,40,.14)); }
   body[data-loc="cane"] #board::after{ background:
-    radial-gradient(125% 96% at 50% 42%, transparent 56%, rgba(10,10,4,.42) 100%),
+    radial-gradient(60% 34% at 50% 0%, rgba(255,190,90,.08), transparent 72%),
+    radial-gradient(125% 96% at 50% 42%, transparent 52%, rgba(10,10,4,.48) 100%),
     linear-gradient(180deg, rgba(255,190,90,.06), transparent 28% 72%, rgba(30,24,6,.14)); }
   body[data-loc="luxury"] #board::after{ background:
-    radial-gradient(125% 96% at 50% 42%, transparent 58%, rgba(14,8,2,.36) 100%),
+    radial-gradient(60% 34% at 50% 0%, rgba(255,200,90,.07), transparent 72%),
+    radial-gradient(125% 96% at 50% 42%, transparent 54%, rgba(14,8,2,.40) 100%),
     linear-gradient(180deg, rgba(255,184,48,.06), transparent 28% 72%, rgba(28,14,2,.12)); }
 
   /* -- readability: grounded sprites + diegetic cyan Aethel-glow on interactives -- */
   .cell .mk{ position:relative; z-index:1; }
   .cell .mk:not(:empty), .mover{ background: radial-gradient(48% 14% at 50% 90%, rgba(0,0,0,.36), transparent 72%); }
   .cell .mk.marker{ filter: drop-shadow(0 0 4px rgba(0,217,255,.45)) drop-shadow(0 1px 1px rgba(0,0,0,.6)); }
+
+  /* ============ PHASE 1V-1b: TILE & FACADE POLISH (rendering only) ============
+     Every rule below is static (no animation → reduced-motion safe by
+     construction) and every new pseudo-element is pointer-events:none.
+     ::after slot audit: v-oil (streets only), v-blit/v-bdark (B tiles),
+     v-wild (plain ground, off-street), v-tree (T tiles) are four mutually
+     exclusive tile populations — the per-cell ::after slot is never
+     double-claimed. */
+
+  /* facade lighting variants: warm lamplit vs shadowed fronts (on top of v-b0..3) */
+  .cell.v-blit::after, .cell.v-bdark::after{ content:""; position:absolute; inset:0; pointer-events:none; }
+  .cell.v-blit::after{ background:
+    radial-gradient(70% 46% at 50% 30%, rgba(255,196,88,.14), transparent 72%),
+    linear-gradient(180deg, rgba(255,216,140,.06), transparent 55%); }
+  .cell.v-bdark::after{ background:
+    linear-gradient(180deg, rgba(4,6,10,.22), rgba(4,6,10,.10) 55%, transparent),
+    radial-gradient(80% 60% at 50% 100%, rgba(0,0,0,.18), transparent 70%); }
+
+  /* curb gutters: streets read as slightly sunken between their edges
+     (guarded so shore foam and facade-base AO keep their own shadow stacks) */
+  .cell.v-street:not(.v-shore):not(.v-foot){ box-shadow:
+    inset 0 2px 3px -1px rgba(0,0,0,.32),
+    inset 0 -2px 3px -1px rgba(0,0,0,.32); }
+
+  /* coastal beach lanes: sun-faded center dashes on the old asphalt */
+  body[data-loc="coastal"] .cell.v-sh{ background-image:
+    repeating-linear-gradient(90deg, rgba(214,199,122,.18) 0 5px, transparent 5px 13px),
+    radial-gradient(circle at 62% 40%, rgba(0,0,0,.28) 0 1px, transparent 1.6px),
+    linear-gradient(135deg,#37383c,#2a2b2f);
+    background-size:100% 8%, 9px 9px, 100% 100%;
+    background-position:0 50%, 0 0, 0 0; background-repeat:no-repeat, repeat, no-repeat; }
+  body[data-loc="coastal"] .cell.v-sv{ background-image:
+    repeating-linear-gradient(0deg, rgba(214,199,122,.18) 0 5px, transparent 5px 13px),
+    radial-gradient(circle at 62% 40%, rgba(0,0,0,.28) 0 1px, transparent 1.6px),
+    linear-gradient(135deg,#37383c,#2a2b2f);
+    background-size:8% 100%, 9px 9px, 100% 100%;
+    background-position:50% 0, 0 0, 0 0; background-repeat:no-repeat, repeat, no-repeat; }
+
+  /* intersections: zone-appropriate crosswalk treatment (full restatements) */
+  body[data-loc="urban"] .cell.v-street.v-cross{ background:   /* painted zebra bars */
+    repeating-linear-gradient(0deg, rgba(214,214,200,.22) 0 3px, transparent 3px 8px),
+    radial-gradient(circle at 30% 30%, rgba(255,255,255,.05) 0 1px, transparent 1.4px),
+    linear-gradient(135deg,#282c33,#1e2126);
+    background-size:100% 100%, 7px 7px, 100% 100%; }
+  body[data-loc="coastal"] .cell.v-street.v-cross{ background: /* worn faded bars */
+    repeating-linear-gradient(0deg, rgba(214,199,122,.14) 0 3px, transparent 3px 9px),
+    radial-gradient(circle at 62% 40%, rgba(0,0,0,.28) 0 1px, transparent 1.6px),
+    linear-gradient(135deg,#37383c,#2a2b2f);
+    background-size:100% 100%, 9px 9px, 100% 100%; }
+  body[data-loc="cane"] .cell.v-street.v-cross{ background:    /* trampled dirt junction */
+    radial-gradient(60% 46% at 50% 50%, rgba(0,0,0,.16), transparent 72%),
+    repeating-linear-gradient(90deg, rgba(0,0,0,.20) 0 2px, transparent 2px 11px),
+    linear-gradient(160deg,#66512f,#523f22);
+    background-size:100% 100%, 100% 100%, 100% 100%; }
+  body[data-loc="luxury"] .cell.v-street.v-cross{ background:  /* inlaid pale stone square */
+    radial-gradient(46% 46% at 50% 50%, rgba(220,214,196,.16), transparent 74%),
+    repeating-linear-gradient(90deg, rgba(0,0,0,.18) 0 1.5px, transparent 1.5px 33.3%),
+    repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 1.5px, transparent 1.5px 50%),
+    linear-gradient(140deg,#8a8578,#736e60); }
+
+  /* diesel stains on streets: dark slick with a faint cyan Aethel sheen */
+  .cell.v-oil::after{ content:""; position:absolute; inset:0; pointer-events:none; background:
+    radial-gradient(34% 22% at 38% 62%, rgba(6,8,10,.42), transparent 74%),
+    radial-gradient(22% 14% at 58% 48%, rgba(6,8,10,.30), transparent 72%),
+    radial-gradient(26% 16% at 42% 58%, rgba(0,217,255,.10), transparent 70%); }
+
+  /* facade-base AO: ground tile directly under a building front sits in its shadow */
+  .cell.v-foot{ box-shadow: inset 0 9px 11px -6px rgba(0,0,0,.50), inset 0 0 0 1px rgba(0,0,0,.14); }
+
+  /* surf lip: water tile whose lower neighbour is ground gets a bright breaking edge */
+  .cell.v-wsurf{ box-shadow: inset 0 -3px 5px -2px rgba(230,248,255,.50), inset 0 -1px 0 rgba(240,252,255,.35); }
+
+  /* two-tone ground: deterministic mid/dark patches break up flat fields.
+     Full restatements of the grass / coastal sand / luxury lawn materials. */
+  .cell.t-grass.v-gm{ background:
+    radial-gradient(circle at 25% 35%, rgba(150,200,120,.22) 0 1.2px, transparent 1.7px),
+    radial-gradient(circle at 70% 62%, rgba(60,110,55,.42) 0 1.3px, transparent 1.8px),
+    linear-gradient(160deg,#2c4227,#1f301a);
+    background-size:8px 8px, 11px 11px, 100% 100%; }
+  .cell.t-grass.v-gd{ background:
+    radial-gradient(circle at 25% 35%, rgba(150,200,120,.16) 0 1.2px, transparent 1.7px),
+    radial-gradient(circle at 70% 62%, rgba(50,95,45,.50) 0 1.3px, transparent 1.8px),
+    linear-gradient(160deg,#233620,#172614);
+    background-size:8px 8px, 11px 11px, 100% 100%; }
+  body[data-loc="coastal"] .cell.t-road.v-gm:not(.v-street){ background: /* dry high sand */
+    radial-gradient(circle at 28% 32%, rgba(255,255,255,.14) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 70% 64%, rgba(120,90,50,.18) 0 1px, transparent 1.5px),
+    linear-gradient(150deg,#95815b,#7f6c4e);
+    background-size:6px 6px, 9px 9px, 100% 100%; }
+  body[data-loc="coastal"] .cell.t-road.v-gd:not(.v-street){ background: /* damp tide-line sand */
+    radial-gradient(circle at 28% 32%, rgba(255,255,255,.10) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 70% 64%, rgba(120,90,50,.24) 0 1px, transparent 1.5px),
+    linear-gradient(150deg,#837052,#6e5d43);
+    background-size:6px 6px, 9px 9px, 100% 100%; }
+  body[data-loc="luxury"] .cell.t-road.v-gm:not(.v-street){ background: /* sunlit lawn stripe */
+    repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 8px, transparent 8px 16px),
+    radial-gradient(circle at 30% 30%, rgba(150,200,120,.16) 0 1px, transparent 1.5px),
+    linear-gradient(160deg,#2f4f27,#24401d);
+    background-size:100% 100%, 8px 8px, 100% 100%; }
+  body[data-loc="luxury"] .cell.t-road.v-gd:not(.v-street){ background: /* shaded lawn stripe */
+    repeating-linear-gradient(90deg, rgba(255,255,255,.04) 0 8px, transparent 8px 16px),
+    radial-gradient(circle at 30% 30%, rgba(150,200,120,.12) 0 1px, transparent 1.5px),
+    linear-gradient(160deg,#284421,#1d3517);
+    background-size:100% 100%, 8px 8px, 100% 100%; }
+
+  /* -- TREE-VAR: per-zone tree variety (visual only; glyph + transform/filter).
+     Canopy ground-shadow anchors every tree; three deterministic variants per
+     zone nudge scale/tint so rows of 🌴 stop reading as copy-paste. Max scale
+     1.1 keeps fronds inside the cell (cells clip overflow). Static → RM-safe. */
+  .cell.v-tree::after{ content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
+    background: radial-gradient(46% 15% at 50% 86%, rgba(0,0,0,.34), transparent 72%); }
+  body[data-loc="coastal"] .cell.v-t0 .mk{ transform:scale(1.04); filter:saturate(1.05); }
+  body[data-loc="coastal"] .cell.v-t1 .mk{ transform:scale(.94) rotate(-4deg); filter:saturate(.9) brightness(.96); }  /* wind-leant */
+  body[data-loc="coastal"] .cell.v-t2 .mk{ transform:scale(1.1) rotate(3deg); filter:hue-rotate(-8deg); }
+  body[data-loc="cane"] .cell.v-t0 .mk{ transform:scale(1.02); filter:sepia(.15) saturate(1.05); }
+  body[data-loc="cane"] .cell.v-t1 .mk{ transform:scale(.92); filter:sepia(.25) brightness(.94); }                     /* dusty */
+  body[data-loc="cane"] .cell.v-t2 .mk{ transform:scale(1.08) rotate(-3deg); filter:hue-rotate(10deg) saturate(.9); }
+  body[data-loc="luxury"] .cell.v-t0 .mk{ transform:scale(1.06); filter:saturate(1.12); }                              /* manicured */
+  body[data-loc="luxury"] .cell.v-t1 .mk{ transform:scale(.96); filter:saturate(1.05) brightness(1.04); }
+  body[data-loc="luxury"] .cell.v-t2 .mk{ transform:scale(1.1) rotate(2deg); filter:saturate(1.08) hue-rotate(-6deg); }
+  /* urban future-proof: any street tree reads as a small potted specimen */
+  body[data-loc="urban"] .cell.v-tree .mk{ transform:scale(.88); filter:saturate(.85) brightness(.95); }
 
   /* =================== FLOOD BAR =================== */
   #flood-bar-wrap{ width:min(96vw,480px); display:flex; align-items:center; gap:8px; margin-bottom:2px; }
@@ -1507,6 +1669,54 @@
   #zone-chip{ font-size:.56rem; letter-spacing:.08em; color:var(--brass); white-space:nowrap; flex:none; opacity:.9; }
   #dressing{ position:absolute; left:0; top:0; pointer-events:none; opacity:.9; }
 
+  /* ============ PHASE 1V-3: AMBIENT MICRO-MOTION (dressing layer only) ============
+     The ONLY new animations in the 1V pass. All opacity/transform-only (cheap,
+     compositable), all on the pointer-events:none #dressing SVG. Every instance
+     is desynced by a coordinate-hashed --dph phase var (set by JS from tile
+     coords — never Math.random), via negative animation-delay. Under reduced
+     motion the local kill block below freezes everything at its markup opacity
+     (wisps .35, motes .55, droplets .45, neon steady .9, laundry/fronds
+     straight, gulls parked). */
+  @keyframes dzGlide{ 0%,100%{ transform:translate(0,0); }
+    30%{ transform:translate(7px,-3px); } 55%{ transform:translate(13px,0); } 80%{ transform:translate(5px,2px); } }
+  @keyframes dzPuff{ 0%{ transform:translateY(0) scale(.9); opacity:.35; }
+    45%{ opacity:.30; } 100%{ transform:translateY(-9px) scale(1.3); opacity:0; } }
+  @keyframes dzFlick{ 0%,6%,10%,52%,58%,100%{ opacity:.9; } 8%{ opacity:.4; } 55%{ opacity:.55; } }
+  @keyframes dzFly{ 0%,100%{ transform:translate(0,0); }
+    30%{ transform:translate(4px,-4px); } 60%{ transform:translate(-3px,-7px); } 82%{ transform:translate(2px,-2px); } }
+  @keyframes dzSway{ 0%,100%{ transform:rotate(-2.5deg); } 50%{ transform:rotate(2.5deg); } }
+  @keyframes dzFrond{ 0%,100%{ transform:rotate(0deg); } 50%{ transform:rotate(-3deg); } }
+  @keyframes dzSpray{ 0%{ transform:translateY(0); opacity:.45; }
+    70%{ opacity:.40; } 100%{ transform:translateY(7px); opacity:0; } }
+  #dressing use.du-gull{ animation:dzGlide 11s ease-in-out infinite;
+    animation-delay:calc(var(--dph,0) * -11s); }
+  #dressing use.du-neon{ animation:dzFlick 4.5s linear infinite;
+    animation-delay:calc(var(--dph,0) * -4.5s); }
+  #dressing .dz-puff{ animation:dzPuff 5s ease-out infinite;
+    animation-delay:calc(var(--dph,0) * -5s); }
+  #dressing .dz-puff.p2{ animation-duration:6.5s;
+    animation-delay:calc(var(--dph,0) * -6.5s); }
+  #dressing .dz-fly1{ animation:dzFly 7s ease-in-out infinite;
+    animation-delay:calc(var(--dph,0) * -7s); }
+  #dressing .dz-fly2{ animation:dzFly 10s ease-in-out infinite reverse;
+    animation-delay:calc(var(--dph,0) * -10s); }
+  #dressing .dz-sway{ animation:dzSway 4s ease-in-out infinite;
+    animation-delay:calc(var(--dph,0) * -4s);
+    transform-box:fill-box; transform-origin:50% 0; }
+  #dressing .dz-frondsway{ animation:dzFrond 5.5s ease-in-out infinite;
+    animation-delay:calc(var(--dph,0) * -5.5s);
+    transform-box:fill-box; transform-origin:50% 100%; }
+  #dressing .dz-drop{ animation:dzSpray 2.6s linear infinite;
+    animation-delay:calc(var(--dph,0) * -2.6s); }
+  #dressing .dz-drop.d2{ animation-duration:3.4s;
+    animation-delay:calc(var(--dph,0) * -3.4s); }
+  /* local RM kill LAST in this block (same cascade lesson as .t-water) */
+  @media (prefers-reduced-motion: reduce){
+    #dressing use.du-gull, #dressing use.du-neon,
+    #dressing .dz-puff, #dressing .dz-fly1, #dressing .dz-fly2,
+    #dressing .dz-sway, #dressing .dz-frondsway, #dressing .dz-drop{ animation:none; }
+  }
+
   /* ============ PHASE 1Y-ARTIFACTS ============ */
   .cell.art-glim .mk{ opacity:.30; filter:saturate(.5); animation:none; }   /* hidden shimmer: dim, no pulse */
   #glints{ position:absolute; left:0; top:0; pointer-events:none; }
@@ -2181,7 +2391,7 @@ const GROUND = {
 };
 /* emoji marker per tile (floors have none) */
 const EMOJI = {
-  'B':'🏢','W':'🌊','T':'🌴','F':'🧱',
+  'B':'🏢','W':'🌊','T':'🌴','F':'🌾',
   '1':'🥊','2':'🛤️','3':'⚓','4':'🗼',
   'N':'📰','D':'👷','R':'🔮',
   'k':'🧰','u':'🛢️','o':'🔩',
@@ -2214,24 +2424,47 @@ const ROAD_NET = {
   'palm-island': { rows:[1,14],      cols:[12] },
 };
 const NO_GLYPH = new Set(['B','W']);   // drawn as pure-CSS facade / animated water instead of emoji
+/* TREE-VAR: render-only per-coordinate tree species (index = (mx*7+my*13)%3).
+   Keyed by JS zone ids, NOT CSS data-loc names. All glyphs single-codepoint
+   (hard rule): 🌴 U+1F334, 🌳 U+1F333, 🌲 U+1F332. 'downtown' is future-proofing. */
+const TREE_VARIANTS = {
+  'lake-worth': ['🌴','🌳','🌴'],   // coconut palm / sea grape / wind-bent palm
+  'wellington': ['🌲','🌲','🌴'],   // slash pine / pond cypress (CSS-tinted) / cabbage palm
+  'downtown':   ['🌴','🌳','🌴'],
+  'palm-island':['🌴','🌳','🌴'],   // royal palm / clipped ficus / mirrored royal
+};
 function tileDeco(ch, base, mx, my){
   if(ch === '*') return ' art-glim';                    // 1Y: dim artifact shimmer
-  if(ch === 'B') return ' v-b' + ((mx*5 + my*3) % 4);   // rotating building facades
+  if(ch === 'B'){                                       // rotating facades + per-COLUMN window lighting
+    const lit = (mx*11 + 7) % 5;                        // mx-only hash: whole columns read lit / dark / neutral
+    return ' v-b' + ((mx*5 + my*3) % 4) + (lit < 2 ? ' v-blit' : (lit === 4 ? ' v-bdark' : ''));
+  }
+  if(ch === 'T') return ' v-tree v-t' + ((mx*7 + my*13) % 3);   // TREE-VAR: species class per coordinate
+  if(ch === 'W')                                        // surf lip: water whose LOWER neighbour is ground (CSS draws the bright edge on the bottom)
+    return (my < MAP_H-1 && map[my+1][mx] !== 'W') ? ' v-wsurf' : '';
   if(base !== '.' && base !== ',') return '';
-  let d = '';
+  let d = '', street = false;
   const net = ROAD_NET[currentLocation];
   if(base === '.' && net){
     const onV = net.cols.indexOf(mx) >= 0, onH = net.rows.indexOf(my) >= 0;
+    street = onV || onH;
     if(onV && onH)  d += ' v-street v-cross';
     else if(onV)    d += ' v-street v-sv';
     else if(onH)    d += ' v-street v-sh';
     else            d += ' v-walk';
+    if(street && !(onV && onH) && (mx*13 + my*7) % 19 === 5) d += ' v-oil'; // sparse diesel leaks, never on crosswalks
+  }
+  if(!street){                                          // two-tone ground mottle (grass / sand / lawn)
+    const g = (mx*3 + my*5) % 7;
+    if(g === 0) d += ' v-gm'; else if(g === 3) d += ' v-gd';
   }
   if(my > 0 && map[my-1][mx] === 'W') d += ' v-shore';   // foam edge under the seawall
+  else if(my > 0 && 'B56F'.indexOf(map[my-1][mx]) >= 0) d += ' v-foot'; // AO shadow at a facade's base
   if(ch === base){                                       // plain empty ground only — never under markers
     const h = (mx*7 + my*13) % 23;                       // deterministic sparse scatter
     if(h === 3) d += ' v-prop1';
     else if(h === 11) d += ' v-prop2';
+    else if(h === 7 && d.indexOf('v-street') < 0) d += ' v-wild';   // 1V-2: ambient wildlife, off-street only
   }
   return d;
 }
@@ -3154,7 +3387,7 @@ const ENEMIES = {
        riseLog:"THE ANGRY FISHERMAN HOLDS THE PIER",
        intro:"A barrel-chested dock-hand cracks his knuckles — net in one fist, gaff in the other. \"You're trespassin' on my pier, runt.\""},
   // ---- Act-2 dieselpunk roster (regular enemies + Cursed Boxer mini-boss) ----
-  'C':{name:"Clockwork Rail-Drone", face:"🛞", hp:34, atk:9,  def:2, xp:20, kind:'patrol',
+  'C':{name:"Clockwork Rail-Drone", face:"⚙️", hp:34, atk:9,  def:2, xp:20, kind:'patrol',
        intro:"A one-wheeled rail-drone clatters down the track, governor screaming."},
   'V':{name:"Steam-Spit Welder", face:"🔥", hp:30, atk:10, def:1, xp:21, kind:'patrol',
        intro:"A hunched welder-rig hisses, torch flaring through a cracked visor."},
@@ -3242,7 +3475,7 @@ const ADD_DEFS = {
   'H':{name:"Barnacle Cur", face:"🦀", hp:26, atk:7, def:1, xp:8, svg:'H'},
   'L':{name:"Spoonbill-Rig", face:"🦩", hp:30, atk:8, def:2, xp:9, svg:'L'},
   'S':{name:"Barnacle Scrapper", face:"🔧", hp:24, atk:7, def:1, xp:8, svg:'S'},
-  'C':{name:"Clockwork Rail-Drone", face:"🛞", hp:28, atk:9, def:2, xp:10, svg:'C'},
+  'C':{name:"Clockwork Rail-Drone", face:"⚙️", hp:28, atk:9, def:2, xp:10, svg:'C'},
   // Act-3 adds
   'E':{name:"Steam-Vent Turret", face:"💨", hp:36, atk:10, def:3, xp:12, svg:'E'},
   'J':{name:"Chrono-Diver Brute", face:"⌚", hp:40, atk:11, def:2, xp:13, svg:'J'},
@@ -3849,7 +4082,7 @@ const ABIL = {
     run:(a,t)=>{ const d=dealTo(t,Math.floor(a.atk*0.6),0.1,1.5); stAdd(t,'stun',1); return {log:`${a.name} hooks ${t.name} (${d}) and drags it off-balance.`,kind:'hit',anim:'strike',sfx:'strike',val:d}; }},
   breachingBlow:{name:'Breaching Blow', icon:'⚓', tgt:'enemy', cd:3, desc:'heavy · may Stun',
     run:(a,t)=>{ const d=dealTo(t,Math.floor(a.atk*1.4),0.20,1.7); const s=Math.random()<0.25; if(s)stAdd(t,'stun',1); return {log:`${a.name} Breaching Blow — ${d}${s?' · STUN!':''}.`,kind:'hit',anim:'overdrive',sfx:'overdrive',crit:lastCrit,val:d}; }},
-  brace:{name:'Brace', icon:'🛡', tgt:'self', desc:'guard · +3 fuel',
+  brace:{name:'Brace', icon:'🛡️', tgt:'self', desc:'guard · +3 fuel',
     run:(a)=>{ stAdd(a,'guard',1); a.fuel=Math.min(a.maxFuel,a.fuel+3); return {log:`${a.name} braces — guard up, +3 fuel.`,kind:'buff',sfx:'brace'}; }},
   repair:{name:'Repair', icon:'🧰', tgt:'self', charge:'kits', desc:'heal · −1 kit',
     run:(a)=>{ a.kits--; const h=Math.floor(a.maxHp*0.4); a.hp=Math.min(a.maxHp,a.hp+h); return {log:`${a.name} patches up +${h} HP (${a.kits} kits).`,kind:'heal',val:h,sfx:'repair'}; }},
@@ -4190,26 +4423,78 @@ const DRESS_DEFS = `
   <g id="dz-car"><path d="M2.5 11 Q3 8.5 5 8.2 L6.2 6.4 Q6.6 5.8 7.4 5.8 L10.8 5.8 Q11.6 5.8 12 6.6 L12.8 8.2 Q14 8.5 13.6 11 Z" fill="#3a4a3a" stroke="#222c22" stroke-width="0.6"/><circle cx="5.2" cy="11.2" r="1.5" fill="#181c18"/><circle cx="11" cy="11.2" r="1.5" fill="#181c18"/></g>
   <g id="dz-stand"><rect x="3" y="6" width="10" height="8" fill="#5a4630"/><rect x="2.4" y="4.8" width="11.2" height="1.6" fill="#8a3a2a"/><rect x="4.2" y="7.4" width="3" height="2" fill="#d8cfc0"/><rect x="8.4" y="7.4" width="3" height="2" fill="#d8cfc0"/></g>
   <g id="dz-boxcar"><rect x="2" y="5.5" width="12" height="6.5" rx="0.8" fill="#6b3a2a" stroke="#3d2016" stroke-width="0.7"/><path d="M8 5.5 V12" stroke="#3d2016" stroke-width="0.6"/><circle cx="4.5" cy="13" r="1.1" fill="#222"/><circle cx="11.5" cy="13" r="1.1" fill="#222"/></g>
-  <g id="dz-frond"><path d="M3 12 Q7 7 13 5 M5.5 11 Q8 9 11 7.5 M4 9.5 Q7.5 8.6 10 6.6" stroke="#3f6b34" stroke-width="0.9" fill="none" stroke-linecap="round"/></g>
+  <g id="dz-frond"><g class="dz-frondsway"><path d="M3 12 Q7 7 13 5 M5.5 11 Q8 9 11 7.5 M4 9.5 Q7.5 8.6 10 6.6" stroke="#3f6b34" stroke-width="0.9" fill="none" stroke-linecap="round"/></g></g>
   <g id="dz-fount"><ellipse cx="8" cy="10.5" rx="5.4" ry="2.6" fill="#8a8478" stroke="#5a564c" stroke-width="0.7"/><rect x="7" y="5.5" width="2" height="4" fill="#8a8478"/><path d="M5 10.5 L9.6 12.6" stroke="#4a463e" stroke-width="0.6"/><ellipse cx="8" cy="10.2" rx="3.4" ry="1.3" fill="#1b4a63" opacity="0.5"/></g>
   <g id="dz-hedge"><path d="M2.5 13 Q2 8.5 5 8 Q5.5 5.5 8 6 Q10.5 5 11.5 7.5 Q14.5 8 13.5 13 Z" fill="#2e4a26" stroke="#1c3016" stroke-width="0.6"/><path d="M6 7.5 Q7 4.5 9.5 5.6" stroke="#3f6b34" stroke-width="0.7" fill="none"/></g>
-  <g id="dz-debris"><path d="M3 12 L12 10.5 L12.4 12 L3.4 13.4 Z" fill="#6b5a42"/><path d="M5 10 L13 11.8 L12.7 12.9 L4.7 11 Z" fill="#57452f"/><path d="M4 13.6 L10 13 L10.2 14 L4.2 14.5 Z" fill="#4a3a26"/></g>`;
+  <g id="dz-debris"><path d="M3 12 L12 10.5 L12.4 12 L3.4 13.4 Z" fill="#6b5a42"/><path d="M5 10 L13 11.8 L12.7 12.9 L4.7 11 Z" fill="#57452f"/><path d="M4 13.6 L10 13 L10.2 14 L4.2 14.5 Z" fill="#4a3a26"/></g>
+  <g id="dz-seagrape"><path d="M8 13.6 L8 10.8" stroke="#5a4630" stroke-width="0.8"/><circle cx="6" cy="9" r="2.6" fill="#4a7a4a"/><circle cx="9.6" cy="8" r="2.8" fill="#3f6b3f"/><circle cx="8" cy="10.9" r="2.6" fill="#568a50"/><circle cx="11.4" cy="10.6" r="2" fill="#4a7a4a"/><circle cx="10.6" cy="8.4" r="0.55" fill="#7a3f4a"/><circle cx="9.4" cy="9.6" r="0.55" fill="#7a3f4a"/></g>
+  <g id="dz-sawgrass"><path d="M8 14 Q7.4 9 5 5.6 M8 14 Q8 8.6 8.6 5 M8.4 14 Q9.8 9.4 11.6 6.4 M7 14 Q5.6 10.4 3.6 8.4 M9 14 Q11 10.6 12.8 9" stroke="#7a8a4a" stroke-width="0.7" fill="none" stroke-linecap="round"/><path d="M8 14 Q7 10 5.8 7.6 M8.6 14 Q9.6 10 10.6 7.6" stroke="#5a6b34" stroke-width="0.6" fill="none" stroke-linecap="round"/></g>
+  <g id="dz-planter"><rect x="4" y="9" width="8" height="4.6" rx="0.6" fill="#8a8478" stroke="#5a564c" stroke-width="0.6"/><rect x="4.6" y="9.6" width="6.8" height="0.8" fill="#736e62"/><path d="M6 9 Q5.4 6.4 7.4 5.4 Q8 4.4 9 5.2 Q10.8 5.6 10.2 7.4 Q11 8.4 10 9 Z" fill="#2e4a26"/><path d="M7 8.4 Q8 5.8 9.6 6.6" stroke="#3f6b34" stroke-width="0.6" fill="none"/></g>
+  <g id="dz-bougain"><path d="M2.8 13 Q2.4 9 5.4 8.2 Q6 5.8 8.6 6.4 Q11 5.8 11.8 8 Q14 8.8 13.2 13 Z" fill="#2e4a26" stroke="#1c3016" stroke-width="0.5"/><circle cx="5" cy="9.4" r="1.1" fill="#a8386a"/><circle cx="7.6" cy="7.8" r="1.2" fill="#b84878"/><circle cx="10.4" cy="8.8" r="1.1" fill="#a8386a"/><circle cx="12" cy="10.6" r="0.9" fill="#b84878"/><circle cx="6.6" cy="11" r="0.9" fill="#b84878"/><circle cx="9.2" cy="10.4" r="0.8" fill="#a8386a"/></g>
+  <g id="dz-sedanb"><path d="M2.3 11.3 Q2.3 9.4 3.6 8.7 Q4 6.9 5.9 6.1 Q7.9 5.4 9.9 6.1 Q11.4 6.7 11.9 8.4 Q13.7 8.7 13.7 10.6 Q13.7 11.6 12.9 11.6 L3.1 11.6 Q2.4 11.6 2.3 11.3 Z"/><path d="M6 6.6 L9.4 6.6 L10.6 8.3 L5 8.3 Q5.3 7.1 6 6.6 Z" fill="#1c2830" stroke="none" opacity="0.8"/><path d="M7.6 6.6 L7.6 8.3" stroke-width="0.4"/><circle cx="4.9" cy="11.5" r="1.55" fill="#181c18" stroke="none"/><circle cx="11.1" cy="11.5" r="1.55" fill="#181c18" stroke="none"/><circle cx="4.9" cy="11.5" r="0.6" fill="#9a948a" stroke="none"/><circle cx="11.1" cy="11.5" r="0.6" fill="#9a948a" stroke="none"/><rect x="13.1" y="9.5" width="0.9" height="0.8" rx="0.4" fill="#e8d9a0" stroke="none"/></g>
+  <g id="dz-sedan1" fill="#6fae9a" stroke="#3f6b5c" stroke-width="0.6"><use href="#dz-sedanb"/></g>
+  <g id="dz-sedan2" fill="#d9cfa8" stroke="#8a7a50" stroke-width="0.6"><use href="#dz-sedanb"/></g>
+  <g id="dz-sedan3" fill="#a04832" stroke="#5c2418" stroke-width="0.6"><use href="#dz-sedanb"/></g>
+  <g id="dz-pickup"><path d="M2.2 11.2 L2.2 8.6 L8.4 8.6 L8.4 6.4 Q8.4 5.9 9 5.9 L11 5.9 Q11.6 5.9 11.9 6.5 L12.8 8.6 Q13.8 8.9 13.8 11.2 Q13.7 11.9 13 11.9 L3 11.9 Q2.3 11.9 2.2 11.2 Z" fill="#5a6b4a" stroke="#37422c" stroke-width="0.6"/><path d="M9.2 6.6 L10.9 6.6 L11.6 8.2 L9.2 8.2 Z" fill="#1c2830" opacity="0.8"/><path d="M2.6 8.6 L8 8.6" stroke="#37422c" stroke-width="0.5"/><circle cx="4.8" cy="11.6" r="1.5" fill="#181c18"/><circle cx="11.4" cy="11.6" r="1.5" fill="#181c18"/><circle cx="4.8" cy="11.6" r="0.55" fill="#9a948a"/><circle cx="11.4" cy="11.6" r="0.55" fill="#9a948a"/></g>
+  <g id="dz-bike"><circle cx="4.6" cy="11" r="2.4" fill="none" stroke="#3a3a40" stroke-width="0.6"/><circle cx="11.4" cy="11" r="2.4" fill="none" stroke="#3a3a40" stroke-width="0.6"/><path d="M4.6 11 L7 7.6 L11 7.6 L11.4 11 M7 7.6 L8.6 11 L4.6 11 M6.4 7.6 L7.6 7.6 M10.6 7 L11.2 7.6" stroke="#7a3f2a" stroke-width="0.7" fill="none" stroke-linecap="round"/></g>
+  <g id="dz-mail"><rect x="7.5" y="8" width="1" height="6" fill="#5a4630"/><path d="M5.4 5.4 h4.4 a1.6 1.6 0 0 1 1.6 1.6 v1.4 h-7.6 v-1.4 a1.6 1.6 0 0 1 1.6 -1.6 Z" fill="#4a5a66" stroke="#2e3a44" stroke-width="0.5"/><rect x="10.4" y="4.9" width="0.7" height="1.6" fill="#a04832"/></g>
+  <g id="dz-line"><rect x="2.4" y="5" width="0.8" height="9" fill="#5a4630"/><rect x="12.8" y="5" width="0.8" height="9" fill="#5a4630"/><path d="M3.2 6 Q8 7.2 12.8 6" stroke="#c9c2b2" stroke-width="0.4" fill="none"/><path d="M4.6 6.5 h2 v2.6 l-1 0.7 l-1 -0.7 Z" fill="#d8cfc0"/><path d="M8.2 6.8 h1.8 v3 h-1.8 Z" fill="#7a8a94"/><path d="M10.8 6.6 h1.6 v2.2 l-0.8 0.6 l-0.8 -0.6 Z" fill="#b89b52"/></g>
+  <g id="dz-porch"><rect x="3" y="12.6" width="10" height="1.2" fill="#6b5238"/><path d="M5 12.6 L5 7.6 M5 9.8 L8.6 9.8 L8.6 12.6 M8.6 9.8 L9.6 12.6" stroke="#7a5a38" stroke-width="0.8" fill="none" stroke-linecap="round"/><path d="M4.4 13.8 Q6.8 15 9.2 13.8" stroke="#5a4630" stroke-width="0.7" fill="none"/></g>
+  <g id="dz-garden"><rect x="2.6" y="8" width="10.8" height="6" rx="1" fill="#4a3a26" opacity="0.85"/><path d="M4.4 9.2 Q5 8 5.6 9.2 M7.4 9.2 Q8 8 8.6 9.2 M10.4 9.2 Q11 8 11.6 9.2 M4.4 11.6 Q5 10.4 5.6 11.6 M7.4 11.6 Q8 10.4 8.6 11.6 M10.4 11.6 Q11 10.4 11.6 11.6" stroke="#4a7a3a" stroke-width="0.7" fill="none" stroke-linecap="round"/></g>
+  <g id="dz-cans"><rect x="3.4" y="7.6" width="4" height="6.4" rx="0.6" fill="#8a9198" stroke="#5a6066" stroke-width="0.5"/><ellipse cx="5.4" cy="7.4" rx="2.3" ry="0.8" fill="#a8afb6" stroke="#5a6066" stroke-width="0.5"/><rect x="8.6" y="9" width="3.4" height="5" rx="0.5" fill="#7a8188" stroke="#4a5056" stroke-width="0.5"/><ellipse cx="10.3" cy="8.9" rx="1.9" ry="0.7" fill="#98a0a8" stroke="#4a5056" stroke-width="0.5"/></g>
+  <g id="dz-dinghy"><path d="M4 8 Q8 4.6 12 8 Q12.8 9.4 12 10.6 Q8 13.6 4 10.6 Q3.2 9.4 4 8 Z" fill="#6b4a2a" stroke="#3d2a16" stroke-width="0.6"/><path d="M5 8.6 Q8 6.6 11 8.6 M5 10 Q8 12 11 10" stroke="#3d2a16" stroke-width="0.5" fill="none"/><rect x="7.2" y="8.4" width="1.6" height="2" fill="#8a6a3a"/></g>
+  <g id="dz-frack"><rect x="3" y="5.5" width="0.8" height="8.5" fill="#5a4630"/><rect x="12.2" y="5.5" width="0.8" height="8.5" fill="#5a4630"/><path d="M3.8 6.5 H12.2 M3.8 9 H12.2" stroke="#8a6a3a" stroke-width="0.5"/><path d="M5.4 6.5 q0.9 1.6 0 3.2 M8 6.5 q0.9 1.6 0 3.2 M10.6 6.5 q0.9 1.6 0 3.2" stroke="#9aa4ac" stroke-width="0.7" fill="none"/></g>
+  <g id="dz-wagon"><rect x="3" y="7.5" width="8.5" height="3.5" rx="0.5" fill="#7a5a38" stroke="#4a3320" stroke-width="0.6"/><path d="M11.5 9.2 L13.6 8.2" stroke="#4a3320" stroke-width="0.6"/><circle cx="5" cy="12" r="1.4" fill="#3a3a40"/><circle cx="9.8" cy="12" r="1.4" fill="#3a3a40"/><circle cx="5" cy="12" r="0.5" fill="#8a8478"/><circle cx="9.8" cy="12" r="0.5" fill="#8a8478"/></g>
+  <g id="dz-news"><rect x="4.5" y="6.5" width="7" height="7.5" fill="#4a5a66" stroke="#2e3a44" stroke-width="0.6"/><rect x="4" y="5.4" width="8" height="1.4" fill="#8a3a2a"/><rect x="5.4" y="7.6" width="5.2" height="3" fill="#d8cfc0"/><path d="M6 8.4 H10 M6 9.2 H9" stroke="#5a6066" stroke-width="0.4"/></g>
+  <g id="dz-smoke"><g class="dz-puff" opacity="0.35"><circle cx="8" cy="2" r="1.6" fill="#c8c4bc"/><circle cx="9.4" cy="0.4" r="2" fill="#c8c4bc"/></g><g class="dz-puff p2" opacity="0.35"><circle cx="7" cy="-1.5" r="2.2" fill="#d4d0c8"/><circle cx="8.8" cy="-3.4" r="2.6" fill="#d4d0c8"/></g></g>
+  <g id="dz-laundry"><rect x="2.4" y="5" width="0.8" height="9" fill="#5a4630"/><rect x="12.8" y="5" width="0.8" height="9" fill="#5a4630"/><path d="M3.2 6 Q8 7.2 12.8 6" stroke="#c9c2b2" stroke-width="0.4" fill="none"/><g class="dz-sway"><path d="M5.2 6.6 h2.2 v3 l-1.1 0.8 l-1.1 -0.8 Z" fill="#d8cfc0"/><path d="M8.6 6.9 h1.9 v3.2 h-1.9 Z" fill="#7a8a94"/></g></g>
+  <g id="dz-neon" opacity="0.9"><rect x="3.5" y="6.6" width="9" height="4.4" rx="0.8" fill="none" stroke="#3fc8f0" stroke-width="1.1" opacity="0.35"/><rect x="3.5" y="6.6" width="9" height="4.4" rx="0.8" fill="none" stroke="#7fdcf7" stroke-width="0.45"/></g>
+  <g id="dz-fly"><circle class="dz-fly1" cx="5" cy="10" r="0.75" fill="#d8f07a" opacity="0.55"/><circle class="dz-fly2" cx="10.6" cy="7.6" r="0.6" fill="#c8e86a" opacity="0.55"/></g>
+  <g id="dz-spray"><g class="dz-drop" opacity="0.45"><circle cx="6.6" cy="4.6" r="0.5" fill="#9fdcf0"/><circle cx="9.2" cy="4.2" r="0.45" fill="#9fdcf0"/></g><g class="dz-drop d2" opacity="0.45"><circle cx="8" cy="3.4" r="0.5" fill="#bfeaf7"/><circle cx="10" cy="5.2" r="0.4" fill="#9fdcf0"/></g></g>`;
 const DRESSING = {
   'lake-worth':[ ['gull',3,1],['gull',16,1],['crate',9,2],['rope',15,2],['crate',3,4],['net',10,4],
-                 ['pool',15,6],['rope',6,9],['pool',13,12],['crate',12,14],['gull',17,14],['debris',4,16],['net',16,16] ],
+                 ['pool',15,6],['rope',6,9],['pool',13,12],['crate',12,14],['gull',17,14],['debris',4,16],['net',16,16],
+                 ['seagrape',2,9],['seagrape',3,10],
+                 ['pickup',5,2],['sedan3',13,2],['cans',1,3],['mail',2,3],['cans',8,3],['crate',16,3],
+                 ['porch',1,4],['bike',9,4],['bike',14,4],['garden',2,5],['frack',16,5],['frack',15,9],['dinghy',16,9],
+                 ['sedan2',1,10],['dinghy',17,10],['line',2,11],['net',15,11],['rope',14,12],['garden',11,13],['porch',14,13],
+                 ['smoke',2,2],['laundry',3,2] ],
   'wellington':[ ['hay',15,5],['fence',2,8],['fence',3,8],['hay',8,10],['slamp',13,4],['slamp',13,11],
-                 ['boxcar',19,4],['boxcar',20,10],['hay',19,15],['fence',10,6] ],
+                 ['boxcar',19,4],['boxcar',20,10],['hay',19,15],['fence',10,6],
+                 ['sawgrass',17,9],['sawgrass',16,11],
+                 ['porch',2,6],['mail',1,7],['garden',4,8],['pickup',5,8],['fence',6,8],['fence',7,8],['wagon',9,8],['hay',11,8],['cans',22,8],['line',2,9],
+                 ['crate',18,9],['wagon',19,9],['pickup',20,11],
+                 ['hay',4,12],['wagon',7,12],['wagon',10,12],['bike',11,12],['hay',17,12],['sedan3',19,12],
+                 ['line',6,13],['garden',8,13],['sedan2',13,13],['mail',16,13],
+                 ['smoke',18,10],['fly',16,10],['fly',18,12] ],
   'downtown':  [ ['lamp',4,4],['lamp',16,4],['awn',4,6],['awn',8,7],['sign',5,6],['stand',16,8],
-                 ['car',2,12],['car',19,14],['lamp',4,10],['lamp',16,10] ],
+                 ['car',2,12],['car',19,14],['lamp',4,10],['lamp',16,10],
+                 ['planter',8,6],['planter',16,6],['planter',19,6],
+                 ['sedan1',1,6],['sedan3',15,6],
+                 ['cans',4,7],['news',15,7],['mail',9,7],['mail',19,7],
+                 ['line',2,8],['cans',6,8],['crate',7,8],['bike',10,8],['line',13,8],
+                 ['sedan2',1,10],['sedan3',5,10],['pickup',8,10],['sedan1',15,10],
+                 ['cans',1,11],['bike',4,11],['mail',8,11],['garden',16,11],['porch',19,11],
+                 ['pickup',1,15],['porch',4,15],['bike',5,15],['sedan1',10,15],['sedan3',15,15],['cans',16,15],['sedan2',19,15],
+                 ['line',2,16],['crate',13,16],
+                 ['neon',5,6],['smoke',9,6],['smoke',17,10] ],
   'palm-island':[ ['frond',9,1],['hedge',7,2],['fount',14,2],['hedge',13,3],['debris',19,4],['frond',21,6],
-                  ['frond',7,9],['hedge',18,11],['debris',11,14] ],
+                  ['frond',7,9],['hedge',18,11],['debris',11,14],
+                  ['bougain',10,2],['bougain',16,2],['bougain',21,7],
+                  ['sedan1',13,2],['sedan1',19,2],
+                  ['porch',9,3],['garden',11,3],['porch',17,3],['garden',18,3],
+                  ['sedan1',7,4],['sedan2',10,4],['sedan2',13,4],['sedan1',16,4],
+                  ['sedan2',21,5],['dinghy',2,6],['hedge',10,6],['bike',13,6],['hedge',15,6],['porch',20,6],['garden',22,6],
+                  ['dinghy',3,9],['hedge',9,9],['garden',13,9],['bike',16,9],
+                  ['garden',15,11],['hedge',20,11],['porch',19,12],['cans',22,12],['crate',21,13],
+                  ['spray',14,2] ],
 };
 function buildDressing(locId){
   const el = document.getElementById('dressing'); if(!el) return;
   const props = DRESSING[locId] || [];
   el.setAttribute('viewBox', `0 0 ${MAP_W*16} ${MAP_H*16}`);
   el.innerHTML = `<defs>${DRESS_DEFS}</defs>` +
-    props.map(([id,x,y]) => `<use href="#dz-${id}" x="${x*16}" y="${y*16}" width="16" height="16"/>`).join('');
+    props.map(([id,x,y]) => `<use href="#dz-${id}" x="${x*16}" y="${y*16}" width="16" height="16" class="du du-${id}" style="--dph:${(((x*7+y*13)%6)/6).toFixed(3)}"/>`).join('');
 }
 const ZONE_SHORT = { 'lake-worth':'LAKE WORTH', 'wellington':'WELLINGTON',
                      'downtown':'DOWNTOWN WPB', 'palm-island':'PALM ISLAND' };
@@ -4734,7 +5019,12 @@ function renderOverworld(instant){
       // floor under markers (1Z FIX-3: Scoop stands on grass in Wellington)
       const base = (ch==='y' && currentLocation==='wellington') ? ',' : ((ch in GROUND) ? GROUND[ch] : ch);
       const cls  = TCLASS[base] || 't-road';
-      const glyph = (moverAt.has(my*MAP_W + mx) || NO_GLYPH.has(ch)) ? '' : (EMOJI[ch] || '');
+      let glyph = (moverAt.has(my*MAP_W + mx) || NO_GLYPH.has(ch)) ? '' : (EMOJI[ch] || '');
+      // TREE-VAR: per-coordinate species emoji, same hash as tileDeco's v-t class
+      if(ch === 'T' && glyph){ const tv = TREE_VARIANTS[currentLocation]; if(tv) glyph = tv[(mx*7 + my*13) % 3]; }
+      // 1V-2 EMOJI: Wellington's y10-11 'F' block is the sugar refinery, not cane rows.
+      // Deterministic per-coordinate swap (same idiom as tileDeco) — map data untouched.
+      if(ch === 'F' && my >= 10 && currentLocation === 'wellington' && glyph) glyph = '🏭';
       const t2 = t;
       t2.cell.className = 'cell ' + cls + tileDeco(ch, base, mx, my);
       if(glyph){
@@ -5493,7 +5783,7 @@ function buildStatusWindow(){
 }
 function memBadges(m){
   let b='';
-  if(stHas(m,'guard')) b+='<span class="badge">🛡</span>';
+  if(stHas(m,'guard')) b+='<span class="badge">🛡️</span>';
   if(stHas(m,'burn'))  b+='<span class="badge">🔥</span>';
   if(stHas(m,'stun'))  b+='<span class="badge">💫</span>';
   if(m.drone)          b+='<span class="badge">🪰</span>';
@@ -5541,7 +5831,7 @@ function abilBucket(id){
   return 'skill';
 }
 function bucketAbils(m, bucket){ return m.abils.filter(id=>abilBucket(id)===bucket); }
-const CMD_DEFS=[ ['fight','⚔','Fight'], ['skill','✨','Skill'], ['fuel','⛽','Fuel'], ['item','🧰','Item'] ];
+const CMD_DEFS=[ ['fight','⚔️','Fight'], ['skill','✨','Skill'], ['fuel','⛽','Fuel'], ['item','🧰','Item'] ];
 function renderActions(){
   const box=document.getElementById('actions'); if(!box) return;
   if(busy || battle.over){ box.innerHTML=''; return; }
@@ -6116,6 +6406,12 @@ if(typeof document !== 'undefined' && document.querySelectorAll){
 }
 musicEl('title');                                   // preload the title theme; the other two lazy-load
 newGame();
+
+/* PWA: offline cache + home-screen install. Service workers only exist on
+   https (or localhost), so file:// play and the headless sim skip this. */
+if(typeof navigator !== 'undefined' && 'serviceWorker' in navigator){
+  try{ navigator.serviceWorker.register('sw.js'); }catch(e){}
+}
 </script>
 </body>
 </html>
