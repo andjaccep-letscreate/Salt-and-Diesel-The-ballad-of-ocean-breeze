@@ -472,3 +472,40 @@ Beginner-friendly on purpose — see `CLAUDE.md` for the format and rules.
            Awaiting Andres: play the preview → "merge it" (auto-deploy then
            updates the live site) or request changes. Optional manual chore:
            delete the 12 stale branches on GitHub.
+
+## [2026-07-27] — Phase 1F-COPACETIC: final pre-launch audit + the service-worker fix
+- Goal:    Full pre-launch audit (text canon, functional spot-checks, sims),
+           then fix the one launch-blocker it found.
+- Did:     14-agent audit: Part B came back ALREADY CLEAN (gender sweep fixed
+           long ago in 522a22c; zero truncation at 390px; canon/contamination
+           clean) — the audit branch's first deliverable was an EMPTY diff.
+           Part C: salvage matrix 51/51 PASS (the 2026-06-27 "stuck on
+           Defense" bug died in f73bf67, unrecorded); build truths recorded
+           (Fear Aura = 30%-per-foe stun; Silver ammo = Kinetic/Net/Magnetic/
+           Flak/Incendiary; Baron puzzle = Downtown; Titanium glow = LAKE
+           WORTH not Palm Island). Part D: zero-drift sims at 1x/2x; new
+           per-member report (damage Gold 57%/Silver 19%/Titanium 16%/
+           Platinum 8%; healing Platinum 80%). ONE BLOCKER: sw.js pinned
+           returning players to stale builds. Fixed across three
+           find-fix-verify rounds (network-first shell -> +HTTP-error
+           fallback + canonical key + no-cache -> +strict path match +
+           redirect-proof rebuild); final v3 battery 9/9 incl. cache-
+           poisoning and 301-navigation attacks; review: clean-to-ship.
+- Learned: "Adversarial verification" = agents paid to refute the fix, not
+           praise it; each round found a subtler real bug (error-page
+           passthrough; cache poisoning where visiting README.md offline-
+           bricked the game into markdown). fetch() only REJECTS on network
+           failure — an HTTP 500 "succeeds", so cache fallbacks must check
+           res.ok. A followed redirect Response is rejected by navigation
+           respondWith — rebuild the body into a plain 200.
+- Gotchas: Docs vs build disagreed in four places (C3/C4/C5/C6) — the build
+           is canon; docs need updating. PROJECT_BRIEF.md still describes
+           the one-map prototype — rewrite pending. Ult turn-order artifact:
+           Titanium/Platinum team-heal ults never fire (Gold claims the ult
+           first every round) — design decision, not a bug.
+- Verify:  Traces byte-identical to baseline (sha256 91557c…8792) at 1x and
+           2x; 51/51 salvage; 9/9 SW scenarios; smoke 0 errors both rounds.
+- Next:    Branch claude/1f-copacetic (a5aba87, sw.js-only diff vs main)
+           awaits Andres' merge word. Queued ideas: doc corrections for the
+           C3-C6 truths, B7 typo list, PROJECT_BRIEF rewrite, Tail Sweep
+           rename decision, stale-branch cleanup (still permission-blocked).
