@@ -8,10 +8,15 @@
    VERSION bumps flush old caches on activate; sd-v2 also evicts any
    sd-v1 caches from the brief cache-first era. */
 const VERSION = 'sd-v2';
-const SHELL = ['./', 'index.html', 'manifest.webmanifest'];
+/* No './' entry: the shell lives under exactly ONE cache key ('index.html')
+   so there is never a second, stale copy under '/'. no-cache Requests keep a
+   brand-new install from precaching an HTTP-cache-stale shell. */
+const SHELL = ['index.html', 'manifest.webmanifest'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(VERSION)
+    .then(c => c.addAll(SHELL.map(u => new Request(u, { cache: 'no-cache' }))))
+    .then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {
@@ -22,33 +27,39 @@ self.addEventListener('activate', e => {
   );
 });
 
-/* The shell must never be pinned: a stale index.html is a stale game. */
-function isShell(req, url) {
-  return req.mode === 'navigate' ||
-    url.pathname.endsWith('/index.html') || url.pathname.endsWith('/');
+/* The shell must never be pinned: a stale index.html is a stale game.
+   STRICT path match (1F review NEW-1): only the scope root and index.html
+   are the shell. A navigation to any other in-scope file (README.md,
+   PRIVACY.md, sw.js itself) must NEVER overwrite the canonical cached game
+   — it falls through to the generic handler instead. */
+function isShell(url) {
+  const scope = new URL(self.registration.scope).pathname;
+  return url.pathname === scope || url.pathname === scope + 'index.html';
 }
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET' || !e.request.url.startsWith(self.location.origin)) return;
   const url = new URL(e.request.url);
 
-  if (isShell(e.request, url)) {
-    /* Network-first with three hardenings (1F adversarial review):
+  if (isShell(url)) {
+    /* Network-first with the 1F hardenings:
        - cache:'no-cache' revalidates past the HTTP cache, so a deploy is
          picked up immediately, not after the CDN max-age.
-       - The fresh body is stored under ONE canonical key ('index.html'),
-         so '/', '/index.html' and '?v=N' variants can't pile up copies or
-         cache a redirect that navigations would later reject.
+       - The body is REBUILT into a plain 200 Response (review NEW-2): a
+         followed redirect handed back to a navigation respondWith would be
+         rejected by the browser; a rebuilt response never carries the
+         redirected flag. Stored under ONE canonical key ('index.html') so
+         '/', '/index.html' and '?v=N' variants can't pile up copies.
        - An HTTP error page (Pages hiccup, 404/5xx) falls back to the
          cached game instead of being shown to the player. */
     e.respondWith(
       fetch(e.request.url, { cache: 'no-cache', credentials: 'same-origin' }).then(res => {
-        if (res.ok) {
-          const copy = res.clone();
-          caches.open(VERSION).then(c => c.put('index.html', copy));
-          return res;
-        }
-        return caches.match('index.html').then(hit => hit || res);
+        if (!res.ok) return caches.match('index.html').then(hit => hit || res);
+        return res.blob().then(body => {
+          const clean = new Response(body, { status: 200, headers: res.headers });
+          return caches.open(VERSION).then(c => c.put('index.html', clean.clone()))
+            .then(() => clean, () => clean);
+        });
       }).catch(() => caches.match('index.html'))
     );
     return;
