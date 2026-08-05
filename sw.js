@@ -25,8 +25,7 @@ self.addEventListener('activate', e => {
 /* The shell must never be pinned: a stale index.html is a stale game. */
 function isShell(req, url) {
   return req.mode === 'navigate' ||
-    url.pathname.endsWith('/index.html') || url.pathname.endsWith('/') ||
-    url.pathname.endsWith('/manifest.webmanifest');
+    url.pathname.endsWith('/index.html') || url.pathname.endsWith('/');
 }
 
 self.addEventListener('fetch', e => {
@@ -34,17 +33,23 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
   if (isShell(e.request, url)) {
+    /* Network-first with three hardenings (1F adversarial review):
+       - cache:'no-cache' revalidates past the HTTP cache, so a deploy is
+         picked up immediately, not after the CDN max-age.
+       - The fresh body is stored under ONE canonical key ('index.html'),
+         so '/', '/index.html' and '?v=N' variants can't pile up copies or
+         cache a redirect that navigations would later reject.
+       - An HTTP error page (Pages hiccup, 404/5xx) falls back to the
+         cached game instead of being shown to the player. */
     e.respondWith(
-      fetch(e.request).then(res => {
+      fetch(e.request.url, { cache: 'no-cache', credentials: 'same-origin' }).then(res => {
         if (res.ok) {
           const copy = res.clone();
-          caches.open(VERSION).then(c => c.put(e.request, copy));
+          caches.open(VERSION).then(c => c.put('index.html', copy));
+          return res;
         }
-        return res;
-      }).catch(() =>
-        caches.match(e.request, { ignoreSearch: true })
-          .then(hit => hit || caches.match('index.html'))
-      )
+        return caches.match('index.html').then(hit => hit || res);
+      }).catch(() => caches.match('index.html'))
     );
     return;
   }
