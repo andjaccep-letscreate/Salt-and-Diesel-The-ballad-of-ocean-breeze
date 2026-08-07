@@ -509,3 +509,26 @@ Beginner-friendly on purpose — see `CLAUDE.md` for the format and rules.
            awaits Andres' merge word. Queued ideas: doc corrections for the
            C3-C6 truths, B7 typo list, PROJECT_BRIEF rewrite, Tail Sweep
            rename decision, stale-branch cleanup (still permission-blocked).
+
+## [2026-08-07] — 1F follow-ups: typos, brief rewrite, doc truths — LAUNCHED
+- Goal:    Land the three zero-risk follow-ups from the 1F audit and confirm
+           launch readiness.
+- Did:     (1) Six B7 typo fixes in index.html player text (discovery-card
+           opener, dockworker spelling, game-over harbor line un-inverted,
+           escaped apostrophe, stray turret emoji, Titanium join line);
+           Inez Vega's six-arms line kept as defensible. (2) PROJECT_BRIEF.md
+           rewritten from the prototype-era text to the shipped Volume 1,
+           embedding the audit's build truths (Fear Aura 30%-per-foe stun,
+           Silver ammo Kinetic/Net/Magnetic/Flak/Incendiary, Baron puzzle on
+           the Downtown bridge, Titanium glow in Lake Worth). (3) CLAUDE.md
+           roadmap/rules updated (asset exceptions, Pages auto-deploy,
+           Volume 1 complete). Merged 3a16f83; auto-deploy published it.
+- Learned: A "cosmetic" fix can be a syntax bomb: the curly apostrophe in a
+           single-quoted JS string was deliberate — replacing it with a
+           straight quote broke the whole script until escaped as \'.
+           node --check caught it before it ever reached a browser.
+- Gotchas: None beyond the apostrophe. Seeded trace stayed byte-identical
+           (sha256 91557c66…8792) — text-only proven again.
+- Next:    Volume 1 is LAUNCHED and stable. Open items: stale-branch cleanup
+           (Andres, via GitHub UI), Tail Sweep rename decision, Phase 5-party
+           /Vault work only on explicit go-ahead.
