@@ -79,12 +79,12 @@ Rules for the log:
 - Don't commit secrets/API keys. Flag them if you spot any.
 
 ## Project hard rules (Salt & Diesel — always apply)
-- One self-contained `index.html` (inline CSS + vanilla JS; no libraries, no external assets; backdrops are pure CSS/SVG).
+- One self-contained `index.html` (inline CSS + vanilla JS; no libraries; backdrops are pure CSS/SVG). Approved external-asset exceptions ONLY: `audio/` (3 MP3s), `icons/` + `manifest.webmanifest` + `sw.js` (PWA). Add nothing else.
 - Emoji icons: single-codepoint or VS16 only — never ZWJ or compound emoji.
 - Mobile-first; deterministic; lock input when it isn't the player's turn; respect `prefers-reduced-motion`.
 - Do NOT change combat balance / stats / formulas unless that is the explicit goal of the phase (e.g. the Phase 5 party rebalance). When a phase DOES change balance, re-run the full balance sim and report before/after numbers.
 - Verify headlessly with a ~200-run full-loop simulation before every merge; report stat-drift explicitly. No "done/fixed/verified" without real command output.
-- Workflow: build on a branch → give a `raw.githack` `?v=N` preview link → merge only after Andres confirms. One phase at a time; never start the next phase without being asked.
+- Workflow: build on a branch → give a `raw.githack` `?v=N` preview link → merge only after Andres confirms. Merging to `main` auto-deploys the live GitHub Pages site (mirror workflow → `gh-pages`). One phase at a time; never start the next phase without being asked.
 - Teach-as-you-go: when introducing a new command or term, add a one-line plain-English note (Andres is a learner / non-coder).
 
 ## What this game is (series framing)
@@ -93,6 +93,6 @@ Rules for the log:
 - Future episodes reuse this engine; the crew keeps tools/artifacts, not inflated stats (level-band + sync-down). Do NOT build episodic save / level-sync plumbing until explicitly asked.
 
 ## Roadmap pointer
-- Phases 1–4 are LIVE (WPB map; Florida-animal enemies + bolt sword; side-view battle stage; graphics + cyan blend).
-- Phase 5 = the 4-member party + Arsenal — build only when handed the party design file (`claude-code-party-system-prompt.md`). It WILL change balance, so rescale the boss and re-verify.
-- Deeper systems (elemental weakness, MP/TP, CTB turn order, isometric, county overworld) are banked in the Vault — do not build without explicit instruction.
+- Volume 1 is COMPLETE and LAUNCHED on `main` (through Phase 1F-COPACETIC): 4 zones, 4-member party + Arsenal, salvage, artifacts, legendaries, crew manifest, soundtrack, PWA. Live at the GitHub Pages URL in README.md.
+- Build truths when docs disagree (per the 1F audit): Fear Aura = 30%-per-foe stun-on-hit; Silver ammo = Kinetic/Net/Magnetic/Flak/Incendiary; Baron droid-puzzle = Downtown bridge; weapon glows = Silver→Wellington, Platinum→Downtown, Gold→Palm Island, Titanium→Lake Worth. `PROJECT_BRIEF.md` is the current-state summary.
+- Deeper systems (elemental weakness, MP/TP, CTB turn order, isometric, county overworld, episodic level-sync) are banked in the Vault — do not build without explicit instruction.

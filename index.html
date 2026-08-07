@@ -2356,7 +2356,7 @@ const LOCATION_DEFS = {
     name:'Wellington Sugarcane Refinery', subtitle:'40% FLOODED', bossKey:'X', nextLoc:'downtown',
     flood:40, palette:'cane', startY:15, startX:12,
     travelEmoji:'🚂',
-    travelDesc:'The cane fields fall away. Downtown WPB rises — art-deco towers and a dock-worker in a cage of patrol droids.',
+    travelDesc:'The cane fields fall away. Downtown WPB rises — art-deco towers and a dockworker in a cage of patrol droids.',
     banner:'WELLINGTON REFINERY — mud, molasses, and hexed knuckles in the stalks.',
   },
   'downtown':{
@@ -2755,7 +2755,7 @@ function showGlowPrompt(upgrade, glow, tile){
   document.getElementById('d-say').textContent = '';
   const c = document.getElementById('dlg-continue');
   if(c) c.style.display = 'none';   // Yes/No are the only choices here
-  document.getElementById('dlg-q').textContent = `Found a strange find!\nThis ${tile.name} hums with raw Aethel charge — the kind ${tile.charName} could tinker with for days.\nPry the core loose for the crew's stash?`;
+  document.getElementById('dlg-q').textContent = `A strange find!\nThis ${tile.name} hums with raw Aethel charge — the kind ${tile.charName} could tinker with for days.\nPry the core loose for the crew's stash?`;
   document.getElementById('dlg-q').dataset.upgrade = upgrade;
   yesBtn.style.display = 'inline-block';
   noBtn.style.display = 'inline-block';
@@ -3416,7 +3416,7 @@ const ENEMIES = {
        intro:"Anchor-chains scream as the Baron's riveted crocodile-walker rises, dripping bay water. \"Behold my leviathan!\""},
   // ---- Act-3 dieselpunk roster ----
   'E':{name:"Steam-Vent Turret", face:"💨", hp:36, atk:10, def:3, xp:22, kind:'patrol',
-       intro:"A squat armored turret swivels on its gimbals, pressure-gauge screaming. 💨"},
+       intro:"A squat armored turret swivels on its gimbals, pressure-gauge screaming."},
   'J':{name:"Chrono-Diver Brute", face:"⌚", hp:40, atk:11, def:2, xp:24, kind:'patrol',
        intro:"A heavy-set diver in a clockwork rebreather lumbers forward, fists ticking."},
   // ---- Act-3 mini-boss: The Baron (droid-puzzle encounter) ----
@@ -3449,7 +3449,7 @@ const ENEMIES = {
 const SALVAGES = {
   corruptedPole: {
     name: 'Corrupted Fishing Pole', icon: '🎣',
-    blurb: 'Pried from the Angry Fisherman’s grip, the rod still hums with stolen Aethel-Diesel charge. Bolt it to one of the crew.',
+    blurb: 'Pried from the Angry Fisherman\'s grip, the rod still hums with stolen Aethel-Diesel charge. Bolt it to one of the crew.',
     stats:['atk','def','maxHp'], amount:5
   },
   cursedGloves: {
@@ -5396,7 +5396,7 @@ const RECRUITMENT_DIALOGUES = {
     { speaker:'GOLD',     text:"Titanium, hold your ground! Crew, fan out and smash those patrol lines before they break his barrier!" },
   ],
   titanium_post: [
-    { speaker:'TITANIUM', text:"Perfect timing, fellas. My drones were completely redlining, but this axe still has plenty of structural steel left to clear. Where are we driving?" },
+    { speaker:'TITANIUM', text:"Perfect timing, fellas. My drones were completely redlining, but this axe still has plenty of swing left in it. Where are we driving?" },
     { speaker:'PLATINUM', text:"The Baron's machines have the Palm Island bridge locked down tight. The full squad crosses together, or the city remains a cage." },
   ],
 };
@@ -6372,7 +6372,7 @@ function gameOver(){
   const boss = battle && battle.enemies.find(e=>e.boss);
   document.getElementById('go-text').innerHTML =
     `The crew goes down as <span class="accent">${boss?boss.name:'the syndicate'}</span> stands over the wreckage. `+
-    `The harbor breathes easy tonight... but Sparkplug's been counted out before. Wind the springs and try again.`;
+    `The syndicate owns the harbor tonight... but Sparkplug's been counted out before. Wind the springs and try again.`;
   showScreen('gameover');
 }
 
